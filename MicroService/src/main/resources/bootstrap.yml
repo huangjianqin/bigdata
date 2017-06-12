@@ -1,0 +1,12 @@
+spring:
+  cloud:
+    zookeeper:
+      connect-string: 139.199.185.84:2181
+#      config:
+#        enabled: true
+#        root: springcloud
+#        defaultContext: apps
+#        profileSeparator: '::'
+  application:
+#    name: personService
+    name: personServiceClient

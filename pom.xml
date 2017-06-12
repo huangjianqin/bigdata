@@ -1,0 +1,421 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org</groupId>
+  <artifactId>bigdata</artifactId>
+  <packaging>pom</packaging>
+  <version>1.0-SNAPSHOT</version>
+
+  <!--<modules>-->
+    <!--<module>MicroService</module>-->
+  <!--</modules>-->
+
+  <properties>
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.target>1.7</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <scala.version>2.10.5</scala.version>
+    <spark.version>1.6.2</spark.version>
+    <kafka.version>0.10.0.1</kafka.version>
+    <hadoop.version>2.6.4</hadoop.version>
+    <zookeeper.version>3.4.9</zookeeper.version>
+    <hbase.version>1.2.4</hbase.version>
+    <hive.version>1.2.1</hive.version>
+    <mongo.version>3.2.2</mongo.version>
+  </properties>
+
+  <repositories>
+    <!-- scala-->
+    <repository>
+      <id>scala-tools.org</id>
+      <name>Scala-Tools Maven2 Repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>scala-tools.org</id>
+      <name>Scala-Tools Maven2 Repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <dependencies>
+    <!-- scala-->
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.specs</groupId>
+      <artifactId>specs</artifactId>
+      <version>1.2.5</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- spark-->
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-core_2.10</artifactId>
+      <version>${spark.version}</version>
+      <exclusions>
+        <!--<exclusion>-->
+          <!--<groupId>org.slf4j</groupId>-->
+          <!--<artifactId>slf4j-log4j12</artifactId>-->
+        <!--</exclusion>-->
+        <exclusion>
+          <groupId>javax.ws.rs</groupId>
+          <artifactId>jsr311-api</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-sql_2.10</artifactId>
+      <version>${spark.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-streaming_2.10</artifactId>
+      <version>${spark.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-streaming-kafka_2.10</artifactId>
+      <version>${spark.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-mllib_2.10</artifactId>
+      <version>${spark.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-hive_2.10</artifactId>
+      <version>${spark.version}</version>
+    </dependency>
+
+    <!--  spark mongodb-->
+    <dependency>
+      <groupId>org.mongodb.spark</groupId>
+      <artifactId>mongo-spark-connector_2.10</artifactId>
+      <version>1.1.0</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mongodb</groupId>
+      <artifactId>mongo-java-driver</artifactId>
+      <version>${mongo.version}</version>
+    </dependency>
+
+    <!--<dependency>-->
+      <!--<groupId>org.mongodb</groupId>-->
+      <!--<artifactId>bson</artifactId>-->
+      <!--<version>${mongo.version}</version>-->
+    <!--</dependency>-->
+
+    <!-- spark mlib依赖于breeze优化数学运算,而breeze又依赖于下包-->
+    <dependency>
+      <groupId>com.github.fommil.netlib</groupId>
+      <artifactId>core</artifactId>
+      <version>1.1.2</version>
+    </dependency>
+
+    <!-- hadoop-->
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-client</artifactId>
+      <version>${hadoop.version}</version>
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.slf4j</groupId>-->
+          <!--<artifactId>slf4j-log4j12</artifactId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>${hadoop.version}</version>
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.slf4j</groupId>-->
+          <!--<artifactId>slf4j-log4j12</artifactId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-hdfs</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-mapreduce-client-core</artifactId>
+      <version>${hadoop.version}</version>
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.slf4j</groupId>-->
+          <!--<artifactId>slf4j-log4j12</artifactId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-annotations</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+
+    <!-- zookeeper-->
+    <dependency>
+      <groupId>org.apache.zookeeper</groupId>
+      <artifactId>zookeeper</artifactId>
+      <version>${zookeeper.version}</version>
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.slf4j</groupId>-->
+          <!--<artifactId>slf4j-log4j12</artifactId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
+    </dependency>
+
+    <!-- hbase-->
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-client</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-common</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-server</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hbase</groupId>
+      <artifactId>hbase-hadoop-compat</artifactId>
+      <version>${hbase.version}</version>
+    </dependency>
+
+    <!-- hive-->
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-common</artifactId>
+      <version>${hive.version}</version>
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.slf4j</groupId>-->
+          <!--<artifactId>slf4j-log4j12</artifactId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-jdbc</artifactId>
+      <version>${hive.version}</version>
+      <exclusions>
+        <!--<exclusion>-->
+          <!--<groupId>org.slf4j</groupId>-->
+          <!--<artifactId>slf4j-log4j12</artifactId>-->
+        <!--</exclusion>-->
+
+        <exclusion>
+          <groupId>org.eclipse.jetty.aggregate</groupId>
+          <artifactId>jetty-all</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-serde</artifactId>
+      <version>${hive.version}</version>
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.slf4j</groupId>-->
+          <!--<artifactId>slf4j-log4j12</artifactId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hive</groupId>
+      <artifactId>hive-metastore</artifactId>
+      <version>${hive.version}</version>
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.slf4j</groupId>-->
+          <!--<artifactId>slf4j-log4j12</artifactId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
+    </dependency>
+
+    <!-- kafka-->
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+      <version>${kafka.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-streams</artifactId>
+      <version>${kafka.version}</version>
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.slf4j</groupId>-->
+          <!--<artifactId>slf4j-log4j12</artifactId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka_2.11</artifactId>
+      <version>${kafka.version}</version>
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.slf4j</groupId>-->
+          <!--<artifactId>slf4j-log4j12</artifactId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
+    </dependency>
+
+    <!-- mysql-->
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>5.1.38</version>
+    </dependency>
+
+    <!-- redis客户端-->
+    <dependency>
+      <groupId>redis.clients</groupId>
+      <artifactId>jedis</artifactId>
+      <version>2.8.1</version>
+    </dependency>
+
+    <!-- druid连接池-->
+    <dependency>
+      <groupId>com.alibaba</groupId>
+      <artifactId>druid</artifactId>
+      <version>1.0.18</version>
+    </dependency>
+
+    <!-- 日志包-->
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.17</version>
+    </dependency>
+
+    <!-- 与scala自带的josn冲突-->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>2.4.4</version>
+    </dependency>
+
+    <!-- 测试包-->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.4</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.mrunit</groupId>
+      <artifactId>mrunit</artifactId>
+      <version>1.1.0</version>
+      <classifier>hadoop2</classifier>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Hadoop test artifact for running mini clusters -->
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-minicluster</artifactId>
+      <version>${hadoop.version}</version>
+      <scope>test</scope>
+      <!--<exclusions>-->
+        <!--<exclusion>-->
+          <!--<groupId>org.slf4j</groupId>-->
+          <!--<artifactId>slf4j-log4j12</artifactId>-->
+        <!--</exclusion>-->
+      <!--</exclusions>-->
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <sourceDirectory>src/main/scala</sourceDirectory>
+    <testSourceDirectory>src/test/scala</testSourceDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.scala-tools</groupId>
+        <artifactId>maven-scala-plugin</artifactId>
+        <executions>
+          <execution>
+            <goals>
+              <goal>compile</goal>
+              <goal>testCompile</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <scalaVersion>${scala.version}</scalaVersion>
+          <args>
+            <arg>-target:jvm-1.7</arg>
+          </args>
+        </configuration>
+      </plugin>
+      <!--<plugin>-->
+        <!--<groupId>org.apache.maven.plugins</groupId>-->
+        <!--<artifactId>maven-eclipse-plugin</artifactId>-->
+        <!--<configuration>-->
+          <!--<downloadSources>true</downloadSources>-->
+          <!--<buildcommands>-->
+            <!--<buildcommand>ch.epfl.lamp.sdt.core.scalabuilder</buildcommand>-->
+          <!--</buildcommands>-->
+          <!--<additionalProjectnatures>-->
+            <!--<projectnature>ch.epfl.lamp.sdt.core.scalanature</projectnature>-->
+          <!--</additionalProjectnatures>-->
+          <!--<classpathContainers>-->
+            <!--<classpathContainer>org.eclipse.jdt.launching.JRE_CONTAINER</classpathContainer>-->
+            <!--<classpathContainer>ch.epfl.lamp.sdt.launching.SCALA_CONTAINER</classpathContainer>-->
+          <!--</classpathContainers>-->
+        <!--</configuration>-->
+      <!--</plugin>-->
+    </plugins>
+  </build>
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.scala-tools</groupId>
+        <artifactId>maven-scala-plugin</artifactId>
+        <configuration>
+          <scalaVersion>${scala.version}</scalaVersion>
+        </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+</project>
