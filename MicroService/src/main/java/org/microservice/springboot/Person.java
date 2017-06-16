@@ -54,13 +54,13 @@ public class Person {
                 .payload(new ZookeeperInstance(name + ":" + port, name, Collections.singletonMap("instance_status", "UP")))
                 .build();
         zookeeperServiceRegistry.register(registration);
-        return Collections.singletonMap("result", "在节点[" + host + ":" + port + "]上的" + name + "服务注册成功!!!");
+        return Collections.<String, Object>singletonMap("result", "在节点[" + host + ":" + port + "]上的" + name + "服务注册成功!!!");
     }
 
     @RequestMapping(value = "say/{id}/{content}", method = RequestMethod.GET)
     @ResponseBody
     public Map<String, Object> say(@PathVariable("id") Integer id, @PathVariable("content") String content){
-        return Collections.singletonMap("callback", "user " + id + " say \"" + content + "\"");
+        return Collections.<String, Object>singletonMap("callback", "user " + id + " say \"" + content + "\"");
     }
 
     @RequestMapping(value = "info", method = RequestMethod.GET)
