@@ -18,6 +18,8 @@ public class MessageFetcher<K, V> implements Runnable {
     //使用ConcurrentSkipListMap保证key有序,key为TopicPartitionWithTime,其实现是以加入队列的时间来排序
     private Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets = new ConcurrentSkipListMap();
     //线程状态标识
+    private boolean isTerminated = false;
+    //结束循环fetch操作
     private boolean isStopped = false;
     //重试相关属性
     private boolean enableRetry = true;
@@ -25,6 +27,8 @@ public class MessageFetcher<K, V> implements Runnable {
     private int nowRetry = 0;
     //consumer poll timeout
     private long pollTimeout = 1000;
+    //定时扫描注册中心并在发现新配置时及时更新运行环境
+    private ConfigFetcher configFetcher;
 
     public MessageFetcher(Properties properties) {
         this.consumer = new KafkaConsumer<K, V>(properties);
@@ -50,6 +54,10 @@ public class MessageFetcher<K, V> implements Runnable {
         return isStopped;
     }
 
+    public boolean isTerminated() {
+        return isTerminated;
+    }
+
     public Map<TopicPartitionWithTime, OffsetAndMetadata> getPendingOffsets() {
         return pendingOffsets;
     }
@@ -73,7 +81,7 @@ public class MessageFetcher<K, V> implements Runnable {
                 for(TopicPartition topicPartition: records.partitions())
                     for(ConsumerRecord<K, V> record: records.records(topicPartition)){
                         //按照某种策略提交线程处理
-                        if(!MessageHandlersManager.instance().dispatch(new ConsumerRecordInfo(record), pendingOffsets)){
+                        if(!MessageHandlersManager.instance().dispatch(new ConsumerRecordInfo(record, System.currentTimeMillis()), pendingOffsets)){
                             msgCache.add(record);
                         }
                     }
@@ -82,7 +90,7 @@ public class MessageFetcher<K, V> implements Runnable {
                     Iterator<ConsumerRecord<K, V>> iterator = msgCache.iterator();
                     while(iterator.hasNext()){
                         ConsumerRecord<K, V> record = iterator.next();
-                        if(MessageHandlersManager.instance().dispatch(new ConsumerRecordInfo(record), pendingOffsets)){
+                        if(MessageHandlersManager.instance().dispatch(new ConsumerRecordInfo(record, System.currentTimeMillis()), pendingOffsets)){
                             //删除该元素
                             iterator.remove();
                         }
@@ -102,6 +110,8 @@ public class MessageFetcher<K, V> implements Runnable {
             this.consumer.close();
             //有异常抛出,需设置,不然手动调用close就设置好了.
             isStopped = true;
+            //标识线程停止
+            isTerminated = true;
         }
     }
 

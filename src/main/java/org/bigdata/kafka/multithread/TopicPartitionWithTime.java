@@ -55,7 +55,7 @@ public class TopicPartitionWithTime implements Comparable<TopicPartitionWithTime
     @Override
     public int compareTo(TopicPartitionWithTime o) {
         if(o == null){
-            return -1;
+            return 1;
         }
         if(o.getAppendTime() < getAppendTime()){
             return 1;

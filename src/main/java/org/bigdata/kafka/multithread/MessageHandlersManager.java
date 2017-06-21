@@ -9,7 +9,7 @@ import java.util.concurrent.*;
 /**
  * Created by hjq on 2017/6/19.
  */
-public class MessageHandlersManager {
+public class MessageHandlersManager implements ReConfigable{
     private static MessageHandlersManager handlersManager;
     private Map<String, MessageHandler> topic2Handler = new ConcurrentHashMap<>();
     private Map<String, CommitStrategy> topic2CommitStrategy = new ConcurrentHashMap<>();
@@ -32,8 +32,26 @@ public class MessageHandlersManager {
         topic2Handler.put(topic, handler);
     }
 
+    public void registerHandlers(Map<String, MessageHandler> topic2Handler){
+        if(topic2Handler == null){
+            return;
+        }
+        for(Map.Entry<String, MessageHandler> entry: topic2Handler.entrySet()){
+            registerHandler(entry.getKey(), entry.getValue());
+        }
+    }
+
     public void registerCommitStrategy(String topic, CommitStrategy strategy){
         topic2CommitStrategy.put(topic, strategy);
+    }
+
+    public void registerCommitStrategies(Map<String, CommitStrategy> topic2CommitStrategy){
+        if(topic2CommitStrategy == null){
+            return;
+        }
+        for(Map.Entry<String, CommitStrategy> entry: topic2CommitStrategy.entrySet()){
+            registerCommitStrategy(entry.getKey(), entry.getValue());
+        }
     }
 
     public void removeHandler(String topic){
@@ -51,6 +69,7 @@ public class MessageHandlersManager {
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets){
         TopicPartition topicPartition = consumerRecordInfo.topicPartition();
 
+        //stop the world
         if(isReConfig){
             return false;
         }
@@ -66,34 +85,75 @@ public class MessageHandlersManager {
             MessageHandlerThread thread = newThread(pendingOffsets);
             topicPartition2Thread.put(topicPartition, thread);
             thread.queue.add(consumerRecordInfo);
+            runThread(thread);
         }
 
         return true;
     }
 
     public void consumerCloseNotify(Set<TopicPartition> topicPartitions){
-        boolean isAllHandled = false;
-        List<TopicPartition> topicPartitionList = new ArrayList<>(topicPartitions);
-        while(isAllHandled){
-            for(TopicPartition topicPartition: topicPartitionList){
+        while(true){
+            List<TopicPartition> findished = new ArrayList<>();
+            for(TopicPartition topicPartition: topicPartitions){
                 //因为consumer没有关闭,所以不会导致该consumer所属的消费者组rebalance,
                 //所以不会有该consumer负责的分区消息进去TopicPartition对应的线程拥有的队列
-                Queue<ConsumerRecordInfo> queue = topicPartition2Thread.get(topicPartition).queue;
+                Queue<ConsumerRecordInfo> queue = topicPartition2Thread.get(topicPartition).queue();
+                boolean isFinish = true;
                 for(ConsumerRecordInfo consumerRecordInfo: queue){
-                   //提高将要关闭的consumer所fetch的消息的优先级,尽快处理,尽快关闭consumer
+                   //设置接受消息时间来提高将要关闭的consumer所fetch的消息的优先级,尽快处理,尽快关闭consumer
+                    if(consumerRecordInfo.topicPartition().equals(topicPartition)){
+                        //仍然有消息在等待处理
+                        //提交优先级
+                        consumerRecordInfo.maxPriority();
+                        isFinish = false;
+                    }
                 }
+
+                //如果该topic分区被处理完成移除该topic分区
+                if(isFinish){
+                    findished.add(topicPartition);
+                }
+            }
+
+            //过滤掉已完成的topic分区
+            topicPartitions.removeAll(findished);
+
+            //该consumer所有topic分区都处理完
+            if(topicPartitions.size() == 0){
+                break;
+            }
+
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
 
+    }
+
+    @Override
+    public void reConfig(Properties config){
+        isReConfig = true;
+
+        //重新配置中.......
+
+
+        isReConfig = false;
     }
 
     public MessageHandlerThread newThread(Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets){
         return new MessageHandlerThread(pendingOffsets);
     }
 
+    public void runThread(Runnable target){
+        new Thread(target).start();
+    }
+
     public class MessageHandlerThread implements Runnable{
         private Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets;
-        private Queue<ConsumerRecordInfo> queue = new LinkedBlockingQueue<>();
+        //按消息接受时间排序
+        private Queue<ConsumerRecordInfo> queue = new PriorityQueue<>();
         private boolean isStooped = false;
 
         public MessageHandlerThread(Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets) {
