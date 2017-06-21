@@ -2,6 +2,8 @@ package org.bigdata.kafka.multithread;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -10,6 +12,7 @@ import java.util.concurrent.*;
  * Created by hjq on 2017/6/19.
  */
 public class MessageHandlersManager implements ReConfigable{
+    private static Logger log = LoggerFactory.getLogger(MessageHandlersManager.class);
     private static MessageHandlersManager handlersManager;
     private Map<String, MessageHandler> topic2Handler = new ConcurrentHashMap<>();
     private Map<String, CommitStrategy> topic2CommitStrategy = new ConcurrentHashMap<>();
@@ -85,7 +88,7 @@ public class MessageHandlersManager implements ReConfigable{
             MessageHandlerThread thread = newThread(pendingOffsets);
             topicPartition2Thread.put(topicPartition, thread);
             thread.queue.add(consumerRecordInfo);
-            runThread(thread);
+            runThread(thread, topicPartition.topic() + "-" + topicPartition.partition());
         }
 
         return true;
@@ -146,11 +149,12 @@ public class MessageHandlersManager implements ReConfigable{
         return new MessageHandlerThread(pendingOffsets);
     }
 
-    public void runThread(Runnable target){
-        new Thread(target).start();
+    public void runThread(Runnable target, String threadName){
+        new Thread(target, threadName + " handler thread").start();
     }
 
     public class MessageHandlerThread implements Runnable{
+        private Logger log = LoggerFactory.getLogger(MessageHandlerThread.class);
         private Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets;
         //按消息接受时间排序
         private Queue<ConsumerRecordInfo> queue = new PriorityQueue<>();
@@ -187,7 +191,7 @@ public class MessageHandlersManager implements ReConfigable{
 
         private void execute(ConsumerRecordInfo record){
             try {
-                execute(record);
+                doExecute(record);
                 record.callBack(null);
             } catch (Exception e) {
                 try {
@@ -200,8 +204,20 @@ public class MessageHandlersManager implements ReConfigable{
 
         private void doExecute(ConsumerRecordInfo record) throws Exception {
             TopicPartition topicPartition = record.topicPartition();
-            MessageHandlersManager.this.topic2Handler.get(topicPartition).handle(record.record());
-            if(MessageHandlersManager.this.topic2CommitStrategy.get(topicPartition).isToCommit(record.record())){
+            MessageHandler messageHandler = MessageHandlersManager.this.topic2Handler.get(topicPartition);
+            if(messageHandler == null){
+                //采用默认的Handler
+                messageHandler = new DefaultMessageHandler();
+            }
+            messageHandler.handle(record.record());
+
+            CommitStrategy commitStrategy = MessageHandlersManager.this.topic2CommitStrategy.get(topicPartition);
+            if(commitStrategy == null){
+                //采用默认的commitStrategy
+                commitStrategy = new DefaultCommitStrategy();
+            }
+
+            if(commitStrategy.isToCommit(record.record())){
                 pendingOffsets.put(new TopicPartitionWithTime(topicPartition, System.currentTimeMillis()), new OffsetAndMetadata(record.record().offset() + 1));
             }
 

@@ -2,20 +2,25 @@ package org.bigdata.kafka.api;
 
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.common.TopicPartition;
 import org.bigdata.kafka.multithread.CommitStrategy;
 import org.bigdata.kafka.multithread.MessageFetcher;
 import org.bigdata.kafka.multithread.MessageHandler;
 import org.bigdata.kafka.multithread.MessageHandlersManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
  * Created by hjq on 2017/6/19.
  */
 public class MultiThreadConsumerManager {
+    private static Logger log = LoggerFactory.getLogger(MultiThreadConsumerManager.class);
     private Map<String, MessageFetcher> name2Fetcher = new HashedMap();
 
     public static MultiThreadConsumerManager instance(){
@@ -121,7 +126,7 @@ public class MultiThreadConsumerManager {
      * @param target
      */
     public void startConsume(MessageFetcher target){
-        new Thread(target).start();
+        new Thread(target, "consumer[" + target.topicPartitionsStr() + "] fetcher thread").start();
     }
 
     public void registerHandlers(Map<String, MessageHandler> topic2Handler){

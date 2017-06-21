@@ -32,9 +32,6 @@ public class ConsumerRecordInfo<K, V> implements Comparable<ConsumerRecordInfo>{
         if(callBack != null){
             callBack.onComplete(record, e);
         }
-        else{
-            throw new Exception();
-        }
     }
 
     public TopicPartition topicPartition(){

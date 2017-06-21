@@ -3,6 +3,8 @@ package org.bigdata.kafka.multithread;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentSkipListMap;
@@ -12,6 +14,7 @@ import java.util.regex.Pattern;
  * Created by hjq on 2017/6/19.
  */
 public class MessageFetcher<K, V> implements Runnable {
+    private static Logger log = LoggerFactory.getLogger(MessageFetcher.class);
     private KafkaConsumer<K, V> consumer;
     //等待提交的Offset
     //用Map的原因是如果同一时间内队列中有相同的topic分区的offset需要提交，那么map会覆盖原有的
@@ -47,6 +50,7 @@ public class MessageFetcher<K, V> implements Runnable {
     }
 
     public void close(){
+        log.info("consumer[" + topicPartitionsStr() + "] fetcher thread closing...");
         this.isStopped = true;
     }
 
@@ -58,12 +62,23 @@ public class MessageFetcher<K, V> implements Runnable {
         return isTerminated;
     }
 
+    public String topicPartitionsStr(){
+        StringBuilder sb = new StringBuilder();
+        TopicPartition[] topicPartitionsArr = (TopicPartition[]) consumer.assignment().toArray();
+        sb.append(topicPartitionsArr[0].topic() + "-" + topicPartitionsArr[0].partition());
+        for(int i = 1; i < topicPartitionsArr.length; i++){
+            sb.append(", " + topicPartitionsArr[i].topic() + "-" + topicPartitionsArr[i].partition());
+        }
+        return sb.toString();
+    }
+
     public Map<TopicPartitionWithTime, OffsetAndMetadata> getPendingOffsets() {
         return pendingOffsets;
     }
 
     @Override
     public void run() {
+        log.info("consumer[" + topicPartitionsStr() + "] fetcher thread started");
         try{
             while(!isStopped && !Thread.currentThread().isInterrupted()){
                 //查看有没offset需要提交
@@ -72,22 +87,27 @@ public class MessageFetcher<K, V> implements Runnable {
                 if(offsets != null){
                     //有offset需要提交
                     commitOffsetsAsync(offsets);
+                    log.info("consumer[" + topicPartitionsStr() + "] commit [" + offsets.size() + "] topic partition offsets");
                 }
 
                 //jvm缓存,当消息处理线程还没启动完,或者配置更改时,需先缓存消息,等待线程启动好再处理
                 Queue<ConsumerRecord<K, V>> msgCache = new LinkedList<>();
+                log.info("consumer[" + topicPartitionsStr() + "] cache [" + msgCache.size() + "] message");
 
                 ConsumerRecords<K, V> records = consumer.poll(pollTimeout);
                 for(TopicPartition topicPartition: records.partitions())
                     for(ConsumerRecord<K, V> record: records.records(topicPartition)){
                         //按照某种策略提交线程处理
                         if(!MessageHandlersManager.instance().dispatch(new ConsumerRecordInfo(record, System.currentTimeMillis()), pendingOffsets)){
+                            log.info("MessageHandlersManager reconfig...");
+                            log.info("message " + record.toString() + " add cache");
                             msgCache.add(record);
                         }
                     }
 
                 if(!MessageHandlersManager.instance().isReConfig()){
                     Iterator<ConsumerRecord<K, V>> iterator = msgCache.iterator();
+                    log.info("consumer[" + topicPartitionsStr() + "] handle cached message");
                     while(iterator.hasNext()){
                         ConsumerRecord<K, V> record = iterator.next();
                         if(MessageHandlersManager.instance().dispatch(new ConsumerRecordInfo(record, System.currentTimeMillis()), pendingOffsets)){
@@ -95,7 +115,8 @@ public class MessageFetcher<K, V> implements Runnable {
                             iterator.remove();
                         }
                         else{
-                            //可能MessageHandlersManager又发生重新配置了
+                            //可能MessageHandlersManager又发生重新配置了,不处理后面的缓存
+                            log.info("MessageHandlersManager reconfig when handle cached message[bad]");
                             break;
                         }
                     }
