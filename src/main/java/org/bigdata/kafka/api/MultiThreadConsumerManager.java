@@ -3,10 +3,7 @@ package org.bigdata.kafka.api;
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.common.TopicPartition;
-import org.bigdata.kafka.multithread.CommitStrategy;
-import org.bigdata.kafka.multithread.MessageFetcher;
-import org.bigdata.kafka.multithread.MessageHandler;
-import org.bigdata.kafka.multithread.MessageHandlersManager;
+import org.bigdata.kafka.multithread.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,8 +65,8 @@ public class MultiThreadConsumerManager {
         MessageFetcher<K, V> messageFetcher = new MessageFetcher<>(properties);
         messageFetcher.subscribe(topics, listener);
         startConsume(messageFetcher);
-        registerHandlers(topic2Handler);
-        registerCommitStrategies(topic2CommitStrategy);
+        messageFetcher.registerHandlers(topic2Handler);
+        messageFetcher.registerCommitStrategies(topic2CommitStrategy);
         return  messageFetcher;
     }
 
@@ -91,8 +88,8 @@ public class MultiThreadConsumerManager {
         MessageFetcher<K, V> messageFetcher = new MessageFetcher<>(properties);
         messageFetcher.subscribe(topics);
         startConsume(messageFetcher);
-        registerHandlers(topic2Handler);
-        registerCommitStrategies(topic2CommitStrategy);
+        messageFetcher.registerHandlers(topic2Handler);
+        messageFetcher.registerCommitStrategies(topic2CommitStrategy);
         return  messageFetcher;
     }
 
@@ -111,13 +108,13 @@ public class MultiThreadConsumerManager {
                                                         Pattern pattern,
                                                         ConsumerRebalanceListener listener,
                                                         Map<String, MessageHandler> topic2Handler,
-                                                        Map<String, CommitStrategy> topic2CommitStrategy){
+                                                        Map<String, CommitStrategy> topic2CommitStrategy) {
         checkAppName(appName);
         MessageFetcher<K, V> messageFetcher = new MessageFetcher<>(properties);
         messageFetcher.subscribe(pattern, listener);
         startConsume(messageFetcher);
-        registerHandlers(topic2Handler);
-        registerCommitStrategies(topic2CommitStrategy);
+        messageFetcher.registerHandlers(topic2Handler);
+        messageFetcher.registerCommitStrategies(topic2CommitStrategy);
         return  messageFetcher;
     }
 
@@ -126,15 +123,7 @@ public class MultiThreadConsumerManager {
      * @param target
      */
     public void startConsume(MessageFetcher target){
-        new Thread(target, "consumer[" + target.topicPartitionsStr() + "] fetcher thread").start();
-    }
-
-    public void registerHandlers(Map<String, MessageHandler> topic2Handler){
-        MessageHandlersManager.instance().registerHandlers(topic2Handler);
-    }
-
-    public void registerCommitStrategies(Map<String, CommitStrategy> topic2CommitStrategy){
-        MessageHandlersManager.instance().registerCommitStrategies(topic2CommitStrategy);
+        new Thread(target, "consumer[" + StrUtil.topicPartitionsStr(target.assignment()) + "] fetcher thread").start();
     }
 
     public void stopConsuerAsync(String appName){

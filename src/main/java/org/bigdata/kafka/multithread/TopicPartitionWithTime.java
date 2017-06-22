@@ -20,7 +20,7 @@ public class TopicPartitionWithTime implements Comparable<TopicPartitionWithTime
         this.appendTime = appendTime;
     }
 
-    public TopicPartition getTopicPartition() {
+    public TopicPartition topicPartition() {
         return topicPartition;
     }
 

@@ -1,5 +1,6 @@
 package org.bigdata.kafka.multithread;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
@@ -7,32 +8,30 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by hjq on 2017/6/19.
  */
-public class MessageHandlersManager implements ReConfigable{
+public class MessageHandlersManager{
     private static Logger log = LoggerFactory.getLogger(MessageHandlersManager.class);
     private static MessageHandlersManager handlersManager;
     private Map<String, MessageHandler> topic2Handler = new ConcurrentHashMap<>();
     private Map<String, CommitStrategy> topic2CommitStrategy = new ConcurrentHashMap<>();
     private Map<TopicPartition, MessageHandlerThread> topicPartition2Thread = new ConcurrentHashMap<>();
     private ThreadPoolExecutor threads = new ThreadPoolExecutor(2, Runtime.getRuntime().availableProcessors() * 2 - 1, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
-    private volatile boolean isReConfig = false;
-
-    public static MessageHandlersManager instance(){
-        if(handlersManager == null){
-            synchronized (handlersManager){
-                if(handlersManager == null){
-                    handlersManager = new MessageHandlersManager();
-                }
-            }
-        }
-        return handlersManager;
-    }
+    private AtomicBoolean isRebalance = new AtomicBoolean(false);
 
     public void registerHandler(String topic, MessageHandler handler){
-        topic2Handler.put(topic, handler);
+        try {
+            if (topic2Handler.containsKey(topic)){
+                topic2Handler.get(topic).cleanup();
+            }
+            handler.setup();
+            topic2Handler.put(topic, handler);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void registerHandlers(Map<String, MessageHandler> topic2Handler){
@@ -45,7 +44,15 @@ public class MessageHandlersManager implements ReConfigable{
     }
 
     public void registerCommitStrategy(String topic, CommitStrategy strategy){
-        topic2CommitStrategy.put(topic, strategy);
+        try {
+            if (topic2CommitStrategy.containsKey(topic)){
+                topic2CommitStrategy.get(topic).cleanup();
+            }
+            strategy.setup();
+            topic2CommitStrategy.put(topic, strategy);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public void registerCommitStrategies(Map<String, CommitStrategy> topic2CommitStrategy){
@@ -57,23 +64,11 @@ public class MessageHandlersManager implements ReConfigable{
         }
     }
 
-    public void removeHandler(String topic){
-        topic2Handler.remove(topic);
-    }
-
-    public void removeCommitStrategy(String topic){
-        topic2CommitStrategy.remove(topic);
-    }
-
-    public boolean isReConfig() {
-        return isReConfig;
-    }
-
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets){
+        log.info("dispatching message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()));
         TopicPartition topicPartition = consumerRecordInfo.topicPartition();
 
-        //stop the world
-        if(isReConfig){
+        if(isRebalance.get()){
             return false;
         }
 
@@ -81,112 +76,145 @@ public class MessageHandlersManager implements ReConfigable{
             //已有该topic分区对应的线程启动
             //直接添加队列
             topicPartition2Thread.get(topicPartition).queue().add(consumerRecordInfo);
+            log.info("message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()) + "queued(" + topicPartition2Thread.get(topicPartition).queue().size() + " rest)");
         }
         else{
             //没有该topic分区对应的线程'
             //先启动线程,再添加至队列
-            MessageHandlerThread thread = newThread(pendingOffsets);
+            MessageHandlerThread thread = newThread(pendingOffsets, topicPartition.topic() + "-" + topicPartition.partition());
             topicPartition2Thread.put(topicPartition, thread);
             thread.queue.add(consumerRecordInfo);
-            runThread(thread, topicPartition.topic() + "-" + topicPartition.partition());
+            runThread(thread);
+            log.info("message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()) + "queued(" + thread.queue.size() + " rest)");
         }
 
         return true;
     }
 
-    public void consumerCloseNotify(Set<TopicPartition> topicPartitions){
-        while(true){
-            List<TopicPartition> findished = new ArrayList<>();
-            for(TopicPartition topicPartition: topicPartitions){
-                //因为consumer没有关闭,所以不会导致该consumer所属的消费者组rebalance,
-                //所以不会有该consumer负责的分区消息进去TopicPartition对应的线程拥有的队列
-                Queue<ConsumerRecordInfo> queue = topicPartition2Thread.get(topicPartition).queue();
-                boolean isFinish = true;
-                for(ConsumerRecordInfo consumerRecordInfo: queue){
-                   //设置接受消息时间来提高将要关闭的consumer所fetch的消息的优先级,尽快处理,尽快关闭consumer
-                    if(consumerRecordInfo.topicPartition().equals(topicPartition)){
-                        //仍然有消息在等待处理
-                        //提交优先级
-                        consumerRecordInfo.maxPriority();
-                        isFinish = false;
-                    }
-                }
-
-                //如果该topic分区被处理完成移除该topic分区
-                if(isFinish){
-                    findished.add(topicPartition);
-                }
-            }
-
-            //过滤掉已完成的topic分区
-            topicPartitions.removeAll(findished);
-
-            //该consumer所有topic分区都处理完
-            if(topicPartitions.size() == 0){
-                break;
-            }
-
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+    private boolean checkHandlerTerminated(){
+        for(MessageHandlerThread thread: topicPartition2Thread.values()){
+            if(!thread.isTerminated()){
+                return false;
             }
         }
+        log.info("all handlers terminated");
+        return true;
+    }
+
+    private void cleanMsgHandlersAndCommitStrategies(){
+        log.info("cleaning message handlers & commit stratgies...");
+        try {
+            //清理handler和commitstrategy
+            for(MessageHandler messageHandler: topic2Handler.values()){
+                messageHandler.cleanup();
+            }
+
+            for(CommitStrategy commitStrategy: topic2CommitStrategy.values()){
+                commitStrategy.cleanup();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        log.info("message handlers & commit stratgies cleaned");
+    }
+
+    public void consumerCloseNotify(Set<TopicPartition> topicPartitions){
+        log.info("shutdown all handlers...");
+        //停止所有handler
+        for(MessageHandlerThread thread: topicPartition2Thread.values()){
+            thread.close();
+        }
+
+        //等待所有handler完成
+        while(!checkHandlerTerminated()){
+        }
+
+        //关闭线程池
+        log.info("shutdown thread pool...");
+        threads.shutdown();
+        log.info("thread pool terminated");
+
+        cleanMsgHandlersAndCommitStrategies();
 
     }
 
-    @Override
-    public void reConfig(Properties config){
-        isReConfig = true;
+    public void consumerRebalanceNotify(){
+        isRebalance.set(true);
+        log.info("clean up handlers(not thread)");
+        //防止有Handler线程提交offset到offset队列
+        for(CommitStrategy commitStrategy: topic2CommitStrategy.values()){
+            commitStrategy.reset();
+        }
 
-        //重新配置中.......
+        //关闭Handler执行,但不关闭线程,达到线程复用的效果
+        for(MessageHandlerThread thread: topicPartition2Thread.values()){
+            //不清除队列好像也可以
+            thread.close();
+        }
 
-
-        isReConfig = false;
+        //清楚topic分区与handler的映射
+        topicPartition2Thread.clear();
+        isRebalance.set(false);
     }
 
-    public MessageHandlerThread newThread(Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets){
-        return new MessageHandlerThread(pendingOffsets);
+    public MessageHandlerThread newThread(Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets, String logHead){
+        return new MessageHandlerThread(pendingOffsets, logHead);
     }
 
-    public void runThread(Runnable target, String threadName){
-        new Thread(target, threadName + " handler thread").start();
+    public void runThread(Runnable target){
+        threads.submit(target);
     }
 
     public class MessageHandlerThread implements Runnable{
         private Logger log = LoggerFactory.getLogger(MessageHandlerThread.class);
+        private String LOG_HEAD = "";
         private Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets;
         //按消息接受时间排序
         private Queue<ConsumerRecordInfo> queue = new PriorityQueue<>();
         private boolean isStooped = false;
+        private boolean isTerminated = false;
 
-        public MessageHandlerThread(Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets) {
+        public MessageHandlerThread(Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets, String logHead) {
             this.pendingOffsets = pendingOffsets;
+            this.LOG_HEAD =logHead;
         }
 
         public Queue<ConsumerRecordInfo> queue() {
             return queue;
         }
 
-        public boolean isStooped() {
-            return isStooped;
+        public boolean isTerminated() {
+            return isTerminated;
         }
 
         public void close(){
+            log.info(LOG_HEAD + " stopping...");
             this.isStooped = true;
         }
 
         @Override
         public void run() {
+            log.info(LOG_HEAD + " start up");
+            ConsumerRecord lastRecord = null;
             while(!this.isStooped && !Thread.currentThread().isInterrupted()){
                 ConsumerRecordInfo record = queue.poll();
                 execute(record);
+                lastRecord = record.record();
             }
 
-            //线程关闭时,要及时清理队列中剩余的ConsumerRecord
-            for(ConsumerRecordInfo record: queue){
-                execute(record);
+            //只有两种情况:
+            //1:rebalance 抛弃这些待处理信息
+            //2:关闭consumer 抛弃这些待处理信息,提交最近处理的offset
+
+            if(!isRebalance.get()){
+                log.info(LOG_HEAD + " closing consumer should commit last offsets sync now");
+                pendingOffsets.put(new TopicPartitionWithTime(new TopicPartition(lastRecord.topic(), lastRecord.partition()),
+                        System.currentTimeMillis()), new OffsetAndMetadata(lastRecord.offset() + 1));
             }
+
+            isTerminated = true;
+            log.info(LOG_HEAD + " terminated");
         }
 
         private void execute(ConsumerRecordInfo record){
@@ -204,20 +232,25 @@ public class MessageHandlersManager implements ReConfigable{
 
         private void doExecute(ConsumerRecordInfo record) throws Exception {
             TopicPartition topicPartition = record.topicPartition();
-            MessageHandler messageHandler = MessageHandlersManager.this.topic2Handler.get(topicPartition);
+            MessageHandler messageHandler = MessageHandlersManager.this.topic2Handler.get(topicPartition.topic());
             if(messageHandler == null){
+                log.info("message handler not set, use default");
                 //采用默认的Handler
                 messageHandler = new DefaultMessageHandler();
+                MessageHandlersManager.this.topic2Handler.put(topicPartition.topic(), messageHandler);
             }
             messageHandler.handle(record.record());
 
-            CommitStrategy commitStrategy = MessageHandlersManager.this.topic2CommitStrategy.get(topicPartition);
+            CommitStrategy commitStrategy = MessageHandlersManager.this.topic2CommitStrategy.get(topicPartition.topic());
             if(commitStrategy == null){
                 //采用默认的commitStrategy
                 commitStrategy = new DefaultCommitStrategy();
+                log.info("commit strategy not set, use default");
+                MessageHandlersManager.this.topic2CommitStrategy.put(topicPartition.topic(), commitStrategy);
             }
 
             if(commitStrategy.isToCommit(record.record())){
+                log.info("satisfy commit strategy, pending to commit");
                 pendingOffsets.put(new TopicPartitionWithTime(topicPartition, System.currentTimeMillis()), new OffsetAndMetadata(record.record().offset() + 1));
             }
 
