@@ -2,7 +2,6 @@ package org.bigdata.kafka.api;
 
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.common.TopicPartition;
 import org.bigdata.kafka.multithread.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -22,6 +20,9 @@ public class MultiThreadConsumerManager {
 
     public static MultiThreadConsumerManager instance(){
         return new MultiThreadConsumerManager();
+    }
+
+    private MultiThreadConsumerManager() {
     }
 
     private void checkAppName(String appName){
@@ -63,7 +64,12 @@ public class MultiThreadConsumerManager {
                                                         Map<String, CommitStrategy> topic2CommitStrategy){
         checkAppName(appName);
         MessageFetcher<K, V> messageFetcher = new MessageFetcher<>(properties);
-        messageFetcher.subscribe(topics, listener);
+        if(listener != null){
+            messageFetcher.subscribe(topics, listener);
+        }
+        else{
+            messageFetcher.subscribe(topics, messageFetcher.new InMemoryRebalanceListsener());
+        }
         startConsume(messageFetcher);
         messageFetcher.registerHandlers(topic2Handler);
         messageFetcher.registerCommitStrategies(topic2CommitStrategy);
@@ -111,7 +117,12 @@ public class MultiThreadConsumerManager {
                                                         Map<String, CommitStrategy> topic2CommitStrategy) {
         checkAppName(appName);
         MessageFetcher<K, V> messageFetcher = new MessageFetcher<>(properties);
-        messageFetcher.subscribe(pattern, listener);
+        if(listener != null){
+            messageFetcher.subscribe(pattern, listener);
+        }
+        else{
+            messageFetcher.subscribe(pattern, messageFetcher.new InMemoryRebalanceListsener());
+        }
         startConsume(messageFetcher);
         messageFetcher.registerHandlers(topic2Handler);
         messageFetcher.registerCommitStrategies(topic2CommitStrategy);
@@ -124,6 +135,7 @@ public class MultiThreadConsumerManager {
      */
     public void startConsume(MessageFetcher target){
         new Thread(target, "consumer[" + StrUtil.topicPartitionsStr(target.assignment()) + "] fetcher thread").start();
+        log.info("start consumer[" + StrUtil.topicPartitionsStr(target.assignment()) + "] fetcher thread");
     }
 
     public void stopConsuerAsync(String appName){
