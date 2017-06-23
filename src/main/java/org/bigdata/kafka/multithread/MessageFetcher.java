@@ -69,7 +69,7 @@ public class MessageFetcher<K, V> implements Runnable {
     }
 
     public Set<TopicPartition> assignment(){
-        return consumer.assignment();
+        return new HashSet<>();
     }
 
     public Map<TopicPartitionWithTime, OffsetAndMetadata> getPendingOffsets() {
@@ -92,7 +92,6 @@ public class MessageFetcher<K, V> implements Runnable {
 
                 //jvm缓存,当消息处理线程还没启动完,或者配置更改时,需先缓存消息,等待线程启动好再处理
                 Queue<ConsumerRecord<K, V>> msgCache = new LinkedList<>();
-                log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] cache [" + msgCache.size() + "] message");
 
                 ConsumerRecords<K, V> records = consumer.poll(pollTimeout);
                 for(TopicPartition topicPartition: records.partitions())

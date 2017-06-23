@@ -16,10 +16,11 @@ import java.util.regex.Pattern;
  */
 public class MultiThreadConsumerManager {
     private static Logger log = LoggerFactory.getLogger(MultiThreadConsumerManager.class);
+    private static final MultiThreadConsumerManager manager = new MultiThreadConsumerManager();
     private Map<String, MessageFetcher> name2Fetcher = new HashedMap();
 
     public static MultiThreadConsumerManager instance(){
-        return new MultiThreadConsumerManager();
+        return manager;
     }
 
     private MultiThreadConsumerManager() {
@@ -43,7 +44,9 @@ public class MultiThreadConsumerManager {
     public <K, V> MessageFetcher<K, V> registerConsumer(String appName,
                                                         Properties properties){
         checkAppName(appName);
-        return new MessageFetcher<K, V>(properties);
+        MessageFetcher<K, V> instance = new MessageFetcher<K, V>(properties);
+        name2Fetcher.put(appName, instance);
+        return instance;
     }
 
     /**
@@ -70,9 +73,10 @@ public class MultiThreadConsumerManager {
         else{
             messageFetcher.subscribe(topics, messageFetcher.new InMemoryRebalanceListsener());
         }
-        startConsume(messageFetcher);
         messageFetcher.registerHandlers(topic2Handler);
         messageFetcher.registerCommitStrategies(topic2CommitStrategy);
+        name2Fetcher.put(appName, messageFetcher);
+        startConsume(messageFetcher);
         return  messageFetcher;
     }
 
@@ -93,9 +97,10 @@ public class MultiThreadConsumerManager {
         checkAppName(appName);
         MessageFetcher<K, V> messageFetcher = new MessageFetcher<>(properties);
         messageFetcher.subscribe(topics);
-        startConsume(messageFetcher);
         messageFetcher.registerHandlers(topic2Handler);
         messageFetcher.registerCommitStrategies(topic2CommitStrategy);
+        name2Fetcher.put(appName, messageFetcher);
+        startConsume(messageFetcher);
         return  messageFetcher;
     }
 
@@ -123,9 +128,10 @@ public class MultiThreadConsumerManager {
         else{
             messageFetcher.subscribe(pattern, messageFetcher.new InMemoryRebalanceListsener());
         }
-        startConsume(messageFetcher);
         messageFetcher.registerHandlers(topic2Handler);
         messageFetcher.registerCommitStrategies(topic2CommitStrategy);
+        name2Fetcher.put(appName, messageFetcher);
+        startConsume(messageFetcher);
         return  messageFetcher;
     }
 
@@ -148,7 +154,7 @@ public class MultiThreadConsumerManager {
         }
     }
 
-    public void stopConsuerSync(String appName){
+    public void stopConsumerSync(String appName){
         MessageFetcher messageFetcher = name2Fetcher.get(appName);
         if(messageFetcher != null){
             messageFetcher.close();

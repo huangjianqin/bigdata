@@ -12,7 +12,7 @@ import java.util.Set;
  * Created by hjq on 2017/6/22.
  */
 public class TestMultiThreadConsumerManager {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         Properties config = PropertiesWrapper.create()
                 .set(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "ubuntu:9092")
                 .set(ConsumerConfig.GROUP_ID_CONFIG, "multi-handle")
@@ -25,6 +25,11 @@ public class TestMultiThreadConsumerManager {
 
         //1.一个consumer
         MultiThreadConsumerManager.instance().<String, String>registerConsumer("test", config, topic, null, null);
+
+        long runTime = 60 * 1000;
+        Thread.sleep(runTime);
+
+        MultiThreadConsumerManager.instance().stopConsumerSync("test");
 
     }
 }

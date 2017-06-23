@@ -72,7 +72,7 @@ public class MessageHandlersManager{
             return false;
         }
 
-        if(!topicPartition2Thread.containsKey(topicPartition)){
+        if(topicPartition2Thread.containsKey(topicPartition)){
             //已有该topic分区对应的线程启动
             //直接添加队列
             topicPartition2Thread.get(topicPartition).queue().add(consumerRecordInfo);
@@ -171,7 +171,7 @@ public class MessageHandlersManager{
         private String LOG_HEAD = "";
         private Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets;
         //按消息接受时间排序
-        private Queue<ConsumerRecordInfo> queue = new PriorityQueue<>();
+        private PriorityBlockingQueue<ConsumerRecordInfo> queue = new PriorityBlockingQueue<>();
         private boolean isStooped = false;
         private boolean isTerminated = false;
 
@@ -198,9 +198,13 @@ public class MessageHandlersManager{
             log.info(LOG_HEAD + " start up");
             ConsumerRecord lastRecord = null;
             while(!this.isStooped && !Thread.currentThread().isInterrupted()){
-                ConsumerRecordInfo record = queue.poll();
-                execute(record);
-                lastRecord = record.record();
+                try {
+                    ConsumerRecordInfo record = queue.poll(100, TimeUnit.MILLISECONDS);
+                    execute(record);
+                    lastRecord = record.record();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
 
             //只有两种情况:
