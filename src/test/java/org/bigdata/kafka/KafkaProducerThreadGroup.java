@@ -21,7 +21,7 @@ public class KafkaProducerThreadGroup {
         int threadSize = 2;
         int runTime = 1 * 30 * 1000;
 
-        ExecutorService executorService = Executors.newCachedThreadPool();
+        ExecutorService executorService = Executors.newFixedThreadPool(threadSize);
         for(int i = 1; i <= threadSize; i++){
             executorService.submit(new KafkaProducerThread(config, "multi-msg", i));
         }
