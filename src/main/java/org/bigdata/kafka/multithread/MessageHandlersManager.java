@@ -203,7 +203,15 @@ public class MessageHandlersManager{
                     //队列中有消息需要处理
                     if(record != null){
                         execute(record);
-                        lastRecord = record.record();
+                        //保存最新的offset
+                        if(lastRecord != null){
+                            if(record.record().offset() > lastRecord.offset()){
+                                lastRecord = record.record();
+                            }
+                        }
+                        else{
+                            lastRecord = record.record();
+                        }
                     }
                     else{
                         //队列poll超时
