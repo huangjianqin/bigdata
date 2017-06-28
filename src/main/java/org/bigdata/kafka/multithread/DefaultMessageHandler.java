@@ -16,7 +16,7 @@ public class DefaultMessageHandler implements MessageHandler<String, String>{
     @Override
     public void handle(ConsumerRecord<String, String> record) throws Exception {
         System.out.println(record.key() + " ---> " + record.value());
-        Thread.sleep(2 * 1000);
+//        Thread.sleep(2 * 1000);
     }
 
     @Override

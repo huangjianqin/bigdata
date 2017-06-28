@@ -26,6 +26,7 @@ public class DefaultCommitStrategy implements CommitStrategy{
     @Override
     public boolean isToCommit(ConsumerRecord record) {
         if(counter.incrementAndGet() >= MAX_COUNT){
+            reset();
             return true;
         }
 

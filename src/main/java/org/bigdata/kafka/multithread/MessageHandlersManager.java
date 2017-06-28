@@ -200,8 +200,16 @@ public class MessageHandlersManager{
             while(!this.isStooped && !Thread.currentThread().isInterrupted()){
                 try {
                     ConsumerRecordInfo record = queue.poll(100, TimeUnit.MILLISECONDS);
-                    execute(record);
-                    lastRecord = record.record();
+                    //队列中有消息需要处理
+                    if(record != null){
+                        execute(record);
+                        lastRecord = record.record();
+                    }
+                    else{
+                        //队列poll超时
+                        log.info(LOG_HEAD + " thread idle --> sleep 200ms");
+                        Thread.sleep(200);
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -225,6 +233,7 @@ public class MessageHandlersManager{
             try {
                 doExecute(record);
                 record.callBack(null);
+                Counters.getCounters().add("consumer-counter");
             } catch (Exception e) {
                 try {
                     record.callBack(e);

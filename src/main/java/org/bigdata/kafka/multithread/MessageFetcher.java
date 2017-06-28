@@ -19,7 +19,7 @@ public class MessageFetcher<K, V> implements Runnable {
     //等待提交的Offset
     //用Map的原因是如果同一时间内队列中有相同的topic分区的offset需要提交，那么map会覆盖原有的
     //使用ConcurrentSkipListMap保证key有序,key为TopicPartitionWithTime,其实现是以加入队列的时间来排序
-    private Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets = new ConcurrentSkipListMap();
+    private ConcurrentSkipListMap<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets = new ConcurrentSkipListMap();
     //线程状态标识
     private boolean isTerminated = false;
     //结束循环fetch操作
@@ -80,18 +80,18 @@ public class MessageFetcher<K, V> implements Runnable {
     public void run() {
         log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] fetcher thread started");
         try{
+            //jvm缓存,当消息处理线程还没启动完,或者配置更改时,需先缓存消息,等待线程启动好再处理
+            Queue<ConsumerRecord<K, V>> msgCache = new LinkedList<>();
+
             while(!isStopped && !Thread.currentThread().isInterrupted()){
                 //查看有没offset需要提交
-                Map<TopicPartition, OffsetAndMetadata> offsets = randomPendingOffsets();
+                Map<TopicPartition, OffsetAndMetadata> offsets = allPendingOffsets();
 
                 if(offsets != null){
                     //有offset需要提交
                     log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit [" + offsets.size() + "] topic partition offsets");
                     commitOffsetsAsync(offsets);
                 }
-
-                //jvm缓存,当消息处理线程还没启动完,或者配置更改时,需先缓存消息,等待线程启动好再处理
-                Queue<ConsumerRecord<K, V>> msgCache = new LinkedList<>();
 
                 ConsumerRecords<K, V> records = consumer.poll(pollTimeout);
                 for(TopicPartition topicPartition: records.partitions())
@@ -183,20 +183,25 @@ public class MessageFetcher<K, V> implements Runnable {
         });
     }
 
-    private Map<TopicPartition, OffsetAndMetadata> randomPendingOffsets(){
+    private Map<TopicPartition, OffsetAndMetadata> allPendingOffsets(){
         if(this.pendingOffsets.size() > 0){
-            Map<TopicPartition, OffsetAndMetadata> result = new HashedMap();
-            //只有一条线程读取该Map,不用给Map加锁
-            //随机抽取m个offset提交
-            int selectedOffsetSize = new Random(this.pendingOffsets.size()).nextInt();
-            Iterator<Map.Entry<TopicPartitionWithTime, OffsetAndMetadata>> source = this.pendingOffsets.entrySet().iterator();
-            while(source.hasNext() && selectedOffsetSize > 0){
-                Map.Entry<TopicPartitionWithTime, OffsetAndMetadata> entry = source.next();
-                result.put(entry.getKey().topicPartition(), entry.getValue());
-                selectedOffsetSize --;
-                source.remove();
+            Map<TopicPartitionWithTime, OffsetAndMetadata> temp = null;
+
+            //复制所有需要提交的offset
+            synchronized (this.pendingOffsets){
+                temp = this.pendingOffsets.clone();
+                this.pendingOffsets.clear();
             }
-            return result;
+
+            if(temp != null){
+                Map<TopicPartition, OffsetAndMetadata> result = new HashedMap();
+
+                for(Map.Entry<TopicPartitionWithTime, OffsetAndMetadata> entry: temp.entrySet()){
+                    result.put(entry.getKey().topicPartition(), entry.getValue());
+                }
+
+                return result;
+            }
         }
         return null;
     }
