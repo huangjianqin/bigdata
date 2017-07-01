@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Pattern;
 
@@ -19,7 +20,7 @@ public class MessageFetcher<K, V> implements Runnable {
     //等待提交的Offset
     //用Map的原因是如果同一时间内队列中有相同的topic分区的offset需要提交，那么map会覆盖原有的
     //使用ConcurrentSkipListMap保证key有序,key为TopicPartitionWithTime,其实现是以加入队列的时间来排序
-    private ConcurrentSkipListMap<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets = new ConcurrentSkipListMap();
+    private ConcurrentHashMap<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets = new ConcurrentHashMap();
     //线程状态标识
     private boolean isTerminated = false;
     //结束循环fetch操作
@@ -55,7 +56,7 @@ public class MessageFetcher<K, V> implements Runnable {
         handlersManager.registerHandlers(topic2Handler);
     }
 
-    public void registerCommitStrategies(Map<String, CommitStrategy> topic2CommitStrategy){
+    public void registerCommitStrategies(Map<TopicPartition, CommitStrategy> topic2CommitStrategy){
         handlersManager.registerCommitStrategies(topic2CommitStrategy);
     }
 
@@ -90,7 +91,7 @@ public class MessageFetcher<K, V> implements Runnable {
                 if(offsets != null){
                     //有offset需要提交
                     log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit [" + offsets.size() + "] topic partition offsets");
-                    commitOffsetsAsync(offsets);
+                    commitOffsetsSync(offsets);
                 }
 
                 ConsumerRecords<K, V> records = consumer.poll(pollTimeout);
@@ -128,11 +129,8 @@ public class MessageFetcher<K, V> implements Runnable {
             Set<TopicPartition> topicPartitions = this.consumer.assignment();
             handlersManager.consumerCloseNotify(topicPartitions);
             //关闭前,提交所有offset
-            Map<TopicPartition, OffsetAndMetadata> topicPartition2Offset = new HashMap<>();
-            for(Map.Entry<TopicPartitionWithTime, OffsetAndMetadata> entry: pendingOffsets.entrySet()){
-                topicPartition2Offset.put(entry.getKey().topicPartition(), entry.getValue());
-            }
-            log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit offsets sync...");
+            Map<TopicPartition, OffsetAndMetadata> topicPartition2Offset = allPendingOffsets();
+            log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit offsets Sync...");
             //同步提交
             consumer.commitSync(topicPartition2Offset);
             log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit offsets [" + StrUtil.topicPartitionOffsetsStr(topicPartition2Offset) + "]");
@@ -147,8 +145,14 @@ public class MessageFetcher<K, V> implements Runnable {
         }
     }
 
+    private void commitOffsetsSync(Map<TopicPartition, OffsetAndMetadata> offsets){
+        log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit offsets Sync...");
+        consumer.commitSync(offsets);
+        log.info("consumer[" + StrUtil.topicPartitionsStr(MessageFetcher.this.assignment()) + "] offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
+    }
+
     private void commitOffsetsAsync(final Map<TopicPartition, OffsetAndMetadata> offsets){
-        log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit offsets async...");
+        log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit offsets ASync...");
         consumer.commitAsync(offsets, new OffsetCommitCallback() {
             @Override
             public void onComplete(Map<TopicPartition, OffsetAndMetadata> map, Exception e) {
@@ -185,21 +189,13 @@ public class MessageFetcher<K, V> implements Runnable {
 
     private Map<TopicPartition, OffsetAndMetadata> allPendingOffsets(){
         if(this.pendingOffsets.size() > 0){
-            Map<TopicPartitionWithTime, OffsetAndMetadata> temp = null;
-
             //复制所有需要提交的offset
             synchronized (this.pendingOffsets){
-                temp = this.pendingOffsets.clone();
-                this.pendingOffsets.clear();
-            }
-
-            if(temp != null){
-                Map<TopicPartition, OffsetAndMetadata> result = new HashedMap();
-
-                for(Map.Entry<TopicPartitionWithTime, OffsetAndMetadata> entry: temp.entrySet()){
+                Map<TopicPartition, OffsetAndMetadata> result = new HashMap<>();
+                for(Map.Entry<TopicPartitionWithTime, OffsetAndMetadata> entry: this.pendingOffsets.entrySet()){
                     result.put(entry.getKey().topicPartition(), entry.getValue());
                 }
-
+                this.pendingOffsets.clear();
                 return result;
             }
         }

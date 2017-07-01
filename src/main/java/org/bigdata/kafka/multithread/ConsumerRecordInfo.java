@@ -8,7 +8,7 @@ import org.apache.kafka.common.TopicPartition;
 /**
  * Created by hjq on 2017/6/19.
  */
-public class ConsumerRecordInfo<K, V> implements Comparable<ConsumerRecordInfo>{
+public class ConsumerRecordInfo<K, V>{
     private ConsumerRecord<K, V> record;
     private CallBack callBack;
     private long recTime;
@@ -66,19 +66,4 @@ public class ConsumerRecordInfo<K, V> implements Comparable<ConsumerRecordInfo>{
         return record != null ? record.hashCode() : 0;
     }
 
-    @Override
-    public int compareTo(ConsumerRecordInfo o) {
-        if(o == null)
-            return 1;
-
-        if(recTime() > o.recTime()){
-            return 1;
-        }
-        else if(recTime() > o.recTime()){
-            return 0;
-        }
-        else{
-            return -1;
-        }
-    }
 }

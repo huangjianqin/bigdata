@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DefaultCommitStrategy implements CommitStrategy{
     private AtomicLong counter = new AtomicLong(0);
-    private long MAX_COUNT = 10;
+    private long MAX_COUNT = 100;
 
     public DefaultCommitStrategy() {
     }
@@ -25,8 +25,7 @@ public class DefaultCommitStrategy implements CommitStrategy{
 
     @Override
     public boolean isToCommit(ConsumerRecord record) {
-        if(counter.incrementAndGet() >= MAX_COUNT){
-            reset();
+        if(counter.incrementAndGet() % MAX_COUNT == 0){
             return true;
         }
 
@@ -34,7 +33,7 @@ public class DefaultCommitStrategy implements CommitStrategy{
     }
 
     @Override
-    public void reset() {
+    public synchronized void reset() {
         counter.set(0L);
     }
 

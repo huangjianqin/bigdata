@@ -36,13 +36,14 @@ public class KafkaProducerThread implements Runnable {
         try{
             while(!isStopped && !Thread.currentThread().isInterrupted()){
                 final String msg = "producer-" + producerId + " message" + Counters.getCounters().get("producer-counter");
-                producer.send(new ProducerRecord<String, String>(topic, null, msg), new Callback() {
+                producer.send(new ProducerRecord<String, String>(topic, (int)(Counters.getCounters().get("producer-counter") % 5), null, msg), new Callback() {
                     @Override
                     public void onCompletion(RecordMetadata recordMetadata, Exception e) {
 //                        System.out.println("producer-" + producerId + " send message[ " + msg + " ]");
                     }
                 });
                 Counters.getCounters().add("producer-counter");
+                Counters.getCounters().add("producer-byte-counter", msg.getBytes().length);
 //                try {
 //                    Thread.sleep(200);
 //                } catch (InterruptedException e) {

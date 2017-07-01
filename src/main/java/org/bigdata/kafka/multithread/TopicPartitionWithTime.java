@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
  * 对TopicPartition的简单封装,添加appendTime属性以作为加入队列的时间并以该属性值排序
  * equals和hashcode都是直接使用TopicPartition的实现
  */
-public class TopicPartitionWithTime implements Comparable<TopicPartitionWithTime>{
+public class TopicPartitionWithTime{
     private TopicPartition topicPartition;
     private long appendTime = 0;
 
@@ -50,21 +50,5 @@ public class TopicPartitionWithTime implements Comparable<TopicPartitionWithTime
                 "topicPartition=" + topicPartition +
                 ", appendTime=" + appendTime +
                 '}';
-    }
-
-    @Override
-    public int compareTo(TopicPartitionWithTime o) {
-        if(o == null){
-            return 1;
-        }
-        if(o.getAppendTime() < getAppendTime()){
-            return 1;
-        }
-        else if(o.getAppendTime() == getAppendTime()){
-            return 0;
-        }
-        else{
-            return -1;
-        }
     }
 }

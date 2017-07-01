@@ -17,9 +17,9 @@ public class MessageHandlersManager{
     private static Logger log = LoggerFactory.getLogger(MessageHandlersManager.class);
     private static MessageHandlersManager handlersManager;
     private Map<String, MessageHandler> topic2Handler = new ConcurrentHashMap<>();
-    private Map<String, CommitStrategy> topic2CommitStrategy = new ConcurrentHashMap<>();
+    private Map<TopicPartition, CommitStrategy> topic2CommitStrategy = new ConcurrentHashMap<>();
     private Map<TopicPartition, MessageHandlerThread> topicPartition2Thread = new ConcurrentHashMap<>();
-    private ThreadPoolExecutor threads = new ThreadPoolExecutor(2, Runtime.getRuntime().availableProcessors() * 2 - 1, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+    private ThreadPoolExecutor threads = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2 - 1, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
     private AtomicBoolean isRebalance = new AtomicBoolean(false);
 
     public void registerHandler(String topic, MessageHandler handler){
@@ -43,29 +43,29 @@ public class MessageHandlersManager{
         }
     }
 
-    public void registerCommitStrategy(String topic, CommitStrategy strategy){
+    public void registerCommitStrategy(TopicPartition topicPartition, CommitStrategy strategy){
         try {
-            if (topic2CommitStrategy.containsKey(topic)){
-                topic2CommitStrategy.get(topic).cleanup();
+            if (topic2CommitStrategy.containsKey(topicPartition)){
+                topic2CommitStrategy.get(topicPartition).cleanup();
             }
             strategy.setup();
-            topic2CommitStrategy.put(topic, strategy);
+            topic2CommitStrategy.put(topicPartition, strategy);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public void registerCommitStrategies(Map<String, CommitStrategy> topic2CommitStrategy){
+    public void registerCommitStrategies(Map<TopicPartition, CommitStrategy> topic2CommitStrategy){
         if(topic2CommitStrategy == null){
             return;
         }
-        for(Map.Entry<String, CommitStrategy> entry: topic2CommitStrategy.entrySet()){
+        for(Map.Entry<TopicPartition, CommitStrategy> entry: topic2CommitStrategy.entrySet()){
             registerCommitStrategy(entry.getKey(), entry.getValue());
         }
     }
 
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets){
-        log.info("dispatching message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()));
+        log.debug("dispatching message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()));
         TopicPartition topicPartition = consumerRecordInfo.topicPartition();
 
         if(isRebalance.get()){
@@ -76,7 +76,7 @@ public class MessageHandlersManager{
             //已有该topic分区对应的线程启动
             //直接添加队列
             topicPartition2Thread.get(topicPartition).queue().add(consumerRecordInfo);
-            log.info("message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()) + "queued(" + topicPartition2Thread.get(topicPartition).queue().size() + " rest)");
+            log.debug("message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()) + "queued(" + topicPartition2Thread.get(topicPartition).queue().size() + " rest)");
         }
         else{
             //没有该topic分区对应的线程'
@@ -85,7 +85,7 @@ public class MessageHandlersManager{
             topicPartition2Thread.put(topicPartition, thread);
             thread.queue.add(consumerRecordInfo);
             runThread(thread);
-            log.info("message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()) + "queued(" + thread.queue.size() + " rest)");
+            log.debug("message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()) + "queued(" + thread.queue.size() + " rest)");
         }
 
         return true;
@@ -126,13 +126,26 @@ public class MessageHandlersManager{
             thread.close();
         }
 
-        //等待所有handler完成
-        while(!checkHandlerTerminated()){
+        //等待所有handler完成,超过10s,强制关闭
+        int count = 0;
+        while(!checkHandlerTerminated() && count < 5){
+            count ++;
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
 
         //关闭线程池
-        log.info("shutdown thread pool...");
-        threads.shutdown();
+        if(count < 5){
+            log.info("shutdown thread pool...");
+            threads.shutdown();
+        }
+        else{
+            log.info("force shutdown thread pool...");
+            threads.shutdownNow();
+        }
         log.info("thread pool terminated");
 
         cleanMsgHandlersAndCommitStrategies();
@@ -170,10 +183,12 @@ public class MessageHandlersManager{
         private Logger log = LoggerFactory.getLogger(MessageHandlerThread.class);
         private String LOG_HEAD = "";
         private Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets;
-        //按消息接受时间排序
-        private PriorityBlockingQueue<ConsumerRecordInfo> queue = new PriorityBlockingQueue<>();
+        //按消息插入顺序排序
+        private LinkedBlockingQueue<ConsumerRecordInfo> queue = new LinkedBlockingQueue<>();
         private boolean isStooped = false;
         private boolean isTerminated = false;
+        //最近一次处理的最大的offset
+        private ConsumerRecord lastRecord = null;
 
         public MessageHandlerThread(Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets, String logHead) {
             this.pendingOffsets = pendingOffsets;
@@ -196,7 +211,6 @@ public class MessageHandlersManager{
         @Override
         public void run() {
             log.info(LOG_HEAD + " start up");
-            ConsumerRecord lastRecord = null;
             while(!this.isStooped && !Thread.currentThread().isInterrupted()){
                 try {
                     ConsumerRecordInfo record = queue.poll(100, TimeUnit.MILLISECONDS);
@@ -212,10 +226,24 @@ public class MessageHandlersManager{
                         else{
                             lastRecord = record.record();
                         }
+
+                        CommitStrategy commitStrategy = MessageHandlersManager.this.topic2CommitStrategy.get(new TopicPartition(lastRecord.topic(), lastRecord.partition()));
+                        if(commitStrategy == null){
+                            //采用默认的commitStrategy
+                            commitStrategy = new DefaultCommitStrategy();
+                            log.info(LOG_HEAD + " commit strategy not set, use default");
+                            MessageHandlersManager.this.topic2CommitStrategy.put(new TopicPartition(lastRecord.topic(), lastRecord.partition()), commitStrategy);
+                        }
+
+                        if(commitStrategy.isToCommit(record.record())){
+                            log.info(LOG_HEAD + " satisfy commit strategy, pending to commit");
+                            pendingOffsets.put(new TopicPartitionWithTime(new TopicPartition(lastRecord.topic(), lastRecord.partition()), System.currentTimeMillis()), new OffsetAndMetadata(lastRecord.offset() + 1));
+                            lastRecord = null;
+                        }
                     }
                     else{
                         //队列poll超时
-                        log.info(LOG_HEAD + " thread idle --> sleep 200ms");
+//                        log.info(LOG_HEAD + " thread idle --> sleep 200ms");
                         Thread.sleep(200);
                     }
                 } catch (InterruptedException e) {
@@ -229,8 +257,10 @@ public class MessageHandlersManager{
 
             if(!isRebalance.get()){
                 log.info(LOG_HEAD + " closing consumer should commit last offsets sync now");
-                pendingOffsets.put(new TopicPartitionWithTime(new TopicPartition(lastRecord.topic(), lastRecord.partition()),
-                        System.currentTimeMillis()), new OffsetAndMetadata(lastRecord.offset() + 1));
+                if(lastRecord != null){
+                    pendingOffsets.put(new TopicPartitionWithTime(new TopicPartition(lastRecord.topic(), lastRecord.partition()),
+                            System.currentTimeMillis()), new OffsetAndMetadata(lastRecord.offset() + 1));
+                }
             }
 
             isTerminated = true;
@@ -255,26 +285,12 @@ public class MessageHandlersManager{
             TopicPartition topicPartition = record.topicPartition();
             MessageHandler messageHandler = MessageHandlersManager.this.topic2Handler.get(topicPartition.topic());
             if(messageHandler == null){
-                log.info("message handler not set, use default");
+                log.info(LOG_HEAD + " message handler not set, use default");
                 //采用默认的Handler
                 messageHandler = new DefaultMessageHandler();
                 MessageHandlersManager.this.topic2Handler.put(topicPartition.topic(), messageHandler);
             }
             messageHandler.handle(record.record());
-
-            CommitStrategy commitStrategy = MessageHandlersManager.this.topic2CommitStrategy.get(topicPartition.topic());
-            if(commitStrategy == null){
-                //采用默认的commitStrategy
-                commitStrategy = new DefaultCommitStrategy();
-                log.info("commit strategy not set, use default");
-                MessageHandlersManager.this.topic2CommitStrategy.put(topicPartition.topic(), commitStrategy);
-            }
-
-            if(commitStrategy.isToCommit(record.record())){
-                log.info("satisfy commit strategy, pending to commit");
-                pendingOffsets.put(new TopicPartitionWithTime(topicPartition, System.currentTimeMillis()), new OffsetAndMetadata(record.record().offset() + 1));
-            }
-
         }
     }
 }

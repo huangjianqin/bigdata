@@ -16,7 +16,9 @@ public class Counters {
 
     private Counters() {
         name2Counter.put("producer-counter", new AtomicLong(0));
+        name2Counter.put("producer-byte-counter", new AtomicLong(0));
         name2Counter.put("consumer-counter", new AtomicLong(0));
+        name2Counter.put("consumer-byte-counter", new AtomicLong(0));
     }
 
     public void add(String name){
@@ -24,6 +26,22 @@ public class Counters {
 
         if(counter != null){
             counter.addAndGet(1);
+        }
+    }
+
+    public void add(String name, Long value){
+        AtomicLong counter = name2Counter.get(name);
+
+        if(counter != null){
+            counter.addAndGet(value);
+        }
+    }
+
+    public void add(String name, Integer value){
+        AtomicLong counter = name2Counter.get(name);
+
+        if(counter != null){
+            counter.addAndGet(value);
         }
     }
 

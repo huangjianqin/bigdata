@@ -25,13 +25,13 @@ public class KafkaProducerThreadGroup {
                 .properties();
 
         int threadSize = 1;
-        int runTime = 1 * 2 * 1000;
+        int runTime = 30 * 1000;
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadSize);
         List<KafkaProducerThread> threads = new ArrayList<>();
         for(int i = 1; i <= threadSize; i++){
             startTime = System.currentTimeMillis();
-            KafkaProducerThread thread = new KafkaProducerThread(config, "multi-msg", i);
+            KafkaProducerThread thread = new KafkaProducerThread(config, "multi-msg2", i);
             threads.add(thread);
             executorService.submit(thread);
         }
@@ -45,7 +45,11 @@ public class KafkaProducerThreadGroup {
         executorService.shutdown();
 
         long sum = Counters.getCounters().get("producer-counter");
-        System.out.println("总发送: " + sum);
-        System.out.println("总发送率: " + 1.0 * sum / (endTime - startTime));
+        long sum1 = Counters.getCounters().get("producer-byte-counter");
+        System.out.println("总发送: " + sum + "条");
+        System.out.println("总发送: " + sum1 + "字节");
+        System.out.println("总发送率: " + 1.0 * sum / (endTime - startTime) + "条/ms");
+        System.out.println("总发送率: " + 1.0 * sum1 / (endTime - startTime) + "B/ms");
+
     }
 }

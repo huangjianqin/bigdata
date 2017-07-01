@@ -2,6 +2,7 @@ package org.bigdata.kafka.api;
 
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
+import org.apache.kafka.common.TopicPartition;
 import org.bigdata.kafka.multithread.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,7 +65,7 @@ public class MultiThreadConsumerManager {
                                                         Collection<String> topics,
                                                         ConsumerRebalanceListener listener,
                                                         Map<String, MessageHandler> topic2Handler,
-                                                        Map<String, CommitStrategy> topic2CommitStrategy){
+                                                        Map<TopicPartition, CommitStrategy> topic2CommitStrategy){
         checkAppName(appName);
         MessageFetcher<K, V> messageFetcher = new MessageFetcher<>(properties);
         if(listener != null){
@@ -93,7 +94,7 @@ public class MultiThreadConsumerManager {
                                                         Properties properties,
                                                         Collection<String> topics,
                                                         Map<String, MessageHandler> topic2Handler,
-                                                        Map<String, CommitStrategy> topic2CommitStrategy){
+                                                        Map<TopicPartition, CommitStrategy> topic2CommitStrategy){
         checkAppName(appName);
         MessageFetcher<K, V> messageFetcher = new MessageFetcher<>(properties);
         messageFetcher.subscribe(topics);
@@ -119,7 +120,7 @@ public class MultiThreadConsumerManager {
                                                         Pattern pattern,
                                                         ConsumerRebalanceListener listener,
                                                         Map<String, MessageHandler> topic2Handler,
-                                                        Map<String, CommitStrategy> topic2CommitStrategy) {
+                                                        Map<TopicPartition, CommitStrategy> topic2CommitStrategy) {
         checkAppName(appName);
         MessageFetcher<K, V> messageFetcher = new MessageFetcher<>(properties);
         if(listener != null){
