@@ -1,6 +1,5 @@
 package org.bigdata.kafka.multithread;
 
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
@@ -8,11 +7,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.regex.Pattern;
 
 /**
  * Created by hjq on 2017/6/19.
+ * Fetcher
+ * 负责抓取信息的线程
  */
 public class MessageFetcher<K, V> implements Runnable {
     private static Logger log = LoggerFactory.getLogger(MessageFetcher.class);
@@ -33,11 +33,11 @@ public class MessageFetcher<K, V> implements Runnable {
     private long pollTimeout = 1000;
     //定时扫描注册中心并在发现新配置时及时更新运行环境
 //    private ConfigFetcher configFetcher;
-    private MessageHandlersManager handlersManager;
+    private OPOTMessageHandlersManager handlersManager;
 
     public MessageFetcher(Properties properties) {
         this.consumer = new KafkaConsumer<K, V>(properties);
-        this.handlersManager = new MessageHandlersManager();
+        this.handlersManager = new OPOTMessageHandlersManager();
     }
 
     public void subscribe(Collection<String> topics, ConsumerRebalanceListener listener){
@@ -99,7 +99,7 @@ public class MessageFetcher<K, V> implements Runnable {
                     for(ConsumerRecord<K, V> record: records.records(topicPartition)){
                         //按照某种策略提交线程处理
                         if(!handlersManager.dispatch(new ConsumerRecordInfo(record, System.currentTimeMillis()), pendingOffsets)){
-                            log.info("MessageHandlersManager reconfig...");
+                            log.info("OPOTMessageHandlersManager reconfig...");
                             log.info("message " + record.toString() + " add cache");
                             msgCache.add(record);
                         }
@@ -116,7 +116,7 @@ public class MessageFetcher<K, V> implements Runnable {
 //                        }
 //                        else{
 //                            //可能MessageHandlersManager又发生重新配置了,不处理后面的缓存
-//                            log.info("MessageHandlersManager reconfig when handle cached message[bad]");
+//                            log.info("OPOTMessageHandlersManager reconfig when handle cached message[bad]");
 //                            break;
 //                        }
 //                    }
