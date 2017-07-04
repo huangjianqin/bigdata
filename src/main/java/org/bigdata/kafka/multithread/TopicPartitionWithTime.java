@@ -8,8 +8,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Created by hjq on 2017/6/19.
- * 对TopicPartition的简单封装,添加appendTime属性以作为加入队列的时间并以该属性值排序
- * equals和hashcode都是直接使用TopicPartition的实现
  */
 public class TopicPartitionWithTime{
     private TopicPartition topicPartition;

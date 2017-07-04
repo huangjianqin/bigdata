@@ -42,14 +42,6 @@ public class ConsumerRecordInfo<K, V>{
         return recTime;
     }
 
-    public void maxPriority(){
-        this.recTime = Long.MIN_VALUE;
-    }
-
-    public void minPriority(){
-        this.recTime = Long.MAX_VALUE;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by hjq on 2017/7/4.
@@ -15,6 +16,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
     private static Logger log = LoggerFactory.getLogger(AbstractMessageHandlersManager.class);
     protected Map<TopicPartition, CommitStrategy> topic2CommitStrategy = new ConcurrentHashMap<>();
     protected Map<String, MessageHandler> topic2Handler = new ConcurrentHashMap<>();
+    protected AtomicBoolean isRebalance = new AtomicBoolean(false);
 
     public void registerHandler(String topic, MessageHandler handler){
         try {
@@ -58,6 +60,24 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         for(Map.Entry<TopicPartition, CommitStrategy> entry: topic2CommitStrategy.entrySet()){
             registerCommitStrategy(entry.getKey(), entry.getValue());
         }
+    }
+
+    protected void cleanMsgHandlersAndCommitStrategies(){
+        log.info("cleaning message handlers & commit stratgies...");
+        try {
+            //清理handler和commitstrategy
+            for(MessageHandler messageHandler: topic2Handler.values()){
+                messageHandler.cleanup();
+            }
+
+            for(CommitStrategy commitStrategy: topic2CommitStrategy.values()){
+                commitStrategy.cleanup();
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        log.info("message handlers & commit stratgies cleaned");
     }
 
 }

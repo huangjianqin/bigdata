@@ -18,18 +18,18 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
     private static Logger log = LoggerFactory.getLogger(OPOTMessageHandlersManager.class);
     private static OPOTMessageHandlersManager handlersManager;
     private Map<TopicPartition, MessageHandlerThread> topicPartition2Thread = new ConcurrentHashMap<>();
-    private ThreadPoolExecutor threads = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors() * 2 - 1, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
-    private AtomicBoolean isRebalance = new AtomicBoolean(false);
+    private ThreadPoolExecutor threads = new ThreadPoolExecutor(2, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
 
     @Override
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets){
         log.debug("dispatching message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()));
-        TopicPartition topicPartition = consumerRecordInfo.topicPartition();
 
         if(isRebalance.get()){
+            log.debug("dispatch failure ~~~ rebalancing...");
             return false;
         }
 
+        TopicPartition topicPartition = consumerRecordInfo.topicPartition();
         if(topicPartition2Thread.containsKey(topicPartition)){
             //已有该topic分区对应的线程启动
             //直接添加队列
@@ -57,24 +57,6 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
         }
         log.info("all handlers terminated");
         return true;
-    }
-
-    private void cleanMsgHandlersAndCommitStrategies(){
-        log.info("cleaning message handlers & commit stratgies...");
-        try {
-            //清理handler和commitstrategy
-            for(MessageHandler messageHandler: topic2Handler.values()){
-                messageHandler.cleanup();
-            }
-
-            for(CommitStrategy commitStrategy: topic2CommitStrategy.values()){
-                commitStrategy.cleanup();
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        log.info("message handlers & commit stratgies cleaned");
     }
 
     @Override
@@ -139,7 +121,7 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
         threads.submit(target);
     }
 
-    public class MessageHandlerThread implements Runnable{
+    private class MessageHandlerThread implements Runnable{
         private Logger log = LoggerFactory.getLogger(MessageHandlerThread.class);
         private String LOG_HEAD = "";
         private Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets;
