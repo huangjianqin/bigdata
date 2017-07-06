@@ -146,20 +146,16 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     }
 
     private void startExpireCleanPoolCache(){
-        new Thread(new Runnable() {
+        TimerTask task = new TimerTask() {
             @Override
             public void run() {
-                try {
-                    Thread.currentThread().sleep(1000 * 60 * 2);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-
                 synchronized (poolCache){
                     poolCache.clear();
                 }
             }
-        }).start();
+        };
+        Timer timer = new Timer();
+        timer.schedule(task, 1000 * 60 * 2);
     }
 
     private class MessageHandlerTask implements Runnable{
