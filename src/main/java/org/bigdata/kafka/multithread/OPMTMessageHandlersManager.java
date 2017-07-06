@@ -21,6 +21,8 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new HashMap<>();
 
 
+    private List<ThreadPoolExecutor> poolCache = new ArrayList<>();
+
     @Override
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets) {
         log.debug("dispatching message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()));
@@ -34,8 +36,17 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
 
         ThreadPoolExecutor pool = topicPartition2Pools.get(topicPartition);
         if(pool == null){
-            //消息处理线程池还没启动,则启动并绑定
-            pool = new ThreadPoolExecutor(2, Runtime.getRuntime().availableProcessors(), 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+            synchronized (poolCache){
+                if(poolCache.size() > 0){
+                    //有线程池缓存
+                    pool = poolCache.remove(0);
+                }
+                else{
+                    //消息处理线程池还没启动,则启动并绑定
+                    pool = new ThreadPoolExecutor(2, Runtime.getRuntime().availableProcessors(), 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+                }
+            }
+
             topicPartition2Pools.put(topicPartition, pool);
         }
 
@@ -100,11 +111,11 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
                 }
                 else{
                     //添加空闲线程池至缓存
-
+                    poolCache.add(pool);
                 }
             }
             //移除空闲线程池
-            pools.removeAll(activePools);
+            pools.removeAll(poolCache);
 
             if(isActive){
                 count ++;
@@ -125,9 +136,30 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
 
         //PendingWindow实例不实施缓存
         for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
+            //提交已完成处理的消息的最大offset
+            pendingWindow.commitLatest();
             pendingWindow.clean();
         }
 
+        //启动缓存清理线程,当缓存2分钟内没有命中,则清楚已有的线程池缓存
+        startExpireCleanPoolCache();
+    }
+
+    private void startExpireCleanPoolCache(){
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.currentThread().sleep(1000 * 60 * 2);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+
+                synchronized (poolCache){
+                    poolCache.clear();
+                }
+            }
+        }).start();
     }
 
     private class MessageHandlerTask implements Runnable{

@@ -25,6 +25,7 @@ public class TestMultiThreadConsumerManager {
                 .set(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
+                .set("messagehandler.mode", "OPOT")
                 .properties();
         Set<String> topic = new HashSet<>();
         topic.add("multi-msg2");

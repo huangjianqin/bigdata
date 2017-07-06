@@ -33,11 +33,19 @@ public class MessageFetcher<K, V> implements Runnable {
     private long pollTimeout = 1000;
     //定时扫描注册中心并在发现新配置时及时更新运行环境
 //    private ConfigFetcher configFetcher;
-    private OPOTMessageHandlersManager handlersManager;
+    private MessageHandlersManager handlersManager;
 
     public MessageFetcher(Properties properties) {
         this.consumer = new KafkaConsumer<K, V>(properties);
-        this.handlersManager = new OPOTMessageHandlersManager();
+
+        //messagehandler.mode => OPOT/OPMT
+        String mode = properties.get("messagehandler.mode").toString();
+        if(mode.toUpperCase().equals("OPMT")){
+            this.handlersManager = new OPMTMessageHandlersManager();
+        }
+        else{
+            this.handlersManager = new OPOTMessageHandlersManager();
+        }
     }
 
     public void subscribe(Collection<String> topics, ConsumerRebalanceListener listener){
