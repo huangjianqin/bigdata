@@ -58,4 +58,11 @@ public class ConsumerRecordInfo<K, V>{
         return record != null ? record.hashCode() : 0;
     }
 
+    @Override
+    public String toString() {
+        return "ConsumerRecordInfo{" +
+                "record=" + record +
+                ", recTime=" + recTime +
+                '}';
+    }
 }

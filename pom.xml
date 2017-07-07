@@ -365,6 +365,18 @@
             <!--</exclusions>-->
         </dependency>
 
+        <!-- spring for bigdata-->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-hadoop</artifactId>
+            <version>2.5.0.RELEASE</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+            <version>1.1.5.RELEASE</version>
+        </dependency>
     </dependencies>
 
     <build>

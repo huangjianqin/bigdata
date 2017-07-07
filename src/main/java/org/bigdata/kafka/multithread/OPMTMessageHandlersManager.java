@@ -28,7 +28,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         log.debug("dispatching message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()));
 
         if(isRebalance.get()){
-            log.debug("dispatch failure ~~~ rebalancing...");
+            log.debug("dispatch failure due to rebalancing...");
             return false;
         }
 
@@ -39,10 +39,12 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
             synchronized (poolCache){
                 if(poolCache.size() > 0){
                     //有线程池缓存
+                    log.info("hit thread pool cache, take one");
                     pool = poolCache.remove(0);
                 }
                 else{
                     //消息处理线程池还没启动,则启动并绑定
+                    log.info("no thread pool cache, new one");
                     pool = new ThreadPoolExecutor(2, Runtime.getRuntime().availableProcessors(), 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
                 }
             }
@@ -52,6 +54,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
 
         PendingWindow pendingWindow = topicPartition2PendingWindow.get(topicPartition);
         if(pendingWindow == null){
+            log.info("new pending window");
             //等待offset连续完整窗口还没创建,则新创建
             pendingWindow = new PendingWindow(30, pendingOffsets);
             topicPartition2PendingWindow.put(topicPartition, pendingWindow);
@@ -59,11 +62,13 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
 
         MessageHandler handler = topic2Handler.get(topicPartition.topic());
         if(handler == null){
+            log.info("message handler not set, use default");
             //消息处理器还没创建,则创建默认
             handler = new DefaultMessageHandler();
             topic2Handler.put(topicPartition.topic(), handler);
         }
 
+        log.debug("message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()) + " wrappered as task has submit");
         pool.submit(new MessageHandlerTask(handler, pendingWindow, consumerRecordInfo));
 
         return true;
@@ -76,6 +81,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
             pendingWindow.commitLatest();
         }
 
+        log.info("shutdown thread pools...");
         //关闭线程池
         for(ThreadPoolExecutor pool: topicPartition2Pools.values()){
             //先清空队列
@@ -91,6 +97,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     public void consumerRebalanceNotify() {
         isRebalance.set(true);
 
+        log.info("clean up tasks");
         //清空线程池任务,缓存线程池,供下次使用
         for(ThreadPoolExecutor pool: topicPartition2Pools.values()){
             //先清空队列
@@ -98,6 +105,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         }
 
         //等待正在处理的线程处理完
+        log.info("waiting active task to finish and choose to cache thread pools...");
         int count = 0;
         List<ThreadPoolExecutor> pools = new ArrayList<>(topicPartition2Pools.values());
         while(count < 5){
@@ -129,11 +137,16 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
 
         //超过10s,强制关闭仍然在执行的现有资源
         if(count == 5){
+            log.info("waitting time out, force shutdown all active thread pool");
             for(ThreadPoolExecutor pool: pools){
                 pool.shutdownNow();
             }
         }
+        else{
+            log.info("all active task finished, cache all idle thread pools");
+        }
 
+        log.info("clean up all used pending window");
         //PendingWindow实例不实施缓存
         for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
             //提交已完成处理的消息的最大offset
@@ -146,6 +159,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     }
 
     private void startExpireCleanPoolCache(){
+        log.info("start daemon thread to clean up cached thread pools after 2 minutes");
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
@@ -159,6 +173,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     }
 
     private class MessageHandlerTask implements Runnable{
+        private Logger log = LoggerFactory.getLogger(MessageHandlerTask.class);
         private MessageHandler handler;
         private PendingWindow pendingWindow;
         private ConsumerRecordInfo target;
@@ -172,8 +187,10 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         @Override
         public void run() {
             try {
+                log.info(Thread.currentThread().getName() + " start to handle task... [" + target + "]");
                 handler.handle(target.record());
                 pendingWindow.commitFinished(target);
+                log.info(Thread.currentThread().getName() + " has finished handling task ");
             } catch (Exception e) {
                 e.printStackTrace();
             }

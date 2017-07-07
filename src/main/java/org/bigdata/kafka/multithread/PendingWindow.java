@@ -19,6 +19,7 @@ public class PendingWindow {
     private final int slidingWindow;
 
     public PendingWindow(int slidingWindow, Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets) {
+        log.info("init pendingWindow, slidingWindow size = " + slidingWindow);
         this.slidingWindow = slidingWindow;
         this.pendingOffsets = pendingOffsets;
         this.queue = new PriorityBlockingQueue<>(slidingWindow, new Comparator<ConsumerRecordInfo>(){
@@ -46,10 +47,12 @@ public class PendingWindow {
     }
 
     public synchronized void clean(){
+        log.info("queue clean up");
         queue.clear();
     }
 
     public void commitFinished(ConsumerRecordInfo record){
+        log.debug("consumer record " + record.record() + " finished");
         queue.put(record);
 
         OffsetAndMetadata offset = getPendingOffset();
@@ -62,6 +65,7 @@ public class PendingWindow {
     }
 
     public void commitLatest(){
+        log.info("commit largest continue finished consumer records offsets");
         long maxOffset;
         String topic;
         int partition;
@@ -91,8 +95,10 @@ public class PendingWindow {
     }
 
     private synchronized OffsetAndMetadata getPendingOffset(){
+        log.debug("getting " + slidingWindow + " continue finished consumer records offsets...");
         //队列长度小于窗口大小,则是不需要提交Offset
         if(queue.size() < slidingWindow){
+            log.debug("no " + slidingWindow + " continue finished consumer records");
             return null;
         }
 
@@ -107,6 +113,7 @@ public class PendingWindow {
                 maxOffset = thisOffset;
             }
             else{
+                log.debug("no " + slidingWindow + " continue finished consumer records");
                 return null;
             }
         }
@@ -116,10 +123,12 @@ public class PendingWindow {
             queue.poll();
         }
 
+        log.debug(slidingWindow + "  continue finished consumer records offsets = " + maxOffset);
         return new OffsetAndMetadata(maxOffset + 1);
     }
 
     private void pendingToCommit(TopicPartitionWithTime topicPartitionWithTime, OffsetAndMetadata offset){
+        log.info("pending to commit offset = " + offset);
         this.pendingOffsets.put(topicPartitionWithTime, offset);
     }
 
