@@ -20,7 +20,6 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     private Map<TopicPartition, ThreadPoolExecutor> topicPartition2Pools = new HashMap<>();
     private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new HashMap<>();
 
-
     private List<ThreadPoolExecutor> poolCache = new ArrayList<>();
 
     @Override
@@ -56,7 +55,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         if(pendingWindow == null){
             log.info("new pending window");
             //等待offset连续完整窗口还没创建,则新创建
-            pendingWindow = new PendingWindow(30, pendingOffsets);
+            pendingWindow = new PendingWindow(100000, pendingOffsets);
             topicPartition2PendingWindow.put(topicPartition, pendingWindow);
         }
 
@@ -187,10 +186,10 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         @Override
         public void run() {
             try {
-                log.info(Thread.currentThread().getName() + " start to handle task... [" + target + "]");
+                log.debug(Thread.currentThread().getName() + " start to handle task... [" + target + "]");
                 handler.handle(target.record());
                 pendingWindow.commitFinished(target);
-                log.info(Thread.currentThread().getName() + " has finished handling task ");
+                log.debug(Thread.currentThread().getName() + " has finished handling task ");
             } catch (Exception e) {
                 e.printStackTrace();
             }

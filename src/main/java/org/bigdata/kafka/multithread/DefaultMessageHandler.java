@@ -14,6 +14,7 @@ public class DefaultMessageHandler implements MessageHandler<String, String>{
 
     @Override
     public void handle(ConsumerRecord<String, String> record) throws Exception {
+        Counters.getCounters().add("consumer-counter");
         Counters.getCounters().add("consumer-byte-counter", record.value().getBytes().length);
     }
 

@@ -31,7 +31,7 @@ public class KafkaProducerThreadGroup {
         List<KafkaProducerThread> threads = new ArrayList<>();
         for(int i = 1; i <= threadSize; i++){
             startTime = System.currentTimeMillis();
-            KafkaProducerThread thread = new KafkaProducerThread(config, "multi-msg2", i);
+            KafkaProducerThread thread = new KafkaProducerThread(config, "multi-msg1", i);
             threads.add(thread);
             executorService.submit(thread);
         }

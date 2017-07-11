@@ -213,7 +213,6 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
             try {
                 doExecute(record);
                 record.callBack(null);
-                Counters.getCounters().add("consumer-counter");
             } catch (Exception e) {
                 try {
                     record.callBack(e);

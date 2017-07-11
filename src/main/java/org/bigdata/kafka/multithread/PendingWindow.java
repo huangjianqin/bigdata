@@ -53,9 +53,12 @@ public class PendingWindow {
 
     public void commitFinished(ConsumerRecordInfo record){
         log.debug("consumer record " + record.record() + " finished");
-        queue.put(record);
+        OffsetAndMetadata offset = null;
 
-        OffsetAndMetadata offset = getPendingOffset();
+        synchronized (queue){
+            queue.put(record);
+            offset = getPendingOffset();
+        }
 
         if(offset != null){
             String topic = record.record().topic();
