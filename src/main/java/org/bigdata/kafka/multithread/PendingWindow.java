@@ -6,7 +6,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -17,6 +21,9 @@ public class PendingWindow {
     private Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets;
     private PriorityBlockingQueue<ConsumerRecordInfo> queue;
     private final int slidingWindow;
+
+    //标识是否有处理线程正在判断窗口满足
+    private AtomicBoolean isChecking = new AtomicBoolean(false);
 
     public PendingWindow(int slidingWindow, Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets) {
         log.info("init pendingWindow, slidingWindow size = " + slidingWindow);
@@ -55,81 +62,84 @@ public class PendingWindow {
         log.debug("consumer record " + record.record() + " finished");
         queue.put(record);
 
-        OffsetAndMetadata offset = getPendingOffset();
-
-        if(offset != null){
-            String topic = record.record().topic();
-            int partition = record.record().partition();
-            pendingToCommit(new TopicPartitionWithTime(new TopicPartition(topic, partition), System.currentTimeMillis()), offset);
+        //保证同一时间只有一条处理线程判断窗口满足
+        //多线判断窗口满足有点难,需要加锁,感觉性能还不如控制一次只有一条线程判断窗口满足,无锁操作queue,其余处理线程直接进队
+        //原子操作设置标识
+        if(queue.size() < slidingWindow){
+            //队列大小满足窗口大小才去判断
+            if(isChecking.compareAndSet(false, true)){
+                //判断是否满足窗口,若满足,则提交Offset
+                commitLatest(true);
+                isChecking.set(false);
+            }
         }
     }
 
-    public void commitLatest(){
+    public void commitLatest(boolean isInWindow){
+        //队列为空,则返回
+        //窗口大小都没满足,则返回
+        if(queue.size() <= 0 || (isInWindow && queue.size() < slidingWindow)){
+            return;
+        }
+
         log.info("commit largest continue finished consumer records offsets");
-        long maxOffset;
-        String topic;
-        int partition;
-        synchronized (queue){
-            if(queue.size() <= 0){
+
+        //获取queue的视图大小
+        //默认是整个queue的视图
+        int viewSize = queue.size();
+        if(isInWindow){
+            //表示获取窗口视图(slidingWindow)
+            viewSize = slidingWindow;
+        }
+
+        //复制视图
+        ConsumerRecordInfo[] tmp =  new ConsumerRecordInfo[viewSize];
+        queue.toArray(tmp);
+
+        //获取基本信息
+        long maxOffset = tmp[0].record().offset();
+        String topic = tmp[0].record().topic();
+        int partition = tmp[0].record().partition();
+        if(isInWindow){
+            //判断是否满足窗口
+            long lastOffset = tmp[tmp.length - 1].record().offset();
+            //因为Offset是连续的,如果刚好满足窗口,则视图的第一个Offset和最后一个Offset相减更好等于窗口大小-1
+            if(lastOffset - maxOffset == (slidingWindow - 1)){
+                //满足窗口
+                maxOffset = lastOffset;
+
+                //因为Offset是连续的,尽管queue不断插入,但是永远不会排序插入到前slidingWindow个中,所以可以直接poll掉前slidingWindow个
+                for(int i = 0; i < slidingWindow; i++){
+                    queue.poll();
+                }
+            }
+            else{
+                //不满足,则直接返回
                 return;
             }
-
-            ConsumerRecordInfo[] tmp = new ConsumerRecordInfo[queue.size()];
-            queue.toArray(tmp);
-
-            maxOffset = tmp[0].record().offset();
-            topic = tmp[0].record().topic();
-            partition = tmp[0].record().partition();
-            for(int i = 1; i < queue.size(); i++){
+        }
+        else{
+            //需要提交处理完的连续的最新的Offset
+            for(int i = 1; i < tmp.length; i++){
                 long thisOffset = tmp[i].record().offset();
                 //判断offset是否连续
                 if(thisOffset - maxOffset == 1){
+                    //连续
                     maxOffset = thisOffset;
                 }
                 else{
+                    //非连续
+                    //如果是获取queue最大Offset,就直接退出循环
                     break;
                 }
             }
         }
+
         pendingToCommit(new TopicPartitionWithTime(new TopicPartition(topic, partition), System.currentTimeMillis()), new OffsetAndMetadata(maxOffset + 1));
-    }
-
-    private synchronized OffsetAndMetadata getPendingOffset(){
-        log.debug("getting " + slidingWindow + " continue finished consumer records offsets...");
-        //队列长度小于窗口大小,则是不需要提交Offset
-        if(queue.size() < slidingWindow){
-            log.debug("no " + slidingWindow + " continue finished consumer records");
-            return null;
-        }
-
-        ConsumerRecordInfo[] tmp = new ConsumerRecordInfo[queue.size()];
-        queue.toArray(tmp);
-
-        long maxOffset = tmp[0].record().offset();
-        for(int i = 1; i < slidingWindow; i++){
-            long thisOffset = tmp[i].record().offset();
-            //判断offset是否连续
-            if(thisOffset - maxOffset == 1){
-                maxOffset = thisOffset;
-            }
-            else{
-                log.debug("no " + slidingWindow + " continue finished consumer records");
-                return null;
-            }
-        }
-
-        //移除前slidingWindow个已处理消息
-        for(int i = 1; i < slidingWindow; i++){
-            queue.poll();
-        }
-
-        log.debug(slidingWindow + "  continue finished consumer records offsets = " + maxOffset);
-        return new OffsetAndMetadata(maxOffset + 1);
     }
 
     private void pendingToCommit(TopicPartitionWithTime topicPartitionWithTime, OffsetAndMetadata offset){
         log.info("pending to commit offset = " + offset);
         this.pendingOffsets.put(topicPartitionWithTime, offset);
     }
-
 }

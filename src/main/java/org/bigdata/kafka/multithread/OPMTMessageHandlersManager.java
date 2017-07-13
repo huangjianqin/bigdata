@@ -78,7 +78,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     public void consumerCloseNotify(Set<TopicPartition> topicPartitions) {
         //提交已完成处理的消息的最大offset
         for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
-            pendingWindow.commitLatest();
+            pendingWindow.commitLatest(false);
         }
 
         log.info("shutdown thread pools...");
@@ -150,7 +150,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         //PendingWindow实例不实施缓存
         for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
             //提交已完成处理的消息的最大offset
-            pendingWindow.commitLatest();
+            pendingWindow.commitLatest(false);
             pendingWindow.clean();
         }
 
