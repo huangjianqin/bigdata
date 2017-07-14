@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -44,7 +45,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
                 else{
                     //消息处理线程池还没启动,则启动并绑定
                     log.info("no thread pool cache, new one");
-                    pool = new ThreadPoolExecutor(2, Runtime.getRuntime().availableProcessors(), 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+                    pool = new ThreadPoolExecutor(2, Runtime.getRuntime().availableProcessors(), 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
                 }
             }
 
