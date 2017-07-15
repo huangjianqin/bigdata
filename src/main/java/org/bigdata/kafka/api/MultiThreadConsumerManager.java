@@ -141,8 +141,8 @@ public class MultiThreadConsumerManager {
      * @param target
      */
     public void startConsume(MessageFetcher target){
-        new Thread(target, "consumer[" + StrUtil.topicPartitionsStr(target.assignment()) + "] fetcher thread").start();
-        log.info("start consumer[" + StrUtil.topicPartitionsStr(target.assignment()) + "] fetcher thread");
+        new Thread(target, "consumer fetcher thread").start();
+        log.info("start consumer fetcher thread");
     }
 
     public void stopConsuerAsync(String appName){

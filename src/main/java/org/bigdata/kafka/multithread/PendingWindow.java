@@ -4,11 +4,10 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.util.Comparator;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -19,7 +18,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class PendingWindow {
     private static Logger log = LoggerFactory.getLogger(PendingWindow.class);
     private Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets;
-    private PriorityBlockingQueue<ConsumerRecordInfo> queue;
+    private ConcurrentSkipListSet<ConsumerRecordInfo> queue;
     private final int slidingWindow;
 
     //标识是否有处理线程正在判断窗口满足
@@ -29,7 +28,7 @@ public class PendingWindow {
         log.info("init pendingWindow, slidingWindow size = " + slidingWindow);
         this.slidingWindow = slidingWindow;
         this.pendingOffsets = pendingOffsets;
-        this.queue = new PriorityBlockingQueue<>(slidingWindow, new Comparator<ConsumerRecordInfo>(){
+        this.queue = new ConcurrentSkipListSet<>(new Comparator<ConsumerRecordInfo>(){
 
             @Override
             public int compare(ConsumerRecordInfo o1, ConsumerRecordInfo o2) {
@@ -60,12 +59,12 @@ public class PendingWindow {
 
     public void commitFinished(ConsumerRecordInfo record){
         log.debug("consumer record " + record.record() + " finished");
-        queue.put(record);
+        queue.add(record);
 
         //保证同一时间只有一条处理线程判断窗口满足
         //多线判断窗口满足有点难,需要加锁,感觉性能还不如控制一次只有一条线程判断窗口满足,无锁操作queue,其余处理线程直接进队
         //原子操作设置标识
-        if(queue.size() < slidingWindow){
+        if(queue.size() > slidingWindow){
             //队列大小满足窗口大小才去判断
             if(isChecking.compareAndSet(false, true)){
                 //判断是否满足窗口,若满足,则提交Offset
@@ -82,19 +81,11 @@ public class PendingWindow {
             return;
         }
 
-        log.info("commit largest continue finished consumer records offsets");
-
-        //获取queue的视图大小
-        //默认是整个queue的视图
-        int viewSize = queue.size();
-        if(isInWindow){
-            //表示获取窗口视图(slidingWindow)
-            viewSize = slidingWindow;
-        }
+        log.debug("commit largest continue finished consumer records offsets");
 
         //复制视图
-        ConsumerRecordInfo[] tmp =  new ConsumerRecordInfo[viewSize];
-        queue.toArray(tmp);
+        ConsumerRecordInfo[] tmp =  new ConsumerRecordInfo[queue.size()];
+        tmp = queue.toArray(tmp);//toArray方法是如果参数数组长度比queue少,会创建一个新的Array实例并返回
 
         //获取基本信息
         long maxOffset = tmp[0].record().offset();
@@ -110,7 +101,7 @@ public class PendingWindow {
 
                 //因为Offset是连续的,尽管queue不断插入,但是永远不会排序插入到前slidingWindow个中,所以可以直接poll掉前slidingWindow个
                 for(int i = 0; i < slidingWindow; i++){
-                    queue.poll();
+                    queue.remove(tmp[i]);
                 }
             }
             else{
@@ -139,7 +130,7 @@ public class PendingWindow {
     }
 
     private void pendingToCommit(TopicPartitionWithTime topicPartitionWithTime, OffsetAndMetadata offset){
-        log.info("pending to commit offset = " + offset);
+        log.debug("pending to commit offset = " + offset);
         this.pendingOffsets.put(topicPartitionWithTime, offset);
     }
 }

@@ -35,6 +35,8 @@ public class MessageFetcher<K, V> implements Runnable {
 //    private ConfigFetcher configFetcher;
     private MessageHandlersManager handlersManager;
 
+    private String assignDesc;
+
     public MessageFetcher(Properties properties) {
         this.consumer = new KafkaConsumer<K, V>(properties);
 
@@ -69,7 +71,7 @@ public class MessageFetcher<K, V> implements Runnable {
     }
 
     public void close(){
-        log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] fetcher thread closing...");
+        log.info("consumer[" + assignment() + "] fetcher thread closing...");
         this.isStopped = true;
     }
 
@@ -77,8 +79,11 @@ public class MessageFetcher<K, V> implements Runnable {
         return isTerminated;
     }
 
-    public Set<TopicPartition> assignment(){
-        return new HashSet<>();
+    public String assignment(){
+        if(assignDesc == null || assignDesc.equals("")){
+            assignDesc = StrUtil.topicPartitionsStr(consumer.assignment());
+        }
+        return assignDesc;
     }
 
     public Map<TopicPartitionWithTime, OffsetAndMetadata> getPendingOffsets() {
@@ -87,7 +92,7 @@ public class MessageFetcher<K, V> implements Runnable {
 
     @Override
     public void run() {
-        log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] fetcher thread started");
+        log.info("consumer[" + assignment() + "] fetcher thread started");
         try{
             //jvm缓存,当消息处理线程还没启动完,或者配置更改时,需先缓存消息,等待线程启动好再处理
             Queue<ConsumerRecord<K, V>> msgCache = new LinkedList<>();
@@ -98,7 +103,7 @@ public class MessageFetcher<K, V> implements Runnable {
 
                 if(offsets != null){
                     //有offset需要提交
-                    log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit [" + offsets.size() + "] topic partition offsets");
+                    log.info("consumer[" + assignment() + "] commit [" + offsets.size() + "] topic partition offsets");
                     commitOffsetsSync(offsets);
                 }
 
@@ -138,58 +143,57 @@ public class MessageFetcher<K, V> implements Runnable {
             handlersManager.consumerCloseNotify(topicPartitions);
             //关闭前,提交所有offset
             Map<TopicPartition, OffsetAndMetadata> topicPartition2Offset = allPendingOffsets();
-            log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit offsets Sync...");
+            log.info("consumer[" + assignment() + "] commit offsets Sync...");
             //同步提交
-            consumer.commitSync(topicPartition2Offset);
-            log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit offsets [" + StrUtil.topicPartitionOffsetsStr(topicPartition2Offset) + "]");
-            log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] kafka conusmer closing...");
+            commitOffsetsSync(topicPartition2Offset);
+            log.info("consumer[" + assignment() + "] kafka conusmer closing...");
             this.consumer.close();
-            log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] kafka conusmer closed");
+            log.info("consumer[" + assignment() + "] kafka conusmer closed");
             //有异常抛出,需设置,不然手动调用close就设置好了.
             isStopped = true;
             //标识线程停止
             isTerminated = true;
-            log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] message fetcher closed");
+            log.info("consumer[" + assignment() + "] message fetcher closed");
         }
     }
 
     private void commitOffsetsSync(Map<TopicPartition, OffsetAndMetadata> offsets){
-        log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit offsets Sync...");
+        log.info("consumer[" + assignment() + "] commit offsets Sync...");
         consumer.commitSync(offsets);
-        log.info("consumer[" + StrUtil.topicPartitionsStr(MessageFetcher.this.assignment()) + "] offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
+        log.info("consumer[" +MessageFetcher.this.assignment() + "] offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
     }
 
     private void commitOffsetsAsync(final Map<TopicPartition, OffsetAndMetadata> offsets){
-        log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit offsets ASync...");
+        log.info("consumer[" + assignment() + "] commit offsets ASync...");
         consumer.commitAsync(offsets, new OffsetCommitCallback() {
             @Override
             public void onComplete(Map<TopicPartition, OffsetAndMetadata> map, Exception e) {
                 //Exception e --> The exception thrown during processing of the request, or null if the commit completed successfully
                 if(e !=null){
-                    log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] commit offsets " + nowRetry + " times failed!!!");
+                    log.info("consumer[" + assignment() + "] commit offsets " + nowRetry + " times failed!!!");
                     //失败
                     if(enableRetry){
                         //允许重试,再次重新提交offset
                         if(nowRetry < maxRetry){
-                            log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] retry commit offsets");
+                            log.info("consumer[" + assignment() + "] retry commit offsets");
                             commitOffsetsAsync(offsets);
                             nowRetry ++;
                         }
                         else{
-                            log.error("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] retry times greater than " + maxRetry + " times(MaxRetry times)");
+                            log.error("consumer[" + assignment() + "] retry times greater than " + maxRetry + " times(MaxRetry times)");
                             close();
                         }
                     }
                     else{
                         //不允许,直接关闭该Fetcher
-                        log.error("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] disable retry commit offsets");
+                        log.error("consumer[" + assignment() + "] disable retry commit offsets");
                         close();
                     }
                 }
                 else{
                     //成功,打日志
                     nowRetry = 0;
-                    log.info("consumer[" + StrUtil.topicPartitionsStr(MessageFetcher.this.assignment()) + "] offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
+                    log.info("consumer[" + MessageFetcher.this.assignment() + "] offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
                 }
             }
         });
@@ -215,6 +219,7 @@ public class MessageFetcher<K, V> implements Runnable {
     }
 
     public class InMemoryRebalanceListsener extends InnerRebalanceListener{
+        //jvm内存缓存目前消费到的Offset
         private Map<TopicPartition, Long> topicPartition2Offset = new HashMap<>();
 
         @Override
@@ -225,6 +230,8 @@ public class MessageFetcher<K, V> implements Runnable {
             for(TopicPartition topicPartition: collection){
                 topicPartition2Offset.put(topicPartition, consumer.position(topicPartition));
             }
+            //分区负载均衡时,至null,负载均衡后重新生成对应字符串
+            assignDesc = null;
 
             //还需清理已经交给handler线程
             handlersManager.consumerRebalanceNotify();
