@@ -43,7 +43,7 @@ public class MessageFetcher<K, V> implements Runnable {
         //messagehandler.mode => OPOT/OPMT
         String mode = properties.get("messagehandler.mode").toString();
         if(mode.toUpperCase().equals("OPMT")){
-            this.handlersManager = new OPMTMessageHandlersManager();
+            this.handlersManager = new OPMTMessageHandlersManager2();
         }
         else{
             this.handlersManager = new OPOTMessageHandlersManager();
@@ -143,7 +143,6 @@ public class MessageFetcher<K, V> implements Runnable {
             handlersManager.consumerCloseNotify(topicPartitions);
             //关闭前,提交所有offset
             Map<TopicPartition, OffsetAndMetadata> topicPartition2Offset = allPendingOffsets();
-            log.info("consumer[" + assignment() + "] commit offsets Sync...");
             //同步提交
             commitOffsetsSync(topicPartition2Offset);
             log.info("consumer[" + assignment() + "] kafka conusmer closing...");
@@ -158,12 +157,20 @@ public class MessageFetcher<K, V> implements Runnable {
     }
 
     private void commitOffsetsSync(Map<TopicPartition, OffsetAndMetadata> offsets){
+        if(offsets == null || offsets.size() <= 0){
+            return;
+        }
+
         log.info("consumer[" + assignment() + "] commit offsets Sync...");
         consumer.commitSync(offsets);
         log.info("consumer[" +MessageFetcher.this.assignment() + "] offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
     }
 
     private void commitOffsetsAsync(final Map<TopicPartition, OffsetAndMetadata> offsets){
+        if(offsets == null || offsets.size() <= 0){
+            return;
+        }
+
         log.info("consumer[" + assignment() + "] commit offsets ASync...");
         consumer.commitAsync(offsets, new OffsetCommitCallback() {
             @Override

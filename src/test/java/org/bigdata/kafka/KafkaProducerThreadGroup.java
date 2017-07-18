@@ -24,14 +24,14 @@ public class KafkaProducerThreadGroup {
                 .set(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
                 .properties();
 
-        int threadSize = 1;
+        int threadSize = 2;
         int runTime = 30 * 1000;
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadSize);
         List<KafkaProducerThread> threads = new ArrayList<>();
         for(int i = 1; i <= threadSize; i++){
             startTime = System.currentTimeMillis();
-            KafkaProducerThread thread = new KafkaProducerThread(config, "multi-msg1", i);
+            KafkaProducerThread thread = new KafkaProducerThread(config, "multi-msg4", i);
             threads.add(thread);
             executorService.submit(thread);
         }

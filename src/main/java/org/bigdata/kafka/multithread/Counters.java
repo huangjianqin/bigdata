@@ -27,6 +27,9 @@ public class Counters {
         if(counter != null){
             counter.addAndGet(1);
         }
+        else{
+            name2Counter.put(name, new AtomicLong(1));
+        }
     }
 
     public void add(String name, Long value){
@@ -35,6 +38,9 @@ public class Counters {
         if(counter != null){
             counter.addAndGet(value);
         }
+        else{
+            name2Counter.put(name, new AtomicLong(value));
+        }
     }
 
     public void add(String name, Integer value){
@@ -42,6 +48,9 @@ public class Counters {
 
         if(counter != null){
             counter.addAndGet(value);
+        }
+        else{
+            name2Counter.put(name, new AtomicLong(value));
         }
     }
 

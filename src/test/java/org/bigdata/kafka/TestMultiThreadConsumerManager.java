@@ -25,17 +25,21 @@ public class TestMultiThreadConsumerManager {
                 .set(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
-                .set("messagehandler.mode", "OPMT")
+                .set("messagehandler.mode", "OPOT")
                 .properties();
         Set<String> topic = new HashSet<>();
-        topic.add("multi-msg1");
+        topic.add("multi-msg4");
 
         //1.一个consumer
         MultiThreadConsumerManager.instance().<String, String>registerConsumer("test", config, topic, null, null);
         startTime = System.currentTimeMillis();
 
-        long runTime = 2 * 60 * 1000;
-        Thread.sleep(runTime);
+        long runTime = 10 * 60 * 1000;
+        while(System.currentTimeMillis() - startTime < runTime){
+            System.out.println("当前消费:" + Counters.getCounters().get("consumer-counter") + "条");
+            System.out.println("当前消费:" + Counters.getCounters().get("consumer-byte-counter") + "字节");
+            Thread.sleep(60 * 1000);
+        }
         endTime = System.currentTimeMillis();
 
         MultiThreadConsumerManager.instance().stopConsumerSync("test");

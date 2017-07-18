@@ -64,7 +64,7 @@ public class PendingWindow {
         //保证同一时间只有一条处理线程判断窗口满足
         //多线判断窗口满足有点难,需要加锁,感觉性能还不如控制一次只有一条线程判断窗口满足,无锁操作queue,其余处理线程直接进队
         //原子操作设置标识
-        if(queue.size() > slidingWindow){
+        if(queue.size() >= slidingWindow){
             //队列大小满足窗口大小才去判断
             if(isChecking.compareAndSet(false, true)){
                 //判断是否满足窗口,若满足,则提交Offset
@@ -93,7 +93,7 @@ public class PendingWindow {
         int partition = tmp[0].record().partition();
         if(isInWindow){
             //判断是否满足窗口
-            long lastOffset = tmp[tmp.length - 1].record().offset();
+            long lastOffset = tmp[slidingWindow - 1].record().offset();
             //因为Offset是连续的,如果刚好满足窗口,则视图的第一个Offset和最后一个Offset相减更好等于窗口大小-1
             if(lastOffset - maxOffset == (slidingWindow - 1)){
                 //满足窗口
