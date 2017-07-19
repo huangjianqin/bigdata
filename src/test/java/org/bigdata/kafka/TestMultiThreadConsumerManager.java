@@ -28,13 +28,13 @@ public class TestMultiThreadConsumerManager {
                 .set("messagehandler.mode", "OPOT")
                 .properties();
         Set<String> topic = new HashSet<>();
-        topic.add("multi-msg4");
+        topic.add("multi-msg1");
 
         //1.一个consumer
         MultiThreadConsumerManager.instance().<String, String>registerConsumer("test", config, topic, null, null);
         startTime = System.currentTimeMillis();
 
-        long runTime = 10 * 60 * 1000;
+        long runTime = 5 * 60 * 1000;
         while(System.currentTimeMillis() - startTime < runTime){
             System.out.println("当前消费:" + Counters.getCounters().get("consumer-counter") + "条");
             System.out.println("当前消费:" + Counters.getCounters().get("consumer-byte-counter") + "字节");

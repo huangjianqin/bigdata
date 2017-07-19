@@ -159,7 +159,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
             }
 
             if(commitStrategy.isToCommit(record.record())){
-                log.info(LOG_HEAD + " satisfy commit strategy, pending to commit");
+                log.debug(LOG_HEAD + " satisfy commit strategy, pending to commit");
                 pendingOffsets.put(new TopicPartitionWithTime(new TopicPartition(lastRecord.topic(), lastRecord.partition()), System.currentTimeMillis()), new OffsetAndMetadata(lastRecord.offset() + 1));
                 lastRecord = null;
             }

@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * Created by 37 on 2017/6/22.
+ * Created by hjq on 2017/6/22.
  */
 public class KafkaProducerThreadGroup {
     public static void main(String[] args) throws InterruptedException {
@@ -24,14 +24,14 @@ public class KafkaProducerThreadGroup {
                 .set(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
                 .properties();
 
-        int threadSize = 2;
-        int runTime = 30 * 1000;
+        int threadSize = 1;
+        int runTime = 20 * 1000;
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadSize);
         List<KafkaProducerThread> threads = new ArrayList<>();
         for(int i = 1; i <= threadSize; i++){
             startTime = System.currentTimeMillis();
-            KafkaProducerThread thread = new KafkaProducerThread(config, "multi-msg4", i);
+            KafkaProducerThread thread = new KafkaProducerThread(config, "multi-msg1", i);
             threads.add(thread);
             executorService.submit(thread);
         }
@@ -50,6 +50,6 @@ public class KafkaProducerThreadGroup {
         System.out.println("总发送: " + sum1 + "字节");
         System.out.println("总发送率: " + 1.0 * sum / (endTime - startTime) + "条/ms");
         System.out.println("总发送率: " + 1.0 * sum1 / (endTime - startTime) + "B/ms");
-
+        System.out.println("最终Offset: " + KafkaProducerThread.offset);
     }
 }

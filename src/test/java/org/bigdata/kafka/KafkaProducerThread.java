@@ -20,6 +20,7 @@ public class KafkaProducerThread implements Runnable {
     private long producerId;
     private String topic;
     private boolean isStopped = false;
+    static Long offset = -1L;
 
     public KafkaProducerThread(Properties properties, String topic, long producerId) {
         this.producer = new KafkaProducer<String, String>(properties);
@@ -36,14 +37,20 @@ public class KafkaProducerThread implements Runnable {
         try{
             while(!isStopped && !Thread.currentThread().isInterrupted()){
                 final String msg = "producer-" + producerId + " message" + Counters.getCounters().get("producer-counter");
-                producer.send(new ProducerRecord<String, String>(topic, (int)(Counters.getCounters().get("producer-counter") % 10), null, msg), new Callback() {
+                producer.send(new ProducerRecord<String, String>(topic, (int) (Counters.getCounters().get("producer-counter") % 1), null, msg), new Callback() {
                     @Override
                     public void onCompletion(RecordMetadata recordMetadata, Exception e) {
 //                        System.out.println("producer-" + producerId + " send message[ " + msg + " ]");
+                        Counters.getCounters().add("producer-counter");
+                        Counters.getCounters().add("producer-byte-counter", msg.getBytes().length);
+
+                        synchronized (offset){
+                            if(recordMetadata.offset() > offset){
+                                offset = recordMetadata.offset();
+                            }
+                        }
                     }
                 });
-                Counters.getCounters().add("producer-counter");
-                Counters.getCounters().add("producer-byte-counter", msg.getBytes().length);
 //                try {
 //                    Thread.sleep(200);
 //                } catch (InterruptedException e) {
@@ -52,6 +59,11 @@ public class KafkaProducerThread implements Runnable {
             }
         }
         finally {
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             producer.close();
             log.info("producer closed");
         }

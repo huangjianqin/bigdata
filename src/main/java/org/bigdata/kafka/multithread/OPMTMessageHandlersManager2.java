@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Created by 健勤 on 2017/7/18.
- * 基于OPOT的OPMT改进版本
+ * 基于OPOT思想的OPMT改进版本
  */
 public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager {
     private static Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);
@@ -36,19 +36,23 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
         TopicPartition topicPartition = consumerRecordInfo.topicPartition();
         List<OPMTMessageQueueHandlerThread> threads = null;
         OPMTMessageQueueHandlerThread selectedThread = null;
+        PendingWindow pendingWindow = topicPartition2PendingWindow.get(topicPartition);
         if(topicPartition2Threads.containsKey(topicPartition)){
             //已有该topic分区对应的线程启动
             //直接添加队列
             threads = topicPartition2Threads.get(topicPartition);
             selectedThread = threads.get(consumerRecordInfo.record().hashCode() % threads.size());
-            }
+        }
         else{
             //没有该topic分区对应的线程
             //先启动线程,再添加至队列
-            PendingWindow pendingWindow = new PendingWindow(100000, pendingOffsets);
+            if(pendingWindow == null){
+                pendingWindow = new PendingWindow(100000, pendingOffsets);
+                topicPartition2PendingWindow.put(topicPartition, pendingWindow);
+            }
             threads = new ArrayList<>();
-            for(int i = 0; i < Runtime.getRuntime().availableProcessors(); i++){
-                OPMTMessageQueueHandlerThread thread = newThread(pendingOffsets, topicPartition.topic() + "-" + topicPartition.partition(), pendingWindow);
+            for(int i = 0; i < 2; i++){
+                OPMTMessageQueueHandlerThread thread = newThread(pendingOffsets, topicPartition.topic() + "-" + topicPartition.partition() + "#" + i, pendingWindow);
                 threads.add(thread);
                 runThread(thread);
             }
@@ -86,6 +90,11 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
                     thread.close();
                 }
             }
+        }
+
+        //提交最新处理消息的Offset
+        for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
+            pendingWindow.commitLatest(false);
         }
 
         //等待所有handler完成,超过10s,强制关闭
@@ -156,7 +165,7 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
 
         @Override
         protected void commit(ConsumerRecordInfo record) {
-            pendingWindow.commitLatest(true);
+            pendingWindow.commitFinished(record);
         }
 
     }

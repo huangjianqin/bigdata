@@ -43,7 +43,7 @@ public class MessageFetcher<K, V> implements Runnable {
         //messagehandler.mode => OPOT/OPMT
         String mode = properties.get("messagehandler.mode").toString();
         if(mode.toUpperCase().equals("OPMT")){
-            this.handlersManager = new OPMTMessageHandlersManager2();
+            this.handlersManager = new OPMTMessageHandlersManager();
         }
         else{
             this.handlersManager = new OPOTMessageHandlersManager();
@@ -80,10 +80,10 @@ public class MessageFetcher<K, V> implements Runnable {
     }
 
     public String assignment(){
-        if(assignDesc == null || assignDesc.equals("")){
-            assignDesc = StrUtil.topicPartitionsStr(consumer.assignment());
-        }
-        return assignDesc;
+//        if(assignDesc == null || assignDesc.equals("")){
+//            assignDesc = StrUtil.topicPartitionsStr(consumer.assignment());
+//        }
+        return "";
     }
 
     public Map<TopicPartitionWithTime, OffsetAndMetadata> getPendingOffsets() {
@@ -92,6 +92,7 @@ public class MessageFetcher<K, V> implements Runnable {
 
     @Override
     public void run() {
+        long offset = -1;
         log.info("consumer[" + assignment() + "] fetcher thread started");
         try{
             //jvm缓存,当消息处理线程还没启动完,或者配置更改时,需先缓存消息,等待线程启动好再处理
@@ -110,6 +111,9 @@ public class MessageFetcher<K, V> implements Runnable {
                 ConsumerRecords<K, V> records = consumer.poll(pollTimeout);
                 for(TopicPartition topicPartition: records.partitions())
                     for(ConsumerRecord<K, V> record: records.records(topicPartition)){
+                        if(record.offset() > offset){
+                            offset = record.offset();
+                        }
                         //按照某种策略提交线程处理
                         if(!handlersManager.dispatch(new ConsumerRecordInfo(record, System.currentTimeMillis()), pendingOffsets)){
                             log.info("OPOTMessageHandlersManager reconfig...");
@@ -153,6 +157,7 @@ public class MessageFetcher<K, V> implements Runnable {
             //标识线程停止
             isTerminated = true;
             log.info("consumer[" + assignment() + "] message fetcher closed");
+            System.out.println("消费者端接受最大Offset: " + offset);
         }
     }
 
