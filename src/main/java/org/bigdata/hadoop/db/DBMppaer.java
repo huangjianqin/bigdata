@@ -18,7 +18,7 @@ public class DBMppaer extends Mapper<LongWritable, UserWritable, LongWritable, U
 
     @Override
     protected void map(LongWritable key, UserWritable value, Context context) throws IOException, InterruptedException {
-        context.write(key, new UserWritable(value.getId() + 10, value.getName() + "1", value.getDescription()));
+        context.write(key, new UserWritable(value.getId() + 20, value.getName() + "1", value.getDescription()));
     }
 
     @Override

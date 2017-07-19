@@ -1,4 +1,4 @@
-package org.bigdata.hadoop;
+package org.bigdata.hadoop.db;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -20,7 +20,7 @@ public class DBReducer extends Reducer<LongWritable, UserWritable, UserWritable,
     @Override
     protected void reduce(LongWritable key, Iterable<UserWritable> values, Context context) throws IOException, InterruptedException {
         Iterator<UserWritable> iterator = values.iterator();
-        context.write(iterator.next(), new Text());
+        context.write(iterator.next(), new Text("1111"));
     }
 
     @Override
