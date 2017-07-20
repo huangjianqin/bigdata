@@ -22,6 +22,7 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
     private static Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);
     private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new ConcurrentHashMap<>();
     private Map<TopicPartition, List<OPMTMessageQueueHandlerThread>> topicPartition2Threads = new ConcurrentHashMap<>();
+    //所有消息处理线程在同一线程池维护
     private ThreadPoolExecutor threads = new ThreadPoolExecutor(2, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
 
     @Override
@@ -38,14 +39,15 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
         OPMTMessageQueueHandlerThread selectedThread = null;
         PendingWindow pendingWindow = topicPartition2PendingWindow.get(topicPartition);
         if(topicPartition2Threads.containsKey(topicPartition)){
-            //已有该topic分区对应的线程启动
+            //已有该topic分区对应的线程池启动
             //直接添加队列
+            //round进队
             threads = topicPartition2Threads.get(topicPartition);
             selectedThread = threads.get(consumerRecordInfo.record().hashCode() % threads.size());
         }
         else{
-            //没有该topic分区对应的线程
-            //先启动线程,再添加至队列
+            //没有该topic分区对应的线程池
+            //先启动线程池,再添加至队列
             if(pendingWindow == null){
                 pendingWindow = new PendingWindow(100000, pendingOffsets);
                 topicPartition2PendingWindow.put(topicPartition, pendingWindow);
@@ -127,6 +129,13 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
     public void consumerRebalanceNotify(){
         isRebalance.set(true);
         log.info("clean up handlers(not thread)");
+
+        for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
+            //提交已完成处理的消息的最大offset
+            pendingWindow.commitLatest(false);
+            pendingWindow.clean();
+        }
+
         //防止有Handler线程提交offset到offset队列
         for(CommitStrategy commitStrategy: topic2CommitStrategy.values()){
             commitStrategy.reset();
@@ -141,6 +150,9 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
                 }
             }
         }
+
+        //清理消息处理线程Offset submit窗口
+        topicPartition2PendingWindow.clear();
 
         //清楚topic分区与handler的映射
         topicPartition2Threads.clear();
