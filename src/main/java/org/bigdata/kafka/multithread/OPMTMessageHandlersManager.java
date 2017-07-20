@@ -26,13 +26,20 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     private static Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);
     private Map<TopicPartition, ThreadPoolExecutor> topicPartition2Pools = new HashMap<>();
     private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new HashMap<>();
+    private Map<TopicPartition, List<MessageHandler>> topicPartition2MessageHandlers = new HashMap<>();
+    private Map<TopicPartition, Long> topicPartition2Counter = new HashMap<>();
     //Rebalance时缓存已经拥有的线程池
     private List<ThreadPoolExecutor> poolCache = new ArrayList<>();
 //    //负责重新提交被拒绝的任务线程
 //    private TaskReSubmitThread taskReSubmitThread;
+    private final int handlerSize;
+
+    public OPMTMessageHandlersManager(int handlerSize) {
+        this.handlerSize = handlerSize;
+    }
 
     @Override
-    public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets) {
+    public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartition, OffsetAndMetadata> pendingOffsets) {
         log.debug("dispatching message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()));
 
 //        //初始化负责重新提交被拒绝的任务线程
@@ -81,13 +88,18 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
             topicPartition2PendingWindow.put(topicPartition, pendingWindow);
         }
 
-        MessageHandler handler = topic2Handler.get(topicPartition.topic());
-        if(handler == null){
-            log.info("message handler not set, use default");
-            //消息处理器还没创建,则创建默认
-            handler = new DefaultMessageHandler();
-            topic2Handler.put(topicPartition.topic(), handler);
+        List<MessageHandler> messageHandlers = topicPartition2MessageHandlers.get(topicPartition);
+        if(messageHandlers == null){
+            messageHandlers = new ArrayList<>();
+            for(int i = 0; i < handlerSize; i++){
+                messageHandlers.add(newMessageHandler(topicPartition.topic()));
+            }
+            topicPartition2Counter.put(topicPartition, 1L);
+            topicPartition2MessageHandlers.put(topicPartition, messageHandlers);
         }
+        //round选择message handler
+        MessageHandler handler = messageHandlers.get((int)(topicPartition2Counter.get(topicPartition) % messageHandlers.size()));
+        topicPartition2Counter.put(topicPartition, topicPartition2Counter.get(topicPartition) + 1);
 
         log.debug("message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()) + " wrappered as task has submit");
         pool.submit(new MessageHandlerTask(handler, pendingWindow, consumerRecordInfo));
@@ -114,8 +126,6 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
 //        //关闭负责重新提交被拒绝任务线程
 //        taskReSubmitThread.cleanUp();
 //        taskReSubmitThread.shutdown();
-
-        cleanMsgHandlersAndCommitStrategies();
     }
 
     @Override
@@ -180,11 +190,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
 
         log.info("clean up all used pending window");
         //PendingWindow实例不实施缓存
-        for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
-            //提交已完成处理的消息的最大offset
-            pendingWindow.commitLatest(false);
-            pendingWindow.clean();
-        }
+        topicPartition2PendingWindow.clear();
 
         //启动缓存清理线程,当缓存2分钟内没有命中,则清楚已有的线程池缓存
         startExpireCleanPoolCache();

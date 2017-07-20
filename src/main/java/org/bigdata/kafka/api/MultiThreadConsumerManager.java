@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
@@ -64,8 +65,8 @@ public class MultiThreadConsumerManager {
                                                         Properties properties,
                                                         Collection<String> topics,
                                                         ConsumerRebalanceListener listener,
-                                                        Map<String, MessageHandler> topic2Handler,
-                                                        Map<TopicPartition, CommitStrategy> topic2CommitStrategy){
+                                                        Map<String, Class<? extends MessageHandler>> topic2HandlerClass,
+                                                        Map<String, Class<? extends CommitStrategy>> topic2CommitStrategyClass){
         checkAppName(appName);
         MessageFetcher<K, V> messageFetcher = new MessageFetcher<>(properties);
         if(listener != null){
@@ -74,8 +75,25 @@ public class MultiThreadConsumerManager {
         else{
             messageFetcher.subscribe(topics, messageFetcher.new InMemoryRebalanceListsener());
         }
-        messageFetcher.registerHandlers(topic2Handler);
-        messageFetcher.registerCommitStrategies(topic2CommitStrategy);
+
+        if(topic2HandlerClass == null){
+            log.info("message handler not set, use default");
+            topic2HandlerClass = new HashMap<>();
+            for(String topic: topics){
+                topic2HandlerClass.put(topic, DefaultMessageHandler.class);
+            }
+        }
+
+        if(topic2CommitStrategyClass == null){
+            log.info("commit strategy not set, use default");
+            topic2CommitStrategyClass = new HashMap<>();
+            for(String topic: topics){
+                topic2CommitStrategyClass.put(topic, DefaultCommitStrategy.class);
+            }
+        }
+        messageFetcher.registerHandlers(topic2HandlerClass);
+        messageFetcher.registerCommitStrategies(topic2CommitStrategyClass);
+
         name2Fetcher.put(appName, messageFetcher);
         startConsume(messageFetcher);
         return  messageFetcher;
@@ -93,44 +111,30 @@ public class MultiThreadConsumerManager {
     public <K, V> MessageFetcher<K, V> registerConsumer(String appName,
                                                         Properties properties,
                                                         Collection<String> topics,
-                                                        Map<String, MessageHandler> topic2Handler,
-                                                        Map<TopicPartition, CommitStrategy> topic2CommitStrategy){
+                                                        Map<String, Class<? extends MessageHandler>> topic2HandlerClass,
+                                                        Map<String, Class<? extends CommitStrategy>> topic2CommitStrategyClass){
         checkAppName(appName);
         MessageFetcher<K, V> messageFetcher = new MessageFetcher<>(properties);
         messageFetcher.subscribe(topics);
-        messageFetcher.registerHandlers(topic2Handler);
-        messageFetcher.registerCommitStrategies(topic2CommitStrategy);
-        name2Fetcher.put(appName, messageFetcher);
-        startConsume(messageFetcher);
-        return  messageFetcher;
-    }
 
-    /**
-     * 该方法会自动启动MessageFetcher线程
-     * @param appName
-     * @param properties
-     * @param pattern
-     * @param listener
-     * @param <K>
-     * @param <V>
-     * @return
-     */
-    public <K, V> MessageFetcher<K, V> registerConsumer(String appName,
-                                                        Properties properties,
-                                                        Pattern pattern,
-                                                        ConsumerRebalanceListener listener,
-                                                        Map<String, MessageHandler> topic2Handler,
-                                                        Map<TopicPartition, CommitStrategy> topic2CommitStrategy) {
-        checkAppName(appName);
-        MessageFetcher<K, V> messageFetcher = new MessageFetcher<>(properties);
-        if(listener != null){
-            messageFetcher.subscribe(pattern, listener);
+        if(topic2HandlerClass == null){
+            log.info("message handler not set, use default");
+            topic2HandlerClass = new HashMap<>();
+            for(String topic: topics){
+                topic2HandlerClass.put(topic, DefaultMessageHandler.class);
+            }
         }
-        else{
-            messageFetcher.subscribe(pattern, messageFetcher.new InMemoryRebalanceListsener());
+
+        if(topic2CommitStrategyClass == null){
+            log.info("commit strategy not set, use default");
+            topic2CommitStrategyClass = new HashMap<>();
+            for(String topic: topics){
+                topic2CommitStrategyClass.put(topic, DefaultCommitStrategy.class);
+            }
         }
-        messageFetcher.registerHandlers(topic2Handler);
-        messageFetcher.registerCommitStrategies(topic2CommitStrategy);
+        messageFetcher.registerHandlers(topic2HandlerClass);
+        messageFetcher.registerCommitStrategies(topic2CommitStrategyClass);
+
         name2Fetcher.put(appName, messageFetcher);
         startConsume(messageFetcher);
         return  messageFetcher;

@@ -10,9 +10,9 @@ import java.util.Set;
  * Created by hjq on 2017/7/4.
  */
 public interface MessageHandlersManager {
-    void registerHandlers(Map<String, MessageHandler> topic2Handler);
-    void registerCommitStrategies(Map<TopicPartition, CommitStrategy> topic2CommitStrategy);
-    boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets);
+    void registerHandlers(Map<String, Class<? extends MessageHandler>> topic2HandlerClass);
+    void registerCommitStrategies(Map<String, Class<? extends CommitStrategy>> topic2CommitStrategyClass);
+    boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartition, OffsetAndMetadata> pendingOffsets);
     void consumerCloseNotify(Set<TopicPartition> topicPartitions);
     void consumerRebalanceNotify();
 }

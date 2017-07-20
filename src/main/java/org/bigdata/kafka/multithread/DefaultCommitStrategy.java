@@ -8,8 +8,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * Created by hjq on 2017/6/21.
  */
 public class DefaultCommitStrategy implements CommitStrategy{
-    private AtomicLong counter = new AtomicLong(0);
-    private long MAX_COUNT = 100000;
+    private long counter = 0L;
+    private long MAX_COUNT = 50;
 
     public DefaultCommitStrategy() {
     }
@@ -25,7 +25,8 @@ public class DefaultCommitStrategy implements CommitStrategy{
 
     @Override
     public boolean isToCommit(ConsumerRecord record) {
-        if(counter.incrementAndGet() % MAX_COUNT == 0){
+        if(++counter % MAX_COUNT == 0){
+            counter = 0L;
             return true;
         }
 
@@ -34,7 +35,7 @@ public class DefaultCommitStrategy implements CommitStrategy{
 
     @Override
     public synchronized void reset() {
-        counter.set(0L);
+        counter = 0L;
     }
 
     @Override

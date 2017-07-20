@@ -20,7 +20,7 @@ public class MessageFetcher<K, V> implements Runnable {
     //等待提交的Offset
     //用Map的原因是如果同一时间内队列中有相同的topic分区的offset需要提交，那么map会覆盖原有的
     //使用ConcurrentSkipListMap保证key有序,key为TopicPartitionWithTime,其实现是以加入队列的时间来排序
-    private ConcurrentHashMap<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets = new ConcurrentHashMap();
+    private ConcurrentHashMap<TopicPartition, OffsetAndMetadata> pendingOffsets = new ConcurrentHashMap();
     //线程状态标识
     private boolean isTerminated = false;
     //结束循环fetch操作
@@ -43,7 +43,7 @@ public class MessageFetcher<K, V> implements Runnable {
         //messagehandler.mode => OPOT/OPMT
         String mode = properties.get("messagehandler.mode").toString();
         if(mode.toUpperCase().equals("OPMT")){
-            this.handlersManager = new OPMTMessageHandlersManager();
+            this.handlersManager = new OPMTMessageHandlersManager(10);
         }
         else{
             this.handlersManager = new OPOTMessageHandlersManager();
@@ -58,16 +58,12 @@ public class MessageFetcher<K, V> implements Runnable {
         this.consumer.subscribe(topics);
     }
 
-    public void subscribe(Pattern pattern, ConsumerRebalanceListener listener){
-        this.consumer.subscribe(pattern, listener);
+    public void registerHandlers(Map<String, Class<? extends MessageHandler>> topic2HandlerClass){
+        handlersManager.registerHandlers(topic2HandlerClass);
     }
 
-    public void registerHandlers(Map<String, MessageHandler> topic2Handler){
-        handlersManager.registerHandlers(topic2Handler);
-    }
-
-    public void registerCommitStrategies(Map<TopicPartition, CommitStrategy> topic2CommitStrategy){
-        handlersManager.registerCommitStrategies(topic2CommitStrategy);
+    public void registerCommitStrategies(Map<String, Class<? extends CommitStrategy>> topic2CommitStrategyClass){
+        handlersManager.registerCommitStrategies(topic2CommitStrategyClass);
     }
 
     public void close(){
@@ -86,7 +82,7 @@ public class MessageFetcher<K, V> implements Runnable {
         return "";
     }
 
-    public Map<TopicPartitionWithTime, OffsetAndMetadata> getPendingOffsets() {
+    public Map<TopicPartition, OffsetAndMetadata> getPendingOffsets() {
         return pendingOffsets;
     }
 
@@ -115,7 +111,7 @@ public class MessageFetcher<K, V> implements Runnable {
                             offset = record.offset();
                         }
                         //按照某种策略提交线程处理
-                        if(!handlersManager.dispatch(new ConsumerRecordInfo(record, System.currentTimeMillis()), pendingOffsets)){
+                        if(!handlersManager.dispatch(new ConsumerRecordInfo(record), pendingOffsets)){
                             log.info("OPOTMessageHandlersManager reconfig...");
                             log.info("message " + record.toString() + " add cache");
                             msgCache.add(record);
@@ -216,8 +212,8 @@ public class MessageFetcher<K, V> implements Runnable {
             //复制所有需要提交的offset
             synchronized (this.pendingOffsets){
                 Map<TopicPartition, OffsetAndMetadata> result = new HashMap<>();
-                for(Map.Entry<TopicPartitionWithTime, OffsetAndMetadata> entry: this.pendingOffsets.entrySet()){
-                    result.put(entry.getKey().topicPartition(), entry.getValue());
+                for(Map.Entry<TopicPartition, OffsetAndMetadata> entry: this.pendingOffsets.entrySet()){
+                    result.put(entry.getKey(), entry.getValue());
                 }
                 this.pendingOffsets.clear();
                 return result;

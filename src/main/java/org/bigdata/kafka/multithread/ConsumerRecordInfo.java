@@ -11,21 +11,22 @@ import org.apache.kafka.common.TopicPartition;
 public class ConsumerRecordInfo<K, V>{
     private ConsumerRecord<K, V> record;
     private CallBack callBack;
-    private long recTime;
 
-    public ConsumerRecordInfo(ConsumerRecord<K, V> record, long recTime) {
+    public ConsumerRecordInfo(ConsumerRecord<K, V> record) {
         this.record = record;
-        this.recTime = recTime;
     }
 
-    public ConsumerRecordInfo(ConsumerRecord<K, V> record, CallBack callBack, long recTime) {
+    public ConsumerRecordInfo(ConsumerRecord<K, V> record, CallBack callBack) {
         this.record = record;
         this.callBack = callBack;
-        this.recTime = recTime;
     }
 
     public ConsumerRecord<K, V> record() {
         return record;
+    }
+
+    public long offset(){
+        return record.offset();
     }
 
     public void callBack(Exception e) throws Exception {
@@ -39,7 +40,7 @@ public class ConsumerRecordInfo<K, V>{
     }
 
     public long recTime() {
-        return recTime;
+        return record.timestamp();
     }
 
     @Override
@@ -62,7 +63,6 @@ public class ConsumerRecordInfo<K, V>{
     public String toString() {
         return "ConsumerRecordInfo{" +
                 "record=" + record +
-                ", recTime=" + recTime +
                 '}';
     }
 }

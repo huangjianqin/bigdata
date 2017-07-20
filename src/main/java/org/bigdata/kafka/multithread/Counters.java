@@ -21,18 +21,18 @@ public class Counters {
         name2Counter.put("consumer-byte-counter", new AtomicLong(0));
     }
 
-    public void add(String name){
+    public synchronized void add(String name){
         AtomicLong counter = name2Counter.get(name);
 
         if(counter != null){
-            counter.addAndGet(1);
+            counter.incrementAndGet();
         }
         else{
             name2Counter.put(name, new AtomicLong(1));
         }
     }
 
-    public void add(String name, Long value){
+    public synchronized void add(String name, Long value){
         AtomicLong counter = name2Counter.get(name);
 
         if(counter != null){
@@ -43,7 +43,7 @@ public class Counters {
         }
     }
 
-    public void add(String name, Integer value){
+    public synchronized void add(String name, Integer value){
         AtomicLong counter = name2Counter.get(name);
 
         if(counter != null){

@@ -17,14 +17,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class PendingWindow {
     private static Logger log = LoggerFactory.getLogger(PendingWindow.class);
-    private Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets;
+    private Map<TopicPartition, OffsetAndMetadata> pendingOffsets;
     private ConcurrentSkipListSet<ConsumerRecordInfo> queue;
     private final int slidingWindow;
 
     //标识是否有处理线程正在判断窗口满足
     private AtomicBoolean isChecking = new AtomicBoolean(false);
 
-    public PendingWindow(int slidingWindow, Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets) {
+    public PendingWindow(int slidingWindow, Map<TopicPartition, OffsetAndMetadata> pendingOffsets) {
         log.info("init pendingWindow, slidingWindow size = " + slidingWindow);
         this.slidingWindow = slidingWindow;
         this.pendingOffsets = pendingOffsets;
@@ -126,11 +126,11 @@ public class PendingWindow {
             }
         }
 
-        pendingToCommit(new TopicPartitionWithTime(new TopicPartition(topic, partition), System.currentTimeMillis()), new OffsetAndMetadata(maxOffset + 1));
+        pendingToCommit(new TopicPartition(topic, partition), new OffsetAndMetadata(maxOffset + 1));
     }
 
-    private void pendingToCommit(TopicPartitionWithTime topicPartitionWithTime, OffsetAndMetadata offset){
+    private void pendingToCommit(TopicPartition topicPartition, OffsetAndMetadata offset){
         log.debug("pending to commit offset = " + offset);
-        this.pendingOffsets.put(topicPartitionWithTime, offset);
+        this.pendingOffsets.put(topicPartition, offset);
     }
 }

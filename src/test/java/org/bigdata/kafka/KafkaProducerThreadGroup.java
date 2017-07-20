@@ -1,5 +1,6 @@
 package org.bigdata.kafka;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.bigdata.kafka.multithread.Counters;
 import org.bigdata.kafka.multithread.PropertiesWrapper;
@@ -23,15 +24,16 @@ public class KafkaProducerThreadGroup {
                 .set(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
                 .set(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer")
                 .properties();
+        KafkaProducer<String, String> producer = new KafkaProducer<String, String>(config);
 
-        int threadSize = 1;
-        int runTime = 20 * 1000;
+        int threadSize = 3;
+        int runTime = 8 * 60 * 60 * 1000;
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadSize);
         List<KafkaProducerThread> threads = new ArrayList<>();
+        startTime = System.currentTimeMillis();
         for(int i = 1; i <= threadSize; i++){
-            startTime = System.currentTimeMillis();
-            KafkaProducerThread thread = new KafkaProducerThread(config, "multi-msg1", i);
+            KafkaProducerThread thread = new KafkaProducerThread(producer, "multi-msg", i);
             threads.add(thread);
             executorService.submit(thread);
         }
@@ -42,6 +44,8 @@ public class KafkaProducerThreadGroup {
             thread.close();
         }
         Thread.sleep(2000);
+        producer.close();
+        System.out.println("kafka producer close!");
         executorService.shutdown();
 
         long sum = Counters.getCounters().get("producer-counter");

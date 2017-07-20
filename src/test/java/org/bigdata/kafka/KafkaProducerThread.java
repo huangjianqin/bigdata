@@ -22,8 +22,8 @@ public class KafkaProducerThread implements Runnable {
     private boolean isStopped = false;
     static Long offset = -1L;
 
-    public KafkaProducerThread(Properties properties, String topic, long producerId) {
-        this.producer = new KafkaProducer<String, String>(properties);
+    public KafkaProducerThread(KafkaProducer<String, String> producer, String topic, long producerId) {
+        this.producer = producer;
         this.topic = topic;
         this.producerId = producerId;
     }
@@ -34,38 +34,27 @@ public class KafkaProducerThread implements Runnable {
 
     @Override
     public void run() {
-        try{
-            while(!isStopped && !Thread.currentThread().isInterrupted()){
-                final String msg = "producer-" + producerId + " message" + Counters.getCounters().get("producer-counter");
-                producer.send(new ProducerRecord<String, String>(topic, (int) (Counters.getCounters().get("producer-counter") % 1), null, msg), new Callback() {
-                    @Override
-                    public void onCompletion(RecordMetadata recordMetadata, Exception e) {
+        while (!isStopped && !Thread.currentThread().isInterrupted()) {
+            final String msg = "producer-" + producerId + " message" + Counters.getCounters().get("producer-counter");
+            producer.send(new ProducerRecord<String, String>(topic, (int) (Counters.getCounters().get("producer-counter") % 10), null, msg), new Callback() {
+                @Override
+                public void onCompletion(RecordMetadata recordMetadata, Exception e) {
 //                        System.out.println("producer-" + producerId + " send message[ " + msg + " ]");
-                        Counters.getCounters().add("producer-counter");
-                        Counters.getCounters().add("producer-byte-counter", msg.getBytes().length);
+                    Counters.getCounters().add("producer-counter");
+                    Counters.getCounters().add("producer-byte-counter", msg.getBytes().length);
 
-                        synchronized (offset){
-                            if(recordMetadata.offset() > offset){
-                                offset = recordMetadata.offset();
-                            }
+                    synchronized (offset) {
+                        if (recordMetadata.offset() > offset) {
+                            offset = recordMetadata.offset();
                         }
                     }
-                });
-//                try {
-//                    Thread.sleep(200);
-//                } catch (InterruptedException e) {
-//                    break;
-//                }
-            }
-        }
-        finally {
+                }
+            });
             try {
-                Thread.sleep(5000);
+                Thread.sleep(100);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                break;
             }
-            producer.close();
-            log.info("producer closed");
         }
     }
 }

@@ -20,7 +20,7 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
     private ThreadPoolExecutor threads = new ThreadPoolExecutor(2, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
 
     @Override
-    public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets){
+    public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartition, OffsetAndMetadata> pendingOffsets){
         log.debug("dispatching message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()));
 
         if(isRebalance.get()){
@@ -38,9 +38,9 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
         else{
             //没有该topic分区对应的线程'
             //先启动线程,再添加至队列
-            OPOTMessageQueueHandlerThread thread = newThread(pendingOffsets, topicPartition.topic() + "-" + topicPartition.partition());
+            OPOTMessageQueueHandlerThread thread = newThread(pendingOffsets, topicPartition.topic() + "-" + topicPartition.partition(), newMessageHandler(topicPartition.topic()), newCommitStrategy(topicPartition.topic()));
             topicPartition2Thread.put(topicPartition, thread);
-            thread.queue.add(consumerRecordInfo);
+            thread.queue().add(consumerRecordInfo);
             runThread(thread);
             log.debug("message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()) + "queued(" + thread.queue.size() + " rest)");
         }
@@ -87,23 +87,15 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
             threads.shutdownNow();
         }
         log.info("thread pool terminated");
-
-        cleanMsgHandlersAndCommitStrategies();
-
     }
 
     @Override
     public void consumerRebalanceNotify(){
         isRebalance.set(true);
         log.info("clean up handlers(not thread)");
-        //防止有Handler线程提交offset到offset队列
-        for(CommitStrategy commitStrategy: topic2CommitStrategy.values()){
-            commitStrategy.reset();
-        }
 
         //关闭Handler执行,但不关闭线程,达到线程复用的效果
         for(OPOTMessageQueueHandlerThread thread: topicPartition2Thread.values()){
-            //不清除队列好像也可以
             thread.close();
         }
 
@@ -112,8 +104,8 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
         isRebalance.set(false);
     }
 
-    private OPOTMessageQueueHandlerThread newThread(Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets, String logHead){
-        return new OPOTMessageQueueHandlerThread(pendingOffsets, logHead);
+    private OPOTMessageQueueHandlerThread newThread(Map<TopicPartition, OffsetAndMetadata> pendingOffsets, String logHead, MessageHandler messageHandler, CommitStrategy commitStrategy){
+        return new OPOTMessageQueueHandlerThread(logHead, pendingOffsets, messageHandler, commitStrategy);
     }
 
     private void runThread(Runnable target){
@@ -122,8 +114,8 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
 
     private class OPOTMessageQueueHandlerThread extends AbstractMessageHandlersManager.MessageQueueHandlerThread {
 
-        public OPOTMessageQueueHandlerThread(Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets, String logHead) {
-            super(logHead, pendingOffsets);
+        public OPOTMessageQueueHandlerThread(String LOG_HEAD, Map<TopicPartition, OffsetAndMetadata> pendingOffsets, MessageHandler messageHandler, CommitStrategy commitStrategy) {
+            super(LOG_HEAD, pendingOffsets, messageHandler, commitStrategy);
         }
 
         @Override
@@ -134,8 +126,7 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
             if(!isRebalance.get()){
                 log.info(LOG_HEAD() + " closing consumer should commit last offsets sync now");
                 if(lastRecord != null){
-                    pendingOffsets.put(new TopicPartitionWithTime(new TopicPartition(lastRecord.topic(), lastRecord.partition()),
-                            System.currentTimeMillis()), new OffsetAndMetadata(lastRecord.offset() + 1));
+                    pendingOffsets.put(new TopicPartition(lastRecord.topic(), lastRecord.partition()), new OffsetAndMetadata(lastRecord.offset() + 1));
                 }
             }
             super.preTerminated();

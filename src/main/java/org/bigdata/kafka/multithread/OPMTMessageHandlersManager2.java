@@ -5,10 +5,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -20,13 +17,13 @@ import java.util.concurrent.TimeUnit;
  */
 public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager {
     private static Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);
-    private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new ConcurrentHashMap<>();
-    private Map<TopicPartition, List<OPMTMessageQueueHandlerThread>> topicPartition2Threads = new ConcurrentHashMap<>();
+    private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new HashMap<>();
+    private Map<TopicPartition, List<OPMTMessageQueueHandlerThread>> topicPartition2Threads = new HashMap<>();
     //所有消息处理线程在同一线程池维护
     private ThreadPoolExecutor threads = new ThreadPoolExecutor(2, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
 
     @Override
-    public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets){
+    public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartition, OffsetAndMetadata> pendingOffsets){
         log.debug("dispatching message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()));
 
         if(isRebalance.get()){
@@ -54,7 +51,7 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
             }
             threads = new ArrayList<>();
             for(int i = 0; i < 2; i++){
-                OPMTMessageQueueHandlerThread thread = newThread(pendingOffsets, topicPartition.topic() + "-" + topicPartition.partition() + "#" + i, pendingWindow);
+                OPMTMessageQueueHandlerThread thread = newThread(topicPartition.topic() + "-" + topicPartition.partition() + "#" + i, pendingOffsets, newMessageHandler(topicPartition.topic()), pendingWindow);
                 threads.add(thread);
                 runThread(thread);
             }
@@ -98,6 +95,8 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
         for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
             pendingWindow.commitLatest(false);
         }
+        topicPartition2PendingWindow.clear();
+
 
         //等待所有handler完成,超过10s,强制关闭
         int count = 0;
@@ -120,9 +119,6 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
             threads.shutdownNow();
         }
         log.info("thread pool terminated");
-
-        cleanMsgHandlersAndCommitStrategies();
-
     }
 
     @Override
@@ -134,11 +130,6 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
             //提交已完成处理的消息的最大offset
             pendingWindow.commitLatest(false);
             pendingWindow.clean();
-        }
-
-        //防止有Handler线程提交offset到offset队列
-        for(CommitStrategy commitStrategy: topic2CommitStrategy.values()){
-            commitStrategy.reset();
         }
 
         //关闭Handler执行,但不关闭线程,达到线程复用的效果
@@ -159,8 +150,8 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
         isRebalance.set(false);
     }
 
-    private OPMTMessageQueueHandlerThread newThread(Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets, String logHead, PendingWindow pendingWindow){
-        return new OPMTMessageQueueHandlerThread(pendingOffsets, logHead, pendingWindow);
+    private OPMTMessageQueueHandlerThread newThread(String LOG_HEAD, Map<TopicPartition, OffsetAndMetadata> pendingOffsets, MessageHandler messageHandler, PendingWindow pendingWindow){
+        return new OPMTMessageQueueHandlerThread(LOG_HEAD, pendingOffsets, messageHandler, null, pendingWindow);
     }
 
     private void runThread(Runnable target){
@@ -170,8 +161,8 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
     private class OPMTMessageQueueHandlerThread extends AbstractMessageHandlersManager.MessageQueueHandlerThread {
         private PendingWindow pendingWindow;
 
-        public OPMTMessageQueueHandlerThread(Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets, String logHead, PendingWindow pendingWindow) {
-            super(logHead, pendingOffsets);
+        public OPMTMessageQueueHandlerThread(String LOG_HEAD, Map<TopicPartition, OffsetAndMetadata> pendingOffsets, MessageHandler messageHandler, CommitStrategy commitStrategy, PendingWindow pendingWindow) {
+            super(LOG_HEAD, pendingOffsets, messageHandler, commitStrategy);
             this.pendingWindow = pendingWindow;
         }
 

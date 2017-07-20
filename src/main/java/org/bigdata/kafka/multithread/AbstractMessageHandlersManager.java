@@ -1,12 +1,14 @@
 package org.bigdata.kafka.multithread;
 
 
+import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,68 +21,57 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public abstract class AbstractMessageHandlersManager implements MessageHandlersManager {
     private static Logger log = LoggerFactory.getLogger(AbstractMessageHandlersManager.class);
-    protected Map<TopicPartition, CommitStrategy> topic2CommitStrategy = new ConcurrentHashMap<>();
-    protected Map<String, MessageHandler> topic2Handler = new ConcurrentHashMap<>();
     protected AtomicBoolean isRebalance = new AtomicBoolean(false);
 
-    public void registerHandler(String topic, MessageHandler handler){
-        try {
-            if (topic2Handler.containsKey(topic)){
-                topic2Handler.get(topic).cleanup();
-            }
-            handler.setup();
-            topic2Handler.put(topic, handler);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    private Map<String, Class<? extends MessageHandler>> topic2HandlerClass = new HashMap<>();
+    private Map<String, Class<? extends CommitStrategy>> topic2CommitStrategyClass = new HashedMap();
+
+    public void registerHandlers(Map<String, Class<? extends MessageHandler>> topic2HandlerClass){
+        this.topic2HandlerClass = topic2HandlerClass;
     }
 
-    public void registerHandlers(Map<String, MessageHandler> topic2Handler){
-        if(topic2Handler == null){
-            return;
-        }
-        for(Map.Entry<String, MessageHandler> entry: topic2Handler.entrySet()){
-            registerHandler(entry.getKey(), entry.getValue());
-        }
+    public void registerCommitStrategies(Map<String, Class<? extends CommitStrategy>> topic2CommitStrategyClass){
+        this.topic2CommitStrategyClass = topic2CommitStrategyClass;
     }
 
-    public void registerCommitStrategy(TopicPartition topicPartition, CommitStrategy strategy){
-        try {
-            if (topic2CommitStrategy.containsKey(topicPartition)){
-                topic2CommitStrategy.get(topicPartition).cleanup();
+    protected MessageHandler newMessageHandler(String topic){
+        Class<? extends MessageHandler> claxx = topic2HandlerClass.get(topic);
+        if(claxx != null){
+            try {
+                MessageHandler messageHandler = ClassUtil.instance(claxx);
+                //初始化message handler
+                messageHandler.setup();
+
+                return messageHandler;
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-            strategy.setup();
-            topic2CommitStrategy.put(topicPartition, strategy);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
+        return null;
     }
 
-    public void registerCommitStrategies(Map<TopicPartition, CommitStrategy> topic2CommitStrategy){
-        if(topic2CommitStrategy == null){
-            return;
-        }
-        for(Map.Entry<TopicPartition, CommitStrategy> entry: topic2CommitStrategy.entrySet()){
-            registerCommitStrategy(entry.getKey(), entry.getValue());
-        }
-    }
+    protected CommitStrategy newCommitStrategy(String topic){
+        Class<? extends CommitStrategy> claxx = topic2CommitStrategyClass.get(topic);
+        if(claxx != null){
+            try {
+                CommitStrategy commitStrategy = ClassUtil.instance(claxx);
+                //初始化message handler
+                commitStrategy.setup();
 
-    protected void cleanMsgHandlersAndCommitStrategies(){
-        log.info("cleaning message handlers & commit stratgies...");
-        try {
-            //清理handler和commitstrategy
-            for(MessageHandler messageHandler: topic2Handler.values()){
-                messageHandler.cleanup();
+                return commitStrategy;
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InstantiationException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-            for(CommitStrategy commitStrategy: topic2CommitStrategy.values()){
-                commitStrategy.cleanup();
-            }
-
-        } catch (Exception e) {
-            e.printStackTrace();
         }
-        log.info("message handlers & commit stratgies cleaned");
+        return null;
     }
 
     protected abstract class MessageQueueHandlerThread implements Runnable{
@@ -88,9 +79,14 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         private String LOG_HEAD = "";
 
         //等待需要提交的Offset队列
-        protected Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets;
+        protected Map<TopicPartition, OffsetAndMetadata> pendingOffsets;
         //按消息插入顺序排序
         protected LinkedBlockingQueue<ConsumerRecordInfo> queue = new LinkedBlockingQueue<>();
+
+        //绑定的消息处理器
+        MessageHandler messageHandler;
+        //绑定的Offset提交策略
+        CommitStrategy commitStrategy;
 
         protected boolean isStooped = false;
         protected boolean isTerminated = false;
@@ -98,13 +94,23 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         //最近一次处理的最大的offset
         protected ConsumerRecord lastRecord = null;
 
-        public MessageQueueHandlerThread(String LOG_HEAD, Map<TopicPartitionWithTime, OffsetAndMetadata> pendingOffsets) {
+        public MessageQueueHandlerThread(String LOG_HEAD, Map<TopicPartition, OffsetAndMetadata> pendingOffsets, MessageHandler messageHandler, CommitStrategy commitStrategy) {
             this.LOG_HEAD = LOG_HEAD;
             this.pendingOffsets = pendingOffsets;
+            this.messageHandler = messageHandler;
+            this.commitStrategy = commitStrategy;
         }
 
         public Queue<ConsumerRecordInfo> queue() {
             return queue;
+        }
+
+        public MessageHandler messageHandler(){
+            return messageHandler;
+        }
+
+        public CommitStrategy commitStrategy(){
+            return commitStrategy;
         }
 
         public String LOG_HEAD(){
@@ -138,29 +144,13 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         }
 
         protected void doExecute(ConsumerRecordInfo record) throws Exception {
-            TopicPartition topicPartition = record.topicPartition();
-            MessageHandler messageHandler = topic2Handler.get(topicPartition.topic());
-            if(messageHandler == null){
-                log.info(LOG_HEAD + " message handler not set, use default");
-                //采用默认的Handler
-                messageHandler = new DefaultMessageHandler();
-                topic2Handler.put(topicPartition.topic(), messageHandler);
-            }
             messageHandler.handle(record.record());
         }
 
         protected void commit(ConsumerRecordInfo record){
-            CommitStrategy commitStrategy = topic2CommitStrategy.get(new TopicPartition(lastRecord.topic(), lastRecord.partition()));
-            if(commitStrategy == null){
-                //采用默认的commitStrategy
-                commitStrategy = new DefaultCommitStrategy();
-                log.info(LOG_HEAD + " commit strategy not set, use default");
-                topic2CommitStrategy.put(new TopicPartition(lastRecord.topic(), lastRecord.partition()), commitStrategy);
-            }
-
             if(commitStrategy.isToCommit(record.record())){
                 log.debug(LOG_HEAD + " satisfy commit strategy, pending to commit");
-                pendingOffsets.put(new TopicPartitionWithTime(new TopicPartition(lastRecord.topic(), lastRecord.partition()), System.currentTimeMillis()), new OffsetAndMetadata(lastRecord.offset() + 1));
+                pendingOffsets.put(new TopicPartition(lastRecord.topic(), lastRecord.partition()), new OffsetAndMetadata(lastRecord.offset() + 1));
                 lastRecord = null;
             }
         }
@@ -171,7 +161,16 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         }
 
         protected void preTerminated(){
-            terminate();
+            //释放message handler和CommitStrategy的资源
+            try {
+                commitStrategy.cleanup();
+                messageHandler.cleanup();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }finally {
+                //无论如何都要释放资源
+                terminate();
+            }
         }
 
         @Override
