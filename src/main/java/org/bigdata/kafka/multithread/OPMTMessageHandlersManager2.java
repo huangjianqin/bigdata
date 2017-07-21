@@ -50,7 +50,7 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
                 topicPartition2PendingWindow.put(topicPartition, pendingWindow);
             }
             threads = new ArrayList<>();
-            for(int i = 0; i < 2; i++){
+            for(int i = 0; i < Runtime.getRuntime().availableProcessors() * 2 - 1; i++){
                 OPMTMessageQueueHandlerThread thread = newThread(topicPartition.topic() + "-" + topicPartition.partition() + "#" + i, pendingOffsets, newMessageHandler(topicPartition.topic()), pendingWindow);
                 threads.add(thread);
                 runThread(thread);
@@ -158,7 +158,7 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
         threads.submit(target);
     }
 
-    private class OPMTMessageQueueHandlerThread extends AbstractMessageHandlersManager.MessageQueueHandlerThread {
+    private final class OPMTMessageQueueHandlerThread extends AbstractMessageHandlersManager.MessageQueueHandlerThread {
         private PendingWindow pendingWindow;
 
         public OPMTMessageQueueHandlerThread(String LOG_HEAD, Map<TopicPartition, OffsetAndMetadata> pendingOffsets, MessageHandler messageHandler, CommitStrategy commitStrategy, PendingWindow pendingWindow) {

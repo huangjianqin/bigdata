@@ -26,8 +26,8 @@ public class KafkaProducerThreadGroup {
                 .properties();
         KafkaProducer<String, String> producer = new KafkaProducer<String, String>(config);
 
-        int threadSize = 3;
-        int runTime = 8 * 60 * 60 * 1000;
+        int threadSize = 1;
+        int runTime = 2 * 1000;
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadSize);
         List<KafkaProducerThread> threads = new ArrayList<>();

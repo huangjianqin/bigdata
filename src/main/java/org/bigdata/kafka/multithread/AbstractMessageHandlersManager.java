@@ -51,7 +51,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
                 e.printStackTrace();
             }
         }
-        return null;
+        throw new IllegalStateException("appliction must set a message handler for one topic");
     }
 
     protected CommitStrategy newCommitStrategy(String topic){
@@ -71,7 +71,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
                 e.printStackTrace();
             }
         }
-        return null;
+        throw new IllegalStateException("appliction must set a commit strategy for one topic");
     }
 
     protected abstract class MessageQueueHandlerThread implements Runnable{

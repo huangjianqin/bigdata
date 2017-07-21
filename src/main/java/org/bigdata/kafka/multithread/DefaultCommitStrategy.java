@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DefaultCommitStrategy implements CommitStrategy{
     private long counter = 0L;
-    private long MAX_COUNT = 50;
+    private long MAX_COUNT = 100000;
 
     public DefaultCommitStrategy() {
     }

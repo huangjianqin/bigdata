@@ -3,6 +3,8 @@ package org.bigdata.kafka;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.bigdata.kafka.api.Config;
+import org.bigdata.kafka.api.ConfigValue;
 import org.bigdata.kafka.api.MultiThreadConsumerManager;
 import org.bigdata.kafka.multithread.*;
 
@@ -23,16 +25,16 @@ public class TestMultiThreadConsumerManager {
                 .set(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
-                .set("messagehandler.mode", "OPOT")
+                .set(Config.MESSAGEHANDLER_MODEL, ConfigValue.OPMT)
                 .properties();
         Set<String> topic = new HashSet<>();
         topic.add("multi-msg");
 
         //1.一个consumer
-        MultiThreadConsumerManager.instance().<String, String>registerConsumer("test", config, topic, (Map)Collections.singletonMap("multi-msg", RealEnvironmentMessageHandler.class), null);
+        MultiThreadConsumerManager.instance().<String, String>registerConsumer("test", config, topic, null, null);
         startTime = System.currentTimeMillis();
 
-        long runTime = 5 * 60 * 60 * 1000;
+        long runTime = 10 * 60 * 1000;
         while(System.currentTimeMillis() - startTime < runTime){
             System.out.println("当前消费:" + Counters.getCounters().get("consumer-counter") + "条");
             System.out.println("当前消费:" + Counters.getCounters().get("consumer-byte-counter") + "字节");

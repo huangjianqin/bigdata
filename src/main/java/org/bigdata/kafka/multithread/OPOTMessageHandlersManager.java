@@ -11,8 +11,6 @@ import java.util.concurrent.*;
 /**
  * Created by hjq on 2017/6/19.
  * OPOT ==> one partition one Thread
- * 相对而言,小部分实例都是长期存在的,大部分实例属于新生代(kafka的消费实例,因为很多,所以占据大部分,以致核心对象实例只占据一小部分)
- * 可考虑增加新生代的大小来减少GC的消耗
  */
 public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
     private static Logger log = LoggerFactory.getLogger(OPOTMessageHandlersManager.class);
@@ -112,7 +110,7 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
         threads.submit(target);
     }
 
-    private class OPOTMessageQueueHandlerThread extends AbstractMessageHandlersManager.MessageQueueHandlerThread {
+    private final class OPOTMessageQueueHandlerThread extends AbstractMessageHandlersManager.MessageQueueHandlerThread {
 
         public OPOTMessageQueueHandlerThread(String LOG_HEAD, Map<TopicPartition, OffsetAndMetadata> pendingOffsets, MessageHandler messageHandler, CommitStrategy commitStrategy) {
             super(LOG_HEAD, pendingOffsets, messageHandler, commitStrategy);

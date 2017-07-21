@@ -17,10 +17,11 @@ import java.util.concurrent.*;
  * 虽然是通用版本,但是大量的线程切换导致性能开销
  *
  * 潜在问题:
- *  当高负载的时候,会存在poll()时间执行过长而导致session timeout的可能
+ *  1.当高负载的时候,会存在poll()时间执行过长而导致session timeout的可能
  *  这可能是机器CPU资源不够以无法在给定时间内执行相关操作,也有可能就是封装得不够好
  *  还是使用OPOT版本,可承受高负载,多开几个实例就好了.
- *  
+ *
+ *  2.该模式下,不能保证MessageHandler线程安全
  */
 public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     private static Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);
@@ -210,7 +211,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         timer.schedule(task, 1000 * 60 * 2);
     }
 
-    private class MessageHandlerTask implements Runnable{
+    private final class MessageHandlerTask implements Runnable{
         private Logger log = LoggerFactory.getLogger(MessageHandlerTask.class);
         private MessageHandler handler;
         private PendingWindow pendingWindow;

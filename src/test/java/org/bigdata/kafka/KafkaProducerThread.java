@@ -50,11 +50,11 @@ public class KafkaProducerThread implements Runnable {
                     }
                 }
             });
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {
-                break;
-            }
+//            try {
+//                Thread.sleep(10);
+//            } catch (InterruptedException e) {
+//                break;
+//            }
         }
     }
 }

@@ -15,6 +15,9 @@ import java.util.regex.Pattern;
 
 /**
  * Created by hjq on 2017/6/19.
+ *
+ * 相对而言,小部分实例都是长期存在的,大部分实例属于新生代(kafka的消费实例,因为很多,所以占据大部分,以致核心对象实例只占据一小部分)
+ * 可考虑增加新生代(尤其是Eden)的大小来减少GC的消耗
  */
 public class MultiThreadConsumerManager {
     private static Logger log = LoggerFactory.getLogger(MultiThreadConsumerManager.class);

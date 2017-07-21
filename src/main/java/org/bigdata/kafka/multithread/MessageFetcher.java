@@ -2,6 +2,8 @@ package org.bigdata.kafka.multithread;
 
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
+import org.bigdata.kafka.api.Config;
+import org.bigdata.kafka.api.ConfigValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,12 +43,18 @@ public class MessageFetcher<K, V> implements Runnable {
         this.consumer = new KafkaConsumer<K, V>(properties);
 
         //messagehandler.mode => OPOT/OPMT
-        String mode = properties.get("messagehandler.mode").toString();
-        if(mode.toUpperCase().equals("OPMT")){
+        String model = properties.get(Config.MESSAGEHANDLER_MODEL).toString().toUpperCase();
+        if (model.equals(ConfigValue.OPOT)){
+            this.handlersManager = new OPOTMessageHandlersManager();
+        }
+        else if(model.equals(ConfigValue.OPMT)){
             this.handlersManager = new OPMTMessageHandlersManager(10);
         }
+        else if(model.equals(ConfigValue.OPMT2)){
+            this.handlersManager = new OPMTMessageHandlersManager2();
+        }
         else{
-            this.handlersManager = new OPOTMessageHandlersManager();
+            throw new IllegalStateException(model + " => unknown message handler manager model");
         }
     }
 
