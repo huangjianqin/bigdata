@@ -11,6 +11,11 @@ import java.util.Map;
  * Created by 37 on 2017/6/22.
  */
 public class StrUtil {
+    /**
+     * 生成topicX-partitionX,topicX-partitionX,......字符串
+     * @param topicPartitions
+     * @return
+     */
     public static String topicPartitionsStr(Collection<TopicPartition> topicPartitions){
         if(topicPartitions != null && topicPartitions.size() > 0){
             StringBuilder sb = new StringBuilder();
@@ -26,6 +31,11 @@ public class StrUtil {
         return null;
     }
 
+    /**
+     * 生成topicX-partitionX(Offset),topicX-partitionX(Offset),......字符串
+     * @param offsets
+     * @return
+     */
     public static String topicPartitionOffsetsStr(Map<TopicPartition, OffsetAndMetadata> offsets){
        if(offsets != null && offsets.size() > 0){
            StringBuilder sb = new StringBuilder();
@@ -48,6 +58,11 @@ public class StrUtil {
         return null;
     }
 
+    /**
+     * 生成ConsumerRecord的具体信息字符串
+     * @param record
+     * @return
+     */
     public static String consumerRecordDetail(ConsumerRecord record){
         String topic = record.topic();
         int partition = record.partition();

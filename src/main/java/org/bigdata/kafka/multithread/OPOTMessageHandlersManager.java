@@ -61,7 +61,7 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
         log.info("shutdown all handlers...");
         //停止所有handler
         for(OPOTMessageQueueHandlerThread thread: topicPartition2Thread.values()){
-            thread.close();
+            thread.stop();
         }
 
         //等待所有handler完成,超过10s,强制关闭
@@ -94,7 +94,7 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
 
         //关闭Handler执行,但不关闭线程,达到线程复用的效果
         for(OPOTMessageQueueHandlerThread thread: topicPartition2Thread.values()){
-            thread.close();
+            thread.stop();
         }
 
         //清楚topic分区与handler的映射

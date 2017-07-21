@@ -1,10 +1,11 @@
-package org.bigdata.kafka.multithread;
+package org.bigdata.kafka.api;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by 健勤 on 2017/6/28.
+ * 系统共用的计数器,用户也可以自定义
  */
 public class Counters {
     private static Counters counters = new Counters();

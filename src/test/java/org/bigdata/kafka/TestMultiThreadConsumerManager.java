@@ -1,15 +1,13 @@
 package org.bigdata.kafka;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
-import org.apache.kafka.common.TopicPartition;
 import org.bigdata.kafka.api.Config;
 import org.bigdata.kafka.api.ConfigValue;
+import org.bigdata.kafka.api.Counters;
 import org.bigdata.kafka.api.MultiThreadConsumerManager;
 import org.bigdata.kafka.multithread.*;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListMap;
 
 /**
  * Created by hjq on 2017/6/22.

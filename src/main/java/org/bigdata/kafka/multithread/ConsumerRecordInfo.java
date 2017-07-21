@@ -7,6 +7,7 @@ import org.apache.kafka.common.TopicPartition;
 
 /**
  * Created by hjq on 2017/6/19.
+ * 对ConsumerRecord的简单封装,添加回调接口,用户可自定义回调接口,进而在消息处理完成后进行一些额外的操作
  */
 public class ConsumerRecordInfo<K, V>{
     private ConsumerRecord<K, V> record;

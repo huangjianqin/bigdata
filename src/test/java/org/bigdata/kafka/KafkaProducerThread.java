@@ -4,12 +4,9 @@ import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.bigdata.kafka.multithread.Counters;
+import org.bigdata.kafka.api.Counters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Properties;
-import java.util.Random;
 
 /**
  * Created by hjq on 2017/6/22.

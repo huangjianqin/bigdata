@@ -297,8 +297,8 @@ public class KafkaPressTest {
 //            }
 //
 //        }finally {
-//            producer.close();
-//            consumer.close();
+//            producer.stop();
+//            consumer.stop();
 //        }
 
     }

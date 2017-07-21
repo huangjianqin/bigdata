@@ -35,10 +35,12 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
 //    private TaskReSubmitThread taskReSubmitThread;
     private final int handlerSize;
     private final int threadSizePerPartition;
+    private final int threadQueueSizePerPartition;
 
-    public OPMTMessageHandlersManager(int handlerSize, int threadSizePerPartition) {
+    public OPMTMessageHandlersManager(int handlerSize, int threadSizePerPartition, int threadQueueSizePerPartition) {
         this.handlerSize = handlerSize;
         this.threadSizePerPartition = threadSizePerPartition;
+        this.threadQueueSizePerPartition = threadQueueSizePerPartition;
     }
 
     @Override

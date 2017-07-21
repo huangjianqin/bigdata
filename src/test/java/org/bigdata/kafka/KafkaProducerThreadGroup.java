@@ -2,7 +2,7 @@ package org.bigdata.kafka;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.bigdata.kafka.multithread.Counters;
+import org.bigdata.kafka.api.Counters;
 import org.bigdata.kafka.multithread.PropertiesWrapper;
 
 import java.util.ArrayList;
@@ -45,7 +45,7 @@ public class KafkaProducerThreadGroup {
         }
         Thread.sleep(2000);
         producer.close();
-        System.out.println("kafka producer close!");
+        System.out.println("kafka producer stop!");
         executorService.shutdown();
 
         long sum = Counters.getCounters().get("producer-counter");

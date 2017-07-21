@@ -1,17 +1,13 @@
 package org.bigdata.kafka.multithread;
 
 
-import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -23,17 +19,30 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
     private static Logger log = LoggerFactory.getLogger(AbstractMessageHandlersManager.class);
     protected AtomicBoolean isRebalance = new AtomicBoolean(false);
 
-    private Map<String, Class<? extends MessageHandler>> topic2HandlerClass = new HashMap<>();
-    private Map<String, Class<? extends CommitStrategy>> topic2CommitStrategyClass = new HashedMap();
+    private Map<String, Class<? extends MessageHandler>> topic2HandlerClass;
+    private Map<String, Class<? extends CommitStrategy>> topic2CommitStrategyClass;
 
+    /**
+     * 注册topics对应的message handlers class实例
+     * @param topic2HandlerClass
+     */
     public void registerHandlers(Map<String, Class<? extends MessageHandler>> topic2HandlerClass){
         this.topic2HandlerClass = topic2HandlerClass;
     }
 
+    /**
+     * 注册topics对应的commit Strategies class实例
+     * @param topic2CommitStrategyClass
+     */
     public void registerCommitStrategies(Map<String, Class<? extends CommitStrategy>> topic2CommitStrategyClass){
         this.topic2CommitStrategyClass = topic2CommitStrategyClass;
     }
 
+    /**
+     * 通过class信息实例化Message handler并调用setup方法进行初始化
+     * @param topic
+     * @return
+     */
     protected MessageHandler newMessageHandler(String topic){
         Class<? extends MessageHandler> claxx = topic2HandlerClass.get(topic);
         if(claxx != null){
@@ -54,6 +63,11 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         throw new IllegalStateException("appliction must set a message handler for one topic");
     }
 
+    /**
+     * 通过class信息实例化Commit strategy并调用setup方法进行初始化
+     * @param topic
+     * @return
+     */
     protected CommitStrategy newCommitStrategy(String topic){
         Class<? extends CommitStrategy> claxx = topic2CommitStrategyClass.get(topic);
         if(claxx != null){
@@ -74,6 +88,9 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         throw new IllegalStateException("appliction must set a commit strategy for one topic");
     }
 
+    /**
+     * 内部抽象的消息处理线程的默认实现
+     */
     protected abstract class MessageQueueHandlerThread implements Runnable{
         protected Logger log = LoggerFactory.getLogger(MessageQueueHandlerThread.class);
         private String LOG_HEAD = "";
@@ -117,19 +134,33 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
             return LOG_HEAD;
         }
 
+        /**
+         * 判断线程是否终止
+         * @return
+         */
         protected boolean isTerminated() {
             return isTerminated;
         }
 
+        /**
+         * 终止线程
+         */
         private void terminate(){
             isTerminated = true;
             log.info(LOG_HEAD + " terminated");
         }
 
+        /**
+         * 线程启动后动作
+         */
         protected void afterStart(){
             log.info(LOG_HEAD + " start up");
         }
 
+        /**
+         * 执行消息处理,包括调用callback
+         * @param record
+         */
         private void execute(ConsumerRecordInfo record){
             try {
                 doExecute(record);
@@ -143,10 +174,19 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
             }
         }
 
+        /**
+         * 真正对消息进行处理
+         * @param record
+         * @throws Exception
+         */
         protected void doExecute(ConsumerRecordInfo record) throws Exception {
             messageHandler.handle(record.record());
         }
 
+        /**
+         * 消息处理完成,提交Offset(判断成功才提交)
+         * @param record
+         */
         protected void commit(ConsumerRecordInfo record){
             if(commitStrategy.isToCommit(record.record())){
                 log.debug(LOG_HEAD + " satisfy commit strategy, pending to commit");
@@ -155,11 +195,17 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
             }
         }
 
-        protected void close(){
+        /**
+         * 定制消息处理
+         */
+        protected void stop(){
             log.info(LOG_HEAD + " stopping...");
             this.isStooped = true;
         }
 
+        /**
+         * 线程终止前的动作
+         */
         protected void preTerminated(){
             //释放message handler和CommitStrategy的资源
             try {

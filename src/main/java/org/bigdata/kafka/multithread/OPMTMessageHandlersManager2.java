@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -95,7 +94,7 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
         for(List<OPMTMessageQueueHandlerThread> threads: topicPartition2Threads.values()){
             for(OPMTMessageQueueHandlerThread thread: threads){
                 if(!thread.isTerminated()){
-                    thread.close();
+                    thread.stop();
                 }
             }
         }
@@ -146,7 +145,7 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
             //不清除队列好像也可以
             for(OPMTMessageQueueHandlerThread thread: threads){
                 if(!thread.isTerminated()){
-                    thread.close();
+                    thread.stop();
                 }
             }
         }

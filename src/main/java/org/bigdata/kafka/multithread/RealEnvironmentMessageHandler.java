@@ -4,6 +4,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 /**
  * Created by 健勤 on 2017/7/20.
+ * 模拟真实生产环境的message handler
  */
 public class RealEnvironmentMessageHandler extends DefaultMessageHandler{
 

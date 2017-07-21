@@ -6,6 +6,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Created by hjq on 2017/6/21.
+ * 默认的commit strategy
+ * 根据提交量判断是否提交Offset
  */
 public class DefaultCommitStrategy implements CommitStrategy{
     private long counter = 0L;
