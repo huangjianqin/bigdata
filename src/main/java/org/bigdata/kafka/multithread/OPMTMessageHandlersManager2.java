@@ -21,6 +21,15 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
     private Map<TopicPartition, List<OPMTMessageQueueHandlerThread>> topicPartition2Threads = new HashMap<>();
     //所有消息处理线程在同一线程池维护
     private ThreadPoolExecutor threads = new ThreadPoolExecutor(2, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+    private final int threadSizePerPartition;
+
+    public OPMTMessageHandlersManager2() {
+        this(Runtime.getRuntime().availableProcessors() * - 1);
+    }
+
+    public OPMTMessageHandlersManager2(int threadSizePerPartition) {
+        this.threadSizePerPartition = threadSizePerPartition;
+    }
 
     @Override
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartition, OffsetAndMetadata> pendingOffsets){
@@ -50,7 +59,7 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
                 topicPartition2PendingWindow.put(topicPartition, pendingWindow);
             }
             threads = new ArrayList<>();
-            for(int i = 0; i < Runtime.getRuntime().availableProcessors() * 2 - 1; i++){
+            for(int i = 0; i < threadSizePerPartition; i++){
                 OPMTMessageQueueHandlerThread thread = newThread(topicPartition.topic() + "-" + topicPartition.partition() + "#" + i, pendingOffsets, newMessageHandler(topicPartition.topic()), pendingWindow);
                 threads.add(thread);
                 runThread(thread);

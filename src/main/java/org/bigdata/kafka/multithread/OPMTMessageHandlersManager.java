@@ -34,9 +34,11 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
 //    //负责重新提交被拒绝的任务线程
 //    private TaskReSubmitThread taskReSubmitThread;
     private final int handlerSize;
+    private final int threadSizePerPartition;
 
-    public OPMTMessageHandlersManager(int handlerSize) {
+    public OPMTMessageHandlersManager(int handlerSize, int threadSizePerPartition) {
         this.handlerSize = handlerSize;
+        this.threadSizePerPartition = threadSizePerPartition;
     }
 
     @Override
@@ -74,7 +76,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
 //                    handler.setQueue(taskReSubmitThread.newQueue(topicPartition));
 //                    pool = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors(), 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), handler);
 //                    taskReSubmitThread.setThreadPool(topicPartition, pool);
-                    pool = new ThreadPoolExecutor(1,1, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+                    pool = new ThreadPoolExecutor(2, threadSizePerPartition, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
                 }
             }
 

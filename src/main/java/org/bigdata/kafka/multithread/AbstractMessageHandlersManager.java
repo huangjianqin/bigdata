@@ -163,8 +163,13 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         protected void preTerminated(){
             //释放message handler和CommitStrategy的资源
             try {
-                commitStrategy.cleanup();
-                messageHandler.cleanup();
+                if(commitStrategy != null){
+                    //OPMT模式下没有CommitStrategy,所以此处需要判断
+                    commitStrategy.cleanup();
+                }
+                if(messageHandler != null){
+                    messageHandler.cleanup();
+                }
             } catch (Exception e) {
                 e.printStackTrace();
             }finally {

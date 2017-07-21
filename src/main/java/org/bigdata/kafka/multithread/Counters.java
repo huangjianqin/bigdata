@@ -63,4 +63,10 @@ public class Counters {
 
         return -1L;
     }
+
+    public synchronized void reset(){
+        for(AtomicLong counter: name2Counter.values()){
+            counter.set(0);
+        }
+    }
 }

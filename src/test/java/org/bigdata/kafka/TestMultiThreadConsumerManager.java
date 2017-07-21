@@ -25,7 +25,7 @@ public class TestMultiThreadConsumerManager {
                 .set(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
-                .set(Config.MESSAGEHANDLER_MODEL, ConfigValue.OPMT)
+                .set(Config.MESSAGEHANDLER_MODEL, ConfigValue.OPMT2)
                 .properties();
         Set<String> topic = new HashSet<>();
         topic.add("multi-msg");
@@ -34,7 +34,7 @@ public class TestMultiThreadConsumerManager {
         MultiThreadConsumerManager.instance().<String, String>registerConsumer("test", config, topic, null, null);
         startTime = System.currentTimeMillis();
 
-        long runTime = 10 * 60 * 1000;
+        long runTime = 3 * 60 * 1000;
         while(System.currentTimeMillis() - startTime < runTime){
             System.out.println("当前消费:" + Counters.getCounters().get("consumer-counter") + "条");
             System.out.println("当前消费:" + Counters.getCounters().get("consumer-byte-counter") + "字节");
