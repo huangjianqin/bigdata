@@ -24,10 +24,21 @@ import java.util.regex.Pattern;
 public class MultiThreadConsumerManager {
     private static Logger log = LoggerFactory.getLogger(MultiThreadConsumerManager.class);
     private static final MultiThreadConsumerManager manager = new MultiThreadConsumerManager();
-    private Map<String, MessageFetcher> name2Fetcher = new HashedMap();
+    private static Map<String, MessageFetcher> name2Fetcher = new HashedMap();
 
     public static MultiThreadConsumerManager instance(){
         return manager;
+    }
+
+    static {
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                for(MessageFetcher messageFetcher: name2Fetcher.values()){
+                    doStop(messageFetcher);
+                }
+            }
+        }));
     }
 
     private MultiThreadConsumerManager() {
@@ -157,7 +168,8 @@ public class MultiThreadConsumerManager {
     public void stopConsuerAsync(String appName){
         MessageFetcher messageFetcher = name2Fetcher.get(appName);
         if(messageFetcher != null){
-            messageFetcher.close();
+            doStop(messageFetcher);
+            name2Fetcher.remove(appName);
         }
         else{
             throw new IllegalStateException("manager does not have MessageFetcher named \"" + appName + "\"");
@@ -167,7 +179,7 @@ public class MultiThreadConsumerManager {
     public void stopConsumerSync(String appName){
         MessageFetcher messageFetcher = name2Fetcher.get(appName);
         if(messageFetcher != null){
-            messageFetcher.close();
+            doStop(messageFetcher);
             while(!messageFetcher.isTerminated()){
                 try {
                     Thread.sleep(2 * 1000);
@@ -175,9 +187,14 @@ public class MultiThreadConsumerManager {
                     e.printStackTrace();
                 }
             }
+            name2Fetcher.remove(appName);
         }
         else{
             throw new IllegalStateException("manager does not have MessageFetcher named \"" + appName + "\"");
         }
+    }
+
+    private static void doStop(MessageFetcher messageFetcher){
+        messageFetcher.close();
     }
 }

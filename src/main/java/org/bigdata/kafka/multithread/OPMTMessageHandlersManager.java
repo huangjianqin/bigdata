@@ -73,12 +73,12 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
                 }
                 else{
                     //消息处理线程池还没启动,则启动并绑定
-                    log.info("no thread pool cache, new one");
+                    log.info("no thread pool cache, new one(MaxPoolSize = " + threadSizePerPartition + ", QueueSize = "  + threadQueueSizePerPartition + ")");
 //                    ReSubmitRejectedTaskHandler handler = new ReSubmitRejectedTaskHandler();
 //                    handler.setQueue(taskReSubmitThread.newQueue(topicPartition));
 //                    pool = new ThreadPoolExecutor(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().availableProcessors(), 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), handler);
 //                    taskReSubmitThread.setThreadPool(topicPartition, pool);
-                    pool = new ThreadPoolExecutor(2, threadSizePerPartition, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+                    pool = new ThreadPoolExecutor(2, threadSizePerPartition, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(this.threadQueueSizePerPartition));
                 }
             }
 
@@ -89,12 +89,13 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         if(pendingWindow == null){
             log.info("new pending window");
             //等待offset连续完整窗口还没创建,则新创建
-            pendingWindow = new PendingWindow(100000, pendingOffsets);
+            pendingWindow = new PendingWindow(1000, pendingOffsets);
             topicPartition2PendingWindow.put(topicPartition, pendingWindow);
         }
 
         List<MessageHandler> messageHandlers = topicPartition2MessageHandlers.get(topicPartition);
         if(messageHandlers == null){
+            log.info("init message handlers(size = " + handlerSize + ")");
             messageHandlers = new ArrayList<>();
             for(int i = 0; i < handlerSize; i++){
                 messageHandlers.add(newMessageHandler(topicPartition.topic()));

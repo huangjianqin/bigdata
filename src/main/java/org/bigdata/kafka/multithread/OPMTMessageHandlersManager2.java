@@ -23,7 +23,7 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
     private final int threadSizePerPartition;
 
     public OPMTMessageHandlersManager2() {
-        this(Runtime.getRuntime().availableProcessors() * - 1);
+        this(Runtime.getRuntime().availableProcessors() * 2 - 1);
     }
 
     public OPMTMessageHandlersManager2(int threadSizePerPartition) {
@@ -54,10 +54,12 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
             //没有该topic分区对应的线程池
             //先启动线程池,再添加至队列
             if(pendingWindow == null){
-                pendingWindow = new PendingWindow(100000, pendingOffsets);
+                log.info("new pending window");
+                pendingWindow = new PendingWindow(1000, pendingOffsets);
                 topicPartition2PendingWindow.put(topicPartition, pendingWindow);
             }
             threads = new ArrayList<>();
+            log.info("init [" + threadSizePerPartition + "] message handler threads for topic-partition(" + topicPartition.topic() + "-" + topicPartition.partition() + ")");
             for(int i = 0; i < threadSizePerPartition; i++){
                 OPMTMessageQueueHandlerThread thread = newThread(topicPartition.topic() + "-" + topicPartition.partition() + "#" + i, pendingOffsets, newMessageHandler(topicPartition.topic()), pendingWindow);
                 threads.add(thread);

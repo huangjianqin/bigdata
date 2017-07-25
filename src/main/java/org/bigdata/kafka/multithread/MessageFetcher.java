@@ -48,7 +48,7 @@ public class MessageFetcher<K, V> implements Runnable {
             this.handlersManager = new OPOTMessageHandlersManager();
         }
         else if(model.equals(ConfigValue.OPMT)){
-            this.handlersManager = new OPMTMessageHandlersManager(10, Runtime.getRuntime().availableProcessors() * 2 - 1, 100000);
+            this.handlersManager = new OPMTMessageHandlersManager(10, Runtime.getRuntime().availableProcessors() * 2 - 1, 10 * 1000 * 10000);
         }
         else if(model.equals(ConfigValue.OPMT2)){
             this.handlersManager = new OPMTMessageHandlersManager2();

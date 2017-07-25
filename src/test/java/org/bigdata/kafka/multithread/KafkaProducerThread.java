@@ -1,4 +1,4 @@
-package org.bigdata.kafka;
+package org.bigdata.kafka.multithread;
 
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -31,12 +31,12 @@ public class KafkaProducerThread implements Runnable {
 
     @Override
     public void run() {
-        while (!isStopped && !Thread.currentThread().isInterrupted()) {
+        System.out.println(topic);
+        for(int i = 0; i < 200000; i++){
             final String msg = "producer-" + producerId + " message" + Counters.getCounters().get("producer-counter");
             producer.send(new ProducerRecord<String, String>(topic, (int) (Counters.getCounters().get("producer-counter") % 10), null, msg), new Callback() {
                 @Override
                 public void onCompletion(RecordMetadata recordMetadata, Exception e) {
-//                        System.out.println("producer-" + producerId + " send message[ " + msg + " ]");
                     Counters.getCounters().add("producer-counter");
                     Counters.getCounters().add("producer-byte-counter", msg.getBytes().length);
 
@@ -47,11 +47,27 @@ public class KafkaProducerThread implements Runnable {
                     }
                 }
             });
-//            try {
-//                Thread.sleep(10);
-//            } catch (InterruptedException e) {
-//                break;
-//            }
         }
+//        while (!isStopped && !Thread.currentThread().isInterrupted()) {
+//            final String msg = "producer-" + producerId + " message" + Counters.getCounters().get("producer-counter");
+//            producer.send(new ProducerRecord<String, String>(topic, (int) (Counters.getCounters().get("producer-counter") % 10), null, msg), new Callback() {
+//                @Override
+//                public void onCompletion(RecordMetadata recordMetadata, Exception e) {
+//                    Counters.getCounters().add("producer-counter");
+//                    Counters.getCounters().add("producer-byte-counter", msg.getBytes().length);
+//
+//                    synchronized (offset) {
+//                        if (recordMetadata.offset() > offset) {
+//                            offset = recordMetadata.offset();
+//                        }
+//                    }
+//                }
+//            });
+////            try {
+////                Thread.sleep(10);
+////            } catch (InterruptedException e) {
+////                break;
+////            }
+//        }
     }
 }

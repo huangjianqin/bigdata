@@ -1,9 +1,8 @@
-package org.bigdata.kafka;
+package org.bigdata.kafka.multithread;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.bigdata.kafka.api.Counters;
-import org.bigdata.kafka.multithread.PropertiesWrapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,14 +25,14 @@ public class KafkaProducerThreadGroup {
                 .properties();
         KafkaProducer<String, String> producer = new KafkaProducer<String, String>(config);
 
-        int threadSize = 1;
-        int runTime = 4 * 1000;
+        int threadSize = 5;
+        int runTime = 60 * 1000;
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadSize);
         List<KafkaProducerThread> threads = new ArrayList<>();
         startTime = System.currentTimeMillis();
         for(int i = 1; i <= threadSize; i++){
-            KafkaProducerThread thread = new KafkaProducerThread(producer, "multi-msg", i);
+            KafkaProducerThread thread = new KafkaProducerThread(producer, "multi-msg3", i);
             threads.add(thread);
             executorService.submit(thread);
         }
