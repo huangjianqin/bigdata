@@ -16,7 +16,7 @@ import java.util.regex.Pattern;
  * Fetcher
  * 负责抓取信息的线程
  */
-public class MessageFetcher<K, V> implements Runnable {
+public class MessageFetcher<K, V> extends Thread {
     private static Logger log = LoggerFactory.getLogger(MessageFetcher.class);
     private KafkaConsumer<K, V> consumer;
     //等待提交的Offset
@@ -40,6 +40,7 @@ public class MessageFetcher<K, V> implements Runnable {
     private String assignDesc;
 
     public MessageFetcher(Properties properties) {
+        super("consumer fetcher thread");
         this.consumer = new KafkaConsumer<K, V>(properties);
 
         //messagehandler.mode => OPOT/OPMT
@@ -48,7 +49,7 @@ public class MessageFetcher<K, V> implements Runnable {
             this.handlersManager = new OPOTMessageHandlersManager();
         }
         else if(model.equals(ConfigValue.OPMT)){
-            this.handlersManager = new OPMTMessageHandlersManager(10, Runtime.getRuntime().availableProcessors() * 2 - 1, 10 * 1000 * 10000);
+            this.handlersManager = new OPMTMessageHandlersManager(10, Runtime.getRuntime().availableProcessors() * 2 - 1, 10000 * 10000);//10 * 1000 * 10000
         }
         else if(model.equals(ConfigValue.OPMT2)){
             this.handlersManager = new OPMTMessageHandlersManager2();

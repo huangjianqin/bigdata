@@ -19,7 +19,11 @@ import java.util.regex.Pattern;
  * kafka多线程工具的对外API
  *
  * 相对而言,小部分实例都是长期存在的,大部分实例属于新生代(kafka的消费实例,因为很多,所以占据大部分,以致核心对象实例只占据一小部分)
- * 可考虑增加新生代(尤其是Eden)的大小来减少GC的消耗
+ * 1.可考虑增加新生代(尤其是Eden)的大小来减少Full GC的消耗
+ * 2.或者减少fetch消息的数量,减少大量未能及时处理的消息积压在Consumer端
+ *
+ * 经过不严谨测试,性能OPMT2>OPMT>OPOT.
+ * 消息处理时间越短,OPOT多实例模式会更有优势.
  */
 public class MultiThreadConsumerManager {
     private static Logger log = LoggerFactory.getLogger(MultiThreadConsumerManager.class);
@@ -161,7 +165,7 @@ public class MultiThreadConsumerManager {
      * @param target
      */
     public void startConsume(MessageFetcher target){
-        new Thread(target, "consumer fetcher thread").start();
+        target.start();
         log.info("start consumer fetcher thread");
     }
 

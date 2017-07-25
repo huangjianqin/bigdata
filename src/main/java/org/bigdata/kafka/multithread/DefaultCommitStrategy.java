@@ -26,7 +26,7 @@ public class DefaultCommitStrategy implements CommitStrategy{
     }
 
     @Override
-    public boolean isToCommit(ConsumerRecord record) {
+    public boolean isToCommit(MessageHandler messageHandler, ConsumerRecord record) {
         if(++counter % MAX_COUNT == 0){
             counter = 0L;
             return true;

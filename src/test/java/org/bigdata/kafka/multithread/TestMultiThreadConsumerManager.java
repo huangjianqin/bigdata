@@ -22,24 +22,24 @@ public class TestMultiThreadConsumerManager {
                 .set(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
-                .set(Config.MESSAGEHANDLER_MODEL, ConfigValue.OPOT)
+                .set(Config.MESSAGEHANDLER_MODEL, ConfigValue.OPMT2)
                 .properties();
         Set<String> topic = new HashSet<>();
-        topic.add("multi-msg3");
+        topic.add("multi-msg");
 
         //1.一个consumer
         MultiThreadConsumerManager.instance().<String, String>registerConsumer("test", config, topic, null, null);
         startTime = System.currentTimeMillis();
 
-        long runTime = Long.MAX_VALUE;
+        long runTime = 10 * 60 * 1000;
         long lastConsumerCounter = -1;
         //重复多少次相同消费记录则退出
-        int sameCounter = 1;
+        int sameCounter = 5;
         while(System.currentTimeMillis() - startTime < runTime){
             //下面逻辑会出现sameCounter+1个相同的消费记录
             if(lastConsumerCounter < Counters.getCounters().get("consumer-counter")){
                 lastConsumerCounter = Counters.getCounters().get("consumer-counter");
-                sameCounter = 1;
+                sameCounter = 5;
             }
             else if(lastConsumerCounter == Counters.getCounters().get("consumer-counter")){
                 sameCounter --;

@@ -18,7 +18,7 @@ public interface CommitStrategy {
      * @param record
      * @return
      */
-    boolean isToCommit(ConsumerRecord record);
+    boolean isToCommit(MessageHandler messageHandler, ConsumerRecord record);
 
     /**
      * 重置规则

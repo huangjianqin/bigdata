@@ -19,6 +19,8 @@ import java.util.concurrent.*;
  * 潜在问题:
  *  1.当高负载的时候,会存在poll()时间执行过长而导致session timeout的可能
  *  这可能是机器CPU资源不够以无法在给定时间内执行相关操作,也有可能就是封装得不够好
+ *  可以延长session超时时间或者调整CommitStrategy,提高提交Offset的频率
+ *
  *  还是使用OPOT版本,可承受高负载,多开几个实例就好了.
  *
  *  2.该模式下,不能保证MessageHandler线程安全

@@ -188,7 +188,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
          * @param record
          */
         protected void commit(ConsumerRecordInfo record){
-            if(commitStrategy.isToCommit(record.record())){
+            if(commitStrategy.isToCommit(messageHandler, record.record())){
                 log.debug(LOG_HEAD + " satisfy commit strategy, pending to commit");
                 pendingOffsets.put(new TopicPartition(lastRecord.topic(), lastRecord.partition()), new OffsetAndMetadata(lastRecord.offset() + 1));
                 lastRecord = null;

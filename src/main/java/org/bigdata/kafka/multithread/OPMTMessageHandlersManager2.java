@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Created by 健勤 on 2017/7/18.
- * 基于OPOT思想的OPMT改进版本
+ * 基于OPOT和滑动窗口思想的改进版本
  */
 public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager {
     private static Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);
