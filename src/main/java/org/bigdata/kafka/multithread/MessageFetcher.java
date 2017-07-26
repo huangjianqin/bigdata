@@ -1,15 +1,16 @@
 package org.bigdata.kafka.multithread;
 
+import org.apache.calcite.rel.core.Collect;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.bigdata.kafka.api.Config;
 import org.bigdata.kafka.api.ConfigValue;
+import org.bigdata.kafka.api.Statistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
 
 /**
  * Created by hjq on 2017/6/19.
@@ -18,7 +19,7 @@ import java.util.regex.Pattern;
  */
 public class MessageFetcher<K, V> extends Thread {
     private static Logger log = LoggerFactory.getLogger(MessageFetcher.class);
-    private KafkaConsumer<K, V> consumer;
+    private final KafkaConsumer<K, V> consumer;
     //等待提交的Offset
     //用Map的原因是如果同一时间内队列中有相同的topic分区的offset需要提交，那么map会覆盖原有的
     //使用ConcurrentSkipListMap保证key有序,key为TopicPartitionWithTime,其实现是以加入队列的时间来排序
@@ -35,9 +36,7 @@ public class MessageFetcher<K, V> extends Thread {
     private long pollTimeout = 1000;
     //定时扫描注册中心并在发现新配置时及时更新运行环境
 //    private ConfigFetcher configFetcher;
-    private MessageHandlersManager handlersManager;
-
-    private String assignDesc;
+    private final MessageHandlersManager handlersManager;
 
     public MessageFetcher(Properties properties) {
         super("consumer fetcher thread");
@@ -52,19 +51,15 @@ public class MessageFetcher<K, V> extends Thread {
             this.handlersManager = new OPMTMessageHandlersManager(10, Runtime.getRuntime().availableProcessors() * 2 - 1, 10000 * 10000);//10 * 1000 * 10000
         }
         else if(model.equals(ConfigValue.OPMT2)){
-            this.handlersManager = new OPMTMessageHandlersManager2();
+            this.handlersManager = new OPMT2MessageHandlersManager();
         }
         else{
             throw new IllegalStateException(model + " => unknown message handler manager model");
         }
     }
 
-    public void subscribe(Collection<String> topics, ConsumerRebalanceListener listener){
-        this.consumer.subscribe(topics, listener);
-    }
-
     public void subscribe(Collection<String> topics){
-        this.consumer.subscribe(topics);
+        this.consumer.subscribe(topics, new AbstractMessageHandlersManager.InnerConsumerRebalanceListener<>(this));
     }
 
     public void registerHandlers(Map<String, Class<? extends MessageHandler>> topic2HandlerClass){
@@ -76,7 +71,7 @@ public class MessageFetcher<K, V> extends Thread {
     }
 
     public void close(){
-        log.info("consumer[" + assignment() + "] fetcher thread closing...");
+        log.info("consumer fetcher thread closing...");
         this.isStopped = true;
     }
 
@@ -84,21 +79,18 @@ public class MessageFetcher<K, V> extends Thread {
         return isTerminated;
     }
 
-    public String assignment(){
-//        if(assignDesc == null || assignDesc.equals("")){
-//            assignDesc = StrUtil.topicPartitionsStr(consumer.assignment());
-//        }
-        return "";
-    }
-
     public Map<TopicPartition, OffsetAndMetadata> getPendingOffsets() {
         return pendingOffsets;
+    }
+
+    public MessageHandlersManager getHandlersManager() {
+        return handlersManager;
     }
 
     @Override
     public void run() {
         long offset = -1;
-        log.info("consumer[" + assignment() + "] fetcher thread started");
+        log.info("consumer fetcher thread started");
         try{
             //jvm缓存,当消息处理线程还没启动完,或者配置更改时,需先缓存消息,等待线程启动好再处理
             Queue<ConsumerRecord<K, V>> msgCache = new LinkedList<>();
@@ -109,7 +101,7 @@ public class MessageFetcher<K, V> extends Thread {
 
                 if(offsets != null){
                     //有offset需要提交
-                    log.info("consumer[" + assignment() + "] commit [" + offsets.size() + "] topic partition offsets");
+                    log.info("consumer commit [" + offsets.size() + "] topic partition offsets");
                     commitOffsetsSync(offsets);
                 }
 
@@ -149,71 +141,85 @@ public class MessageFetcher<K, V> extends Thread {
         finally {
             //等待所有该消费者接受的消息处理完成
             Set<TopicPartition> topicPartitions = this.consumer.assignment();
-            handlersManager.consumerCloseNotify(topicPartitions);
+            handlersManager.consumerCloseNotify();
             //关闭前,提交所有offset
             Map<TopicPartition, OffsetAndMetadata> topicPartition2Offset = allPendingOffsets();
             //同步提交
             commitOffsetsSync(topicPartition2Offset);
-            log.info("consumer[" + assignment() + "] kafka conusmer closing...");
+            log.info("consumer kafka conusmer closing...");
             this.consumer.close();
-            log.info("consumer[" + assignment() + "] kafka conusmer closed");
+            log.info("consumer kafka conusmer closed");
             //有异常抛出,需设置,不然手动调用close就设置好了.
             isStopped = true;
             //标识线程停止
             isTerminated = true;
-            log.info("consumer[" + assignment() + "] message fetcher closed");
+            log.info("consumer message fetcher closed");
             System.out.println("消费者端接受最大Offset: " + offset);
         }
     }
 
-    private void commitOffsetsSync(Map<TopicPartition, OffsetAndMetadata> offsets){
-        if(offsets == null || offsets.size() <= 0){
-            return;
-        }
-
-        log.info("consumer[" + assignment() + "] commit offsets Sync...");
-        consumer.commitSync(offsets);
-        log.info("consumer[" +MessageFetcher.this.assignment() + "] offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
+    public long position(TopicPartition topicPartition){
+        return consumer.position(topicPartition);
     }
 
-    private void commitOffsetsAsync(final Map<TopicPartition, OffsetAndMetadata> offsets){
+    public void seek(TopicPartition topicPartition, Long offset){
+        consumer.seek(topicPartition, offset);
+    }
+
+    public void seekToEnd(Collection<TopicPartition> topicPartitions){
+        consumer.seekToEnd(topicPartitions);
+    }
+
+    public void commitOffsetsSync(Map<TopicPartition, OffsetAndMetadata> offsets){
         if(offsets == null || offsets.size() <= 0){
             return;
         }
 
-        log.info("consumer[" + assignment() + "] commit offsets ASync...");
+        log.info("consumer commit offsets Sync...");
+        consumer.commitSync(offsets);
+        Statistics.instance().append("offset", StrUtil.topicPartitionOffsetsStr(offsets) + System.lineSeparator());
+        log.info("consumer offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
+    }
+
+    public void commitOffsetsAsync(final Map<TopicPartition, OffsetAndMetadata> offsets){
+        if(offsets == null || offsets.size() <= 0){
+            return;
+        }
+
+        log.info("consumer commit offsets ASync...");
         consumer.commitAsync(offsets, new OffsetCommitCallback() {
             @Override
             public void onComplete(Map<TopicPartition, OffsetAndMetadata> map, Exception e) {
                 //Exception e --> The exception thrown during processing of the request, or null if the commit completed successfully
-                if(e !=null){
-                    log.info("consumer[" + assignment() + "] commit offsets " + nowRetry + " times failed!!!");
+                if (e != null) {
+                    log.info("consumer commit offsets " + nowRetry + " times failed!!!");
                     //失败
-                    if(enableRetry){
+                    if (enableRetry) {
                         //允许重试,再次重新提交offset
-                        if(nowRetry < maxRetry){
-                            log.info("consumer[" + assignment() + "] retry commit offsets");
+                        if (nowRetry < maxRetry) {
+                            log.info("consumer retry commit offsets");
                             commitOffsetsAsync(offsets);
-                            nowRetry ++;
-                        }
-                        else{
-                            log.error("consumer[" + assignment() + "] retry times greater than " + maxRetry + " times(MaxRetry times)");
+                            nowRetry++;
+                        } else {
+                            log.error("consumer retry times greater than " + maxRetry + " times(MaxRetry times)");
                             close();
                         }
-                    }
-                    else{
+                    } else {
                         //不允许,直接关闭该Fetcher
-                        log.error("consumer[" + assignment() + "] disable retry commit offsets");
+                        log.error("consumer disable retry commit offsets");
                         close();
                     }
-                }
-                else{
+                } else {
                     //成功,打日志
                     nowRetry = 0;
-                    log.info("consumer[" + MessageFetcher.this.assignment() + "] offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
+                    log.info("consumer offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
                 }
             }
         });
+    }
+
+    public void commitOffsetsSyncWhenRebalancing(){
+        commitOffsetsSync(allPendingOffsets());
     }
 
     private Map<TopicPartition, OffsetAndMetadata> allPendingOffsets(){
@@ -231,38 +237,5 @@ public class MessageFetcher<K, V> extends Thread {
         return null;
     }
 
-    public abstract class InnerRebalanceListener implements ConsumerRebalanceListener{
-        protected KafkaConsumer<K, V> consumer = MessageFetcher.this.consumer;
-    }
 
-    public class InMemoryRebalanceListsener extends InnerRebalanceListener{
-        //jvm内存缓存目前消费到的Offset
-        private Map<TopicPartition, Long> topicPartition2Offset = new HashMap<>();
-
-        @Override
-        public void onPartitionsRevoked(Collection<TopicPartition> collection) {
-            log.info("consumer origin assignment: " + StrUtil.topicPartitionsStr(collection));
-            log.info("consumer rebalancing...");
-            //保存在jvm内存中
-            for(TopicPartition topicPartition: collection){
-                topicPartition2Offset.put(topicPartition, consumer.position(topicPartition));
-            }
-            //分区负载均衡时,至null,负载均衡后重新生成对应字符串
-            assignDesc = null;
-
-            //还需清理已经交给handler线程
-            handlersManager.consumerRebalanceNotify();
-        }
-
-        @Override
-        public void onPartitionsAssigned(Collection<TopicPartition> collection) {
-            for(TopicPartition topicPartition: collection){
-                consumer.seek(topicPartition, topicPartition2Offset.get(topicPartition));
-            }
-            log.info("consumer reassigned");
-            log.info("consumer new assignment: " + StrUtil.topicPartitionsStr(collection));
-            //清理offset缓存
-            topicPartition2Offset.clear();
-        }
-    }
 }

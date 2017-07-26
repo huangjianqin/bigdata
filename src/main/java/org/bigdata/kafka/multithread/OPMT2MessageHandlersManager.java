@@ -14,19 +14,19 @@ import java.util.concurrent.TimeUnit;
  * Created by 健勤 on 2017/7/18.
  * 基于OPOT和滑动窗口思想的改进版本
  */
-public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager {
-    private static Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);
+public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager {
+    private static final Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);
     private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new HashMap<>();
     private Map<TopicPartition, List<OPMTMessageQueueHandlerThread>> topicPartition2Threads = new HashMap<>();
     //所有消息处理线程在同一线程池维护
-    private ThreadPoolExecutor threads = new ThreadPoolExecutor(2, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+    private final ThreadPoolExecutor threads = new ThreadPoolExecutor(2, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
     private final int threadSizePerPartition;
 
-    public OPMTMessageHandlersManager2() {
+    public OPMT2MessageHandlersManager() {
         this(Runtime.getRuntime().availableProcessors() * 2 - 1);
     }
 
-    public OPMTMessageHandlersManager2(int threadSizePerPartition) {
+    public OPMT2MessageHandlersManager(int threadSizePerPartition) {
         this.threadSizePerPartition = threadSizePerPartition;
     }
 
@@ -90,13 +90,15 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
     }
 
     @Override
-    public void consumerCloseNotify(Set<TopicPartition> topicPartitions){
+    public void consumerCloseNotify(){
         log.info("shutdown all handlers...");
+        List<OPMTMessageQueueHandlerThread> allThreads = new ArrayList<>();
         //停止所有handler
         for(List<OPMTMessageQueueHandlerThread> threads: topicPartition2Threads.values()){
             for(OPMTMessageQueueHandlerThread thread: threads){
                 if(!thread.isTerminated()){
                     thread.stop();
+                    allThreads.add(thread);
                 }
             }
         }
@@ -109,18 +111,10 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
 
 
         //等待所有handler完成,超过10s,强制关闭
-        int count = 0;
-        while(!checkHandlerTerminated() && count < 5){
-            count ++;
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+        boolean isTimeout = waitingThreadPoolIdle((Collection)allThreads, 10000);
 
         //关闭线程池
-        if(count < 5){
+        if(!isTimeout){
             log.info("shutdown thread pool...");
             threads.shutdown();
         }
@@ -130,33 +124,49 @@ public class OPMTMessageHandlersManager2 extends AbstractMessageHandlersManager 
         }
         log.info("thread pool terminated");
     }
-
+    /**
+     * 之前分配到的TopicPartitions
+     * @param topicPartitions 当前分配到的分区
+     */
     @Override
-    public void consumerRebalanceNotify(){
+    public void consumerRebalanceNotify(Set<TopicPartition> topicPartitions){
         isRebalance.set(true);
         log.info("clean up handlers(not thread)");
 
         for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
             //提交已完成处理的消息的最大offset
             pendingWindow.commitLatest(false);
-            pendingWindow.clean();
         }
+    }
 
+    /**
+     * @param topicPartitions 之前分配到但此次又没有分配到的TopicPartitions
+     */
+    @Override
+    public void doOnConsumerReAssigned(Set<TopicPartition> topicPartitions) {
+        List<OPMTMessageQueueHandlerThread> allThreads = new ArrayList<>();
+        List<PendingWindow> allPendingWindow = new ArrayList<>();
         //关闭Handler执行,但不关闭线程,达到线程复用的效果
-        for(List<OPMTMessageQueueHandlerThread> threads: topicPartition2Threads.values()){
+        for(TopicPartition topicPartition: topicPartitions){
             //不清除队列好像也可以
-            for(OPMTMessageQueueHandlerThread thread: threads){
+            for(OPMTMessageQueueHandlerThread thread: topicPartition2Threads.get(topicPartition)){
                 if(!thread.isTerminated()){
                     thread.stop();
                 }
             }
+            //移除滑动窗口
+            allPendingWindow.add(topicPartition2PendingWindow.remove(topicPartition));
+            //移除属于该分区的线程
+            allThreads.addAll(topicPartition2Threads.remove(topicPartition));
         }
 
-        //清理消息处理线程Offset submit窗口
-        topicPartition2PendingWindow.clear();
+        //等待线程池中线程空闲,如果超过3s,则抛异常,并释放资源
+        boolean isTimeOut = waitingThreadPoolIdle((Collection)allThreads, 3000);
+        if(isTimeOut){
+            log.warn("waiting for target message handlers terminated timeout when rebalancing!!!");
+            System.exit(-1);
+        }
 
-        //清楚topic分区与handler的映射
-        topicPartition2Threads.clear();
         isRebalance.set(false);
     }
 

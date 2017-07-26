@@ -10,7 +10,7 @@ public class RealEnvironmentMessageHandler extends DefaultMessageHandler{
 
     @Override
     public void handle(ConsumerRecord<String, String> record) throws Exception {
-        Thread.sleep(300);
+        Thread.sleep(100);
         super.handle(record);
     }
 }

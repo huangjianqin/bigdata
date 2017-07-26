@@ -16,8 +16,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created by hjq on 2017/7/4.
  */
 public class PendingWindow {
-    private static Logger log = LoggerFactory.getLogger(PendingWindow.class);
-    private Map<TopicPartition, OffsetAndMetadata> pendingOffsets;
+    private static  final Logger log = LoggerFactory.getLogger(PendingWindow.class);
+    private final Map<TopicPartition, OffsetAndMetadata> pendingOffsets;
     private ConcurrentSkipListSet<ConsumerRecordInfo> queue;
     private final int slidingWindow;
 

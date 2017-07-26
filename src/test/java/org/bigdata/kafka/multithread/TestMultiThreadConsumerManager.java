@@ -1,10 +1,7 @@
 package org.bigdata.kafka.multithread;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.bigdata.kafka.api.Config;
-import org.bigdata.kafka.api.ConfigValue;
-import org.bigdata.kafka.api.Counters;
-import org.bigdata.kafka.api.MultiThreadConsumerManager;
+import org.bigdata.kafka.api.*;
 
 import java.util.*;
 
@@ -22,16 +19,16 @@ public class TestMultiThreadConsumerManager {
                 .set(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
-                .set(Config.MESSAGEHANDLER_MODEL, ConfigValue.OPMT2)
+                .set(Config.MESSAGEHANDLER_MODEL, ConfigValue.OPMT)
                 .properties();
         Set<String> topic = new HashSet<>();
-        topic.add("multi-msg");
+        topic.add("msg1");
 
         //1.一个consumer
-        MultiThreadConsumerManager.instance().<String, String>registerConsumer("test", config, topic, null, null);
+        MultiThreadConsumerManager.instance().<String, String>registerConsumer("test", config, topic, (Map)Collections.singletonMap("msg1", RealEnvironmentMessageHandler.class), null);
         startTime = System.currentTimeMillis();
 
-        long runTime = 10 * 60 * 1000;
+        long runTime = 5 * 60 * 1000;
         long lastConsumerCounter = -1;
         //重复多少次相同消费记录则退出
         int sameCounter = 5;
@@ -69,5 +66,6 @@ public class TestMultiThreadConsumerManager {
         System.out.println("总消费率: " + 1.0 * sum / (endTime - startTime) + "条/ms");
         System.out.println("总消费率: " + 1.0 * sum1 / (endTime - startTime) + "B/ms");
         System.out.println("总耗时:" + (endTime - startTime));
+        System.out.println(Statistics.instance().get("offset"));
     }
 }

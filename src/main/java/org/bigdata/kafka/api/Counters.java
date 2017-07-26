@@ -1,6 +1,7 @@
 package org.bigdata.kafka.api;
 
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -8,8 +9,8 @@ import java.util.concurrent.atomic.AtomicLong;
  * 系统共用的计数器,用户也可以自定义
  */
 public class Counters {
-    private static Counters counters = new Counters();
-    private ConcurrentHashMap<String, AtomicLong> name2Counter = new ConcurrentHashMap<>();
+    private static ConcurrentMap<String, AtomicLong> name2Counter = new ConcurrentHashMap<>();
+    private static final Counters counters = new Counters();
 
     public static Counters getCounters() {
         return counters;
