@@ -1,7 +1,10 @@
-package org.bigdata.kafka.multithread;
+package org.bigdata.kafka.multithread.core;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.bigdata.kafka.multithread.util.ConsumerRecordInfo;
+import org.bigdata.kafka.multithread.api.MessageHandler;
+import org.bigdata.kafka.multithread.util.StrUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

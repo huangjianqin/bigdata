@@ -3,8 +3,6 @@ package org.bigdata.kafka.multithread;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.bigdata.kafka.multithread.api.*;
 import org.bigdata.kafka.multithread.api.impl.RealEnvironmentMessageHandler;
-import org.bigdata.kafka.multithread.config.Config;
-import org.bigdata.kafka.multithread.config.ConfigValue;
 import org.bigdata.kafka.multithread.config.PropertiesWrapper;
 import org.bigdata.kafka.multithread.monitor.Counters;
 import org.bigdata.kafka.multithread.monitor.Statistics;
@@ -12,9 +10,9 @@ import org.bigdata.kafka.multithread.monitor.Statistics;
 import java.util.*;
 
 /**
- * Created by hjq on 2017/6/22.
+ * Created by 健勤 on 2017/7/26.
  */
-public class TestMultiThreadConsumerManager {
+public class TestOCOTConsumerManager {
     public static void main(String[] args) throws InterruptedException {
         long startTime = 0;
         long endTime = 0;
@@ -25,16 +23,25 @@ public class TestMultiThreadConsumerManager {
                 .set(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
-                .set(Config.MESSAGEHANDLER_MODEL, ConfigValue.OPMT)
                 .properties();
-        Set<String> topic = new HashSet<>();
-        topic.add("msg1");
+        Set<String> topics = new HashSet<>();
+        topics.add("msg1");
 
         //1.一个consumer
-        MultiThreadConsumerManager.instance().<String, String>registerConsumer("test", config, topic, null, (Map)Collections.singletonMap("msg1", RealEnvironmentMessageHandler.class), null);
+        MultiThreadConsumerManager.instance()
+                .newOCOTMultiProcessor(
+                        "test",
+                        1,
+                        config,
+                        topics,
+                        RealEnvironmentMessageHandler.class,
+                        null,
+                        null,
+                        null);
+
         startTime = System.currentTimeMillis();
 
-        long runTime = 5 * 60 * 1000;
+        long runTime = 3 * 60 * 1000;
         long lastConsumerCounter = -1;
         //重复多少次相同消费记录则退出
         int sameCounter = 5;
@@ -63,7 +70,7 @@ public class TestMultiThreadConsumerManager {
             endTime -= 5 * 60 * 1000;
         }
 
-        MultiThreadConsumerManager.instance().stopConsumerSync("test");
+        MultiThreadConsumerManager.instance().stopOCOTMultiProcessor("test");
 
         long sum = Counters.getCounters().get("consumer-counter");
         long sum1 = Counters.getCounters().get("consumer-byte-counter");

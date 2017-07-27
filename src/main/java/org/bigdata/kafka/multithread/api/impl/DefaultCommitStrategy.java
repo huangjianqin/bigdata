@@ -1,17 +1,17 @@
-package org.bigdata.kafka.multithread;
+package org.bigdata.kafka.multithread.api.impl;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-
-import java.util.concurrent.atomic.AtomicLong;
+import org.bigdata.kafka.multithread.api.CommitStrategy;
+import org.bigdata.kafka.multithread.api.MessageHandler;
 
 /**
  * Created by hjq on 2017/6/21.
  * 默认的commit strategy
  * 根据提交量判断是否提交Offset
  */
-public class DefaultCommitStrategy implements CommitStrategy{
+public class DefaultCommitStrategy implements CommitStrategy {
     private long counter = 0L;
-    private long MAX_COUNT = 1000;
+    private long MAX_COUNT = 50;
 
     public DefaultCommitStrategy() {
     }

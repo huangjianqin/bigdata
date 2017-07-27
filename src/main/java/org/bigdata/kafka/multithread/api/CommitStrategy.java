@@ -1,4 +1,4 @@
-package org.bigdata.kafka.multithread;
+package org.bigdata.kafka.multithread.api;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 

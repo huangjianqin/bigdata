@@ -1,11 +1,15 @@
-package org.bigdata.kafka.multithread;
+package org.bigdata.kafka.multithread.core;
 
 
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
-import org.bigdata.kafka.api.Statistics;
+import org.bigdata.kafka.multithread.api.CommitStrategy;
+import org.bigdata.kafka.multithread.util.ConsumerRecordInfo;
+import org.bigdata.kafka.multithread.api.MessageHandler;
+import org.bigdata.kafka.multithread.util.ClassUtil;
+import org.bigdata.kafka.multithread.util.StrUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +17,6 @@ import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by hjq on 2017/7/4.
@@ -385,7 +388,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
                 //清理offset缓存
                 topicPartition2Offset.clear();
             }
-            Statistics.instance().append("offset", System.lineSeparator());
+//            Statistics.instance().append("offset", System.lineSeparator());
         }
 
     }

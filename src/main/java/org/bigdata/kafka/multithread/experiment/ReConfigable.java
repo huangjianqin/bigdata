@@ -1,4 +1,4 @@
-package org.bigdata.kafka.multithread;
+package org.bigdata.kafka.multithread.experiment;
 
 import java.util.Properties;
 

@@ -2,7 +2,8 @@ package org.bigdata.kafka.multithread;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.bigdata.kafka.api.Counters;
+import org.bigdata.kafka.multithread.monitor.Counters;
+import org.bigdata.kafka.multithread.config.PropertiesWrapper;
 
 import java.util.ArrayList;
 import java.util.List;

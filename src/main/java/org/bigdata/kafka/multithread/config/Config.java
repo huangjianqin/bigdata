@@ -1,4 +1,4 @@
-package org.bigdata.kafka.api;
+package org.bigdata.kafka.multithread.config;
 
 /**
  * Created by 健勤 on 2017/7/21.

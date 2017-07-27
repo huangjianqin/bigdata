@@ -1,15 +1,16 @@
-package org.bigdata.kafka.api;
+package org.bigdata.kafka.multithread.api;
 
 import org.apache.commons.collections.map.HashedMap;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.bigdata.kafka.multithread.*;
+import org.bigdata.kafka.multithread.api.impl.DefaultCommitStrategy;
+import org.bigdata.kafka.multithread.api.impl.DefaultMessageHandler;
+import org.bigdata.kafka.multithread.api.impl.SimpleConsumerRebalanceListener;
+import org.bigdata.kafka.multithread.core.MessageFetcher;
+import org.bigdata.kafka.multithread.core.OCOTMultiProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Created by hjq on 2017/6/19.
@@ -27,6 +28,7 @@ public class MultiThreadConsumerManager {
     private static final Logger log = LoggerFactory.getLogger(MultiThreadConsumerManager.class);
     private static final MultiThreadConsumerManager manager = new MultiThreadConsumerManager();
     private static Map<String, MessageFetcher> name2Fetcher = new HashedMap();
+    private static Map<String, OCOTMultiProcessor> name2OCOTMultiProcessor = new HashedMap();
 
     public static MultiThreadConsumerManager instance(){
         return manager;
@@ -49,6 +51,12 @@ public class MultiThreadConsumerManager {
     private void checkAppName(String appName){
         if (name2Fetcher.containsKey(appName)){
             throw new IllegalStateException("Manager has same app name");
+        }
+    }
+
+    private void checkAppName2(String appName){
+        if (name2OCOTMultiProcessor.containsKey(appName)){
+            throw new IllegalStateException("Processor has same app name");
         }
     }
 
@@ -81,6 +89,7 @@ public class MultiThreadConsumerManager {
     public <K, V> MessageFetcher<K, V> registerConsumer(String appName,
                                                         Properties properties,
                                                         Collection<String> topics,
+                                                        Class<? extends CallBack> callBackClass,
                                                         Map<String, Class<? extends MessageHandler>> topic2HandlerClass,
                                                         Map<String, Class<? extends CommitStrategy>> topic2CommitStrategyClass){
         checkAppName(appName);
@@ -104,6 +113,7 @@ public class MultiThreadConsumerManager {
         }
         messageFetcher.registerHandlers(topic2HandlerClass);
         messageFetcher.registerCommitStrategies(topic2CommitStrategyClass);
+        messageFetcher.registerCallBack(callBackClass);
 
         name2Fetcher.put(appName, messageFetcher);
         startConsume(messageFetcher);
@@ -150,5 +160,38 @@ public class MultiThreadConsumerManager {
 
     private static void doStop(MessageFetcher messageFetcher){
         messageFetcher.close();
+    }
+
+    public <K, V> OCOTMultiProcessor<K, V> newOCOTMultiProcessor(String appName,
+                                                                 int consumerNum,
+                                                                 Properties properties,
+                                                                 Set<String> topics,
+                                                                 Class<? extends MessageHandler> messageHandlerClass,
+                                                                 Class<? extends CommitStrategy> commitStrategyClass,
+                                                                 Class<? extends ConsumerRebalanceListener> consumerRebalanceListenerClass,
+                                                                 Class<? extends CallBack> callBackClass){
+        checkAppName2(appName);
+        OCOTMultiProcessor<K, V> ocotMultiProcessor =
+                new OCOTMultiProcessor<>(consumerNum,
+                        properties,
+                        topics,
+                        messageHandlerClass != null? messageHandlerClass : DefaultMessageHandler.class,
+                        commitStrategyClass != null? commitStrategyClass : DefaultCommitStrategy.class,
+                        consumerRebalanceListenerClass != null? consumerRebalanceListenerClass : SimpleConsumerRebalanceListener.class,
+                        callBackClass);
+        name2OCOTMultiProcessor.put(appName, ocotMultiProcessor);
+        ocotMultiProcessor.start();
+        return ocotMultiProcessor;
+    }
+
+    public void stopOCOTMultiProcessor(String appName){
+        OCOTMultiProcessor ocotMultiProcessor = name2OCOTMultiProcessor.get(appName);
+        if(ocotMultiProcessor != null){
+            ocotMultiProcessor.close();
+            name2OCOTMultiProcessor.remove(appName);
+        }
+        else{
+            throw new IllegalStateException("manager does not have MessageFetcher named \"" + appName + "\"");
+        }
     }
 }

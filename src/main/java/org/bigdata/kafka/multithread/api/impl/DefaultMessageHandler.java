@@ -1,14 +1,15 @@
-package org.bigdata.kafka.multithread;
+package org.bigdata.kafka.multithread.api.impl;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.bigdata.kafka.api.Counters;
+import org.bigdata.kafka.multithread.api.MessageHandler;
+import org.bigdata.kafka.multithread.monitor.Counters;
 
 /**
  * Created by hjq on 2017/6/21.
  * 默认的Message handler
  * 仅仅添加相应的计数器
  */
-public class DefaultMessageHandler implements MessageHandler<String, String>{
+public class DefaultMessageHandler implements MessageHandler<String, String> {
 
     @Override
     public void setup() throws Exception {

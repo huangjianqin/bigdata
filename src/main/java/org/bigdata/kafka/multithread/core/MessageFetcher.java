@@ -1,11 +1,13 @@
-package org.bigdata.kafka.multithread;
+package org.bigdata.kafka.multithread.core;
 
-import org.apache.calcite.rel.core.Collect;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
-import org.bigdata.kafka.api.Config;
-import org.bigdata.kafka.api.ConfigValue;
-import org.bigdata.kafka.api.Statistics;
+import org.bigdata.kafka.multithread.api.*;
+import org.bigdata.kafka.multithread.config.Config;
+import org.bigdata.kafka.multithread.config.ConfigValue;
+import org.bigdata.kafka.multithread.util.ClassUtil;
+import org.bigdata.kafka.multithread.util.ConsumerRecordInfo;
+import org.bigdata.kafka.multithread.util.StrUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +40,9 @@ public class MessageFetcher<K, V> extends Thread {
 //    private ConfigFetcher configFetcher;
     private final MessageHandlersManager handlersManager;
 
+    //consumer record callback
+    private Class<? extends CallBack> callBackClass;
+
     public MessageFetcher(Properties properties) {
         super("consumer fetcher thread");
         this.consumer = new KafkaConsumer<K, V>(properties);
@@ -68,6 +73,10 @@ public class MessageFetcher<K, V> extends Thread {
 
     public void registerCommitStrategies(Map<String, Class<? extends CommitStrategy>> topic2CommitStrategyClass){
         handlersManager.registerCommitStrategies(topic2CommitStrategyClass);
+    }
+
+    public void registerCallBack(Class<? extends CallBack> callBackClass){
+        this.callBackClass = callBackClass;
     }
 
     public void close(){
@@ -112,7 +121,7 @@ public class MessageFetcher<K, V> extends Thread {
                             offset = record.offset();
                         }
                         //按照某种策略提交线程处理
-                        if(!handlersManager.dispatch(new ConsumerRecordInfo(record), pendingOffsets)){
+                        if(!handlersManager.dispatch(new ConsumerRecordInfo(record, callBackClass != null? ClassUtil.instance(callBackClass) : null), pendingOffsets)){
                             log.info("OPOTMessageHandlersManager reconfig...");
                             log.info("message " + record.toString() + " add cache");
                             msgCache.add(record);
@@ -177,7 +186,7 @@ public class MessageFetcher<K, V> extends Thread {
 
         log.info("consumer commit offsets Sync...");
         consumer.commitSync(offsets);
-        Statistics.instance().append("offset", StrUtil.topicPartitionOffsetsStr(offsets) + System.lineSeparator());
+//        Statistics.instance().append("offset", StrUtil.topicPartitionOffsetsStr(offsets) + System.lineSeparator());
         log.info("consumer offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
     }
 

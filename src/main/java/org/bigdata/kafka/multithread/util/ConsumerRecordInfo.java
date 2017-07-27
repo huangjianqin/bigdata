@@ -1,8 +1,8 @@
-package org.bigdata.kafka.multithread;
+package org.bigdata.kafka.multithread.util;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.bigdata.kafka.multithread.api.CallBack;
 
 
 /**
@@ -33,6 +33,7 @@ public class ConsumerRecordInfo<K, V>{
     public void callBack(Exception e) throws Exception {
         if(callBack != null){
             callBack.onComplete(record, e);
+            callBack.cleanup();
         }
     }
 

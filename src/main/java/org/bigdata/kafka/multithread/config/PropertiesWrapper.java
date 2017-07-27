@@ -1,4 +1,4 @@
-package org.bigdata.kafka.multithread;
+package org.bigdata.kafka.multithread.config;
 
 import java.util.Map;
 import java.util.Properties;
