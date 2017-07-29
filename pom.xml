@@ -381,6 +381,21 @@
             <artifactId>spring-kafka</artifactId>
             <version>1.1.5.RELEASE</version>
         </dependency>
+
+        <!-- activeMQ-->
+        <dependency>
+            <groupId>org.apache.activemq</groupId>
+            <artifactId>activemq-core</artifactId>
+            <version>5.7.0</version>
+        </dependency>
+
+        <!-- rabbitMQ -->
+        <dependency>
+            <groupId>com.rabbitmq</groupId>
+            <artifactId>amqp-client</artifactId>
+            <version>4.1.0</version>
+        </dependency>
+
     </dependencies>
 
     <build>

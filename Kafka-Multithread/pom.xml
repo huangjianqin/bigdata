@@ -48,6 +48,13 @@
             <!--</exclusion>-->
             <!--</exclusions>-->
         </dependency>
+
+        <!-- 依赖于自己的dubbox项目-->
+        <dependency>
+            <groupId>org.kin</groupId>
+            <artifactId>dubbox</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
     </dependencies>
 
 </project>
