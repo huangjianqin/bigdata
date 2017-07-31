@@ -32,7 +32,7 @@ public class DistributedLockTest {
 
 class SelfIncrementThread implements Runnable{
 //    private DistributedLock lock = new RedisDistributedLock("139.199.185.84", "self-increment");
-    private DistributedLock lock = new ZKDistributedLock("139.199.185.84", "self-increment");
+    private DistributedLock lock = new ZKDistributedLock("192.168.40.128", "self-increment");
     private CountDownLatch latch;
 
     public SelfIncrementThread(CountDownLatch latch) {

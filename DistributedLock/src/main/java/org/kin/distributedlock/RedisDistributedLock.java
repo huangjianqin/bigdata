@@ -1,5 +1,7 @@
 package org.kin.distributedlock;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
 
 import java.util.concurrent.TimeUnit;
@@ -13,6 +15,7 @@ import java.util.concurrent.locks.Condition;
  * 支持阻塞锁和超时锁+进程故障会自动释放锁(利用超时实现)
  */
 public class RedisDistributedLock implements DistributedLock {
+    private static Logger log = LoggerFactory.getLogger(RedisDistributedLock.class);
     //每轮锁请求的间隔
     private static final long LOCK_REQUEST_DURATION = 300;
     //阻塞锁的最大超时时间
@@ -51,12 +54,12 @@ public class RedisDistributedLock implements DistributedLock {
         //超时锁时判断获得锁的过程是否超时
         while((isBlock || System.currentTimeMillis() - start < unit.toMillis(time)) && !Thread.currentThread().isInterrupted()){
             if(!jedis.isConnected()){
-                System.out.println(Thread.currentThread().getName() + " redis连接中断");
+                log.error(Thread.currentThread().getName() + " redis连接中断");
             }
             long now = System.currentTimeMillis();
             //如果没有进程获得锁,redis上并没有这个key,setnx就会返回1,当前进程就可以获得锁
-            if(jedis.setnx(lockName, now + "," + (isBlock? MAX_TIMEOUT:unit.toMillis(time))) == 1){
-                System.out.println(Thread.currentThread().getName() + "命中");
+            if(jedis.setnx(lockName, now + "," + (isBlock? MAX_TIMEOUT : unit.toMillis(time))) == 1) {
+                log.debug(Thread.currentThread().getName() + "命中锁");
                 isLocked = true;
                 return true;
             }
@@ -80,7 +83,7 @@ public class RedisDistributedLock implements DistributedLock {
                         String ov = jedis.getSet(lockName, now + "," + (isBlock? MAX_TIMEOUT:unit.toMillis(time)));
                         if(ov != null && ov.equals(v)){
                             //没有改变,抢占成功
-                            System.out.println(Thread.currentThread().getName() + "命中");
+                            log.debug(Thread.currentThread().getName() + "命中锁");
                             isLocked = true;
                             return true;
                         }
@@ -91,7 +94,7 @@ public class RedisDistributedLock implements DistributedLock {
             try {
                 Thread.sleep(LOCK_REQUEST_DURATION);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                return false;
             }
         }
         return false;
@@ -147,8 +150,8 @@ public class RedisDistributedLock implements DistributedLock {
      */
     @Override
     public void unlock() {
-        if(isLocked){
-            System.out.println(Thread.currentThread().getName() + "释放");
+        if (isLocked) {
+            log.debug(Thread.currentThread().getName() + "释放锁");
             jedis.del(lockName);
             isLocked = false;
         }

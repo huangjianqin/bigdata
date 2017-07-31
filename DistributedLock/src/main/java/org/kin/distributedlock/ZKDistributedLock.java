@@ -1,6 +1,9 @@
 package org.kin.distributedlock;
 
 import org.apache.zookeeper.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -11,9 +14,10 @@ import java.util.concurrent.locks.Condition;
  */
 
 /**
- * 仅支持阻塞锁+进程故障会自动释放锁(自身特性提供)
+ * 仅支持阻塞锁和超时锁+进程故障会自动释放锁(自身特性提供)
  */
 public class ZKDistributedLock implements DistributedLock {
+    private static Logger log = LoggerFactory.getLogger(ZKDistributedLock.class);
     //每轮锁请求的间隔
     private static final long LOCK_REQUEST_DURATION = 300;
     //zkClient客户端
@@ -50,7 +54,7 @@ public class ZKDistributedLock implements DistributedLock {
                 }
             });
             latch.await();
-//            System.out.println(Thread.currentThread().getName() + " >>> zk客户端连接成功");
+            log.info(Thread.currentThread().getName() + " >>> zk客户端连接成功");
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -65,9 +69,9 @@ public class ZKDistributedLock implements DistributedLock {
     public void destroy() {
         try {
             zkClient.close();
-//            System.out.println(Thread.currentThread().getName() + " >>> 关闭zk客户端");
+            log.info(Thread.currentThread().getName() + " >>> 关闭zk客户端");
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            log.error(Thread.currentThread().getName() + "'s lock is interrupted when destroying");
         }
     }
 
@@ -78,9 +82,8 @@ public class ZKDistributedLock implements DistributedLock {
         try {
             zkClient.create(DL_PARENT, null, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         } catch (KeeperException e) {
-            e.printStackTrace();
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            log.warn(Thread.currentThread().getName() + " is interrupted when operating");
         }
     }
 
@@ -92,10 +95,12 @@ public class ZKDistributedLock implements DistributedLock {
         try {
             zkClient.delete(path, -1);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            log.warn(Thread.currentThread().getName() + " is interrupted when operating");
         } catch (KeeperException e) {
             if(e instanceof KeeperException.NoNodeException){
-//                System.out.println(Thread.currentThread().getName() + " >>> 删除一个不存在的节点");
+                //也就是存在bug了
+                log.error(Thread.currentThread().getName() + " >>> 删除一个不存在的节点");
+                destroy();
             }
         }
     }
@@ -105,41 +110,54 @@ public class ZKDistributedLock implements DistributedLock {
      */
     @Override
     public void lock() {
+        requestLock(Long.MAX_VALUE);
+    }
+
+    public boolean requestLock(long expireTime){
         String path = DL_PARENT + "/" + lockName;
         if(!Thread.currentThread().isInterrupted()){
+            //如果超时时间等于Long.MAX_VALUE,也就是阻塞锁
+            if(expireTime != Long.MAX_VALUE && System.currentTimeMillis() > expireTime){
+                return false;
+            }
             try {
                 //如果节点已存在(也就是有进程持有锁)将抛出异常
                 zkClient.create(path,
                         null,
                         ZooDefs.Ids.OPEN_ACL_UNSAFE,
                         CreateMode.EPHEMERAL);
-                System.out.println(Thread.currentThread().getName() + " >>> 获得锁");
-                return;
+                log.debug(Thread.currentThread().getName() + " >>> 获得锁");
+                return true;
             } catch (KeeperException e) {
                 if(e instanceof KeeperException.NoNodeException){
+                    log.warn(Thread.currentThread().getName() + " >>> 不存在父节点");
+                    log.info(Thread.currentThread().getName() + " 创建父节点");
                     //不存在父节点,先初始化父节点
                     initParent();
                     //再次尝试获得锁
-                    lock();
-//                    System.out.println(Thread.currentThread().getName() + " >>> 不存在父节点");
+                    return requestLock(expireTime);
                 }
                 else if(e instanceof KeeperException.NodeExistsException){
                     //有进程持有锁,重新尝试获得锁
-//                    System.out.println(Thread.currentThread().getName() + " >>> 有进程持有锁");
+                    log.debug(Thread.currentThread().getName() + " >>> 有进程持有锁");
                     try {
                         Thread.sleep(LOCK_REQUEST_DURATION);
                     } catch (InterruptedException e1) {
-                        e1.printStackTrace();
+                        log.warn(Thread.currentThread().getName() + " is interrupted when operating");
                     }
-                    lock();
+                    return requestLock(expireTime);
                 }
                 else{
                     e.printStackTrace();
+                    return false;
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                log.warn(Thread.currentThread().getName() + " is interrupted when operating");
+                return false;
             }
         }
+
+        return false;
     }
 
     /**
@@ -171,6 +189,7 @@ public class ZKDistributedLock implements DistributedLock {
         } catch (KeeperException e) {
             return false;
         } catch (InterruptedException e) {
+            log.warn(Thread.currentThread().getName() + " is interrupted when operating");
             return false;
         }
     }
@@ -184,7 +203,7 @@ public class ZKDistributedLock implements DistributedLock {
      */
     @Override
     public boolean tryLock(long time, TimeUnit unit) throws InterruptedException {
-        throw new UnsupportedOperationException("DistributedLock Base on zkClient don't support now");
+        return requestLock(System.currentTimeMillis() + unit.toMillis(time));
     }
 
     /**
@@ -194,7 +213,7 @@ public class ZKDistributedLock implements DistributedLock {
     public void unlock() {
         String path = DL_PARENT + "/" + lockName;
         deleteZKPath(path);
-        System.out.println(Thread.currentThread().getName() + " >>> 释放锁");
+        log.debug(Thread.currentThread().getName() + " >>> 释放锁");
     }
 
     /**
