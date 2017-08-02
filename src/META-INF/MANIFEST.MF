@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: org.bigdata.hadoop.wordcount.TwoWordCountJob
+Main-Class: org.kin.bigdata.hadoop.wordcount.TwoWordCountJob
 
