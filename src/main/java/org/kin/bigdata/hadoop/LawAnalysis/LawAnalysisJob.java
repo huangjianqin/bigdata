@@ -14,6 +14,9 @@ import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.LazyOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.kin.bigdata.hadoop.common.PairWritableFactory;
+import org.kin.bigdata.hadoop.common.TextPairWritable;
+
 import java.io.IOException;
 import java.util.Iterator;
 

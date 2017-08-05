@@ -1,4 +1,4 @@
-package org.kin.bigdata.hadoop.LawAnalysis;// == WritableTestBase
+package org.kin.bigdata.hadoop.common;// == WritableTestBase
 // == WritableTestBase-Deserialize
 import java.io.*;
 import org.apache.hadoop.io.Writable;

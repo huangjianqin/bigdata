@@ -1,4 +1,4 @@
-package org.kin.bigdata.hadoop.LawAnalysis;
+package org.kin.bigdata.hadoop.common;
 
 import org.apache.hadoop.io.Text;
 
