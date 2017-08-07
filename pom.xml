@@ -273,6 +273,12 @@
             <!--</exclusions>-->
         </dependency>
 
+        <dependency>
+            <groupId>org.apache.hive</groupId>
+            <artifactId>hive-hbase-handler</artifactId>
+            <version>1.2.2</version>
+        </dependency>
+
         <!-- kafka-->
         <dependency>
             <groupId>org.apache.kafka</groupId>
