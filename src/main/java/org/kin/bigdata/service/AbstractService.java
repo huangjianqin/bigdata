@@ -1,0 +1,167 @@
+package org.kin.bigdata.service;
+
+import java.io.IOException;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+/**
+ * Created by 健勤 on 2017/8/8.
+ */
+public abstract class AbstractService implements Service{
+    private final String serviceName;
+    private final ServiceState state;
+    private long startTime;
+    private final List<ServiceStateChangeListener> listeners = new LinkedList<>();
+    private static final List<ServiceStateChangeListener> globalListeners = new LinkedList<>();
+
+    private final Object lock = new Object();
+    private final AtomicBoolean terminationNotification = new AtomicBoolean(false);
+
+    public AbstractService(String serviceName) {
+        if(serviceName != null && !serviceName.equals("")){
+            this.serviceName = serviceName;
+        }
+        else{
+            this.serviceName = getClass().getSimpleName();
+        }
+        this.state = new ServiceState(serviceName, State.NOTINITED);
+    }
+
+    @Override
+    public void init() {
+        if(isInState(State.INITED)){
+            return;
+        }
+
+        synchronized (lock){
+            State pre = state.enterState(State.INITED);
+            if(pre != State.INITED){
+                serviceInit();
+                if(isInState(State.INITED)){
+                    notifyAllListeners(pre);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void start() {
+        if(isInState(State.STARTED)){
+            return;
+        }
+
+        synchronized (lock){
+            State pre = state.enterState(State.STARTED);
+            if(pre != State.STARTED){
+                startTime = System.currentTimeMillis();
+                serviceStart();
+                if(isInState(State.STARTED)){
+                    notifyAllListeners(pre);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void stop() {
+        if(isInState(State.STOPPED)){
+            return;
+        }
+
+        synchronized (lock){
+            State pre = state.enterState(State.STOPPED);
+            if(pre != State.STOPPED){
+                serviceStop();
+                notifyAllListeners(pre);
+
+                terminationNotification.set(true);
+                synchronized (terminationNotification){
+                    terminationNotification.notifyAll();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void close() throws IOException {
+        stop();
+    }
+
+    @Override
+    public final boolean waitForServiceToStop(long millis) {
+        boolean isStopped = terminationNotification.get();
+        if(!isStopped){
+            try {
+                synchronized (terminationNotification){
+                    terminationNotification.wait(millis);
+                }
+            }catch (InterruptedException e) {
+                return terminationNotification.get();
+            }
+        }
+
+        return terminationNotification.get();
+    }
+
+    @Override
+    public void registerServiceListener(ServiceStateChangeListener listener) {
+        listeners.add(listener);
+    }
+
+    @Override
+    public void unregisterServiceListener(ServiceStateChangeListener listener) {
+        listeners.remove(listener);
+    }
+
+    @Override
+    public boolean isInState(State that) {
+        return state.isInState(that);
+    }
+
+    @Override
+    public String getName() {
+        return serviceName;
+    }
+
+    @Override
+    public State getCurrentState() {
+        return state.getState();
+    }
+
+    @Override
+    public long getStartTime() {
+        return startTime;
+    }
+
+    protected void serviceInit(){}
+    protected void serviceStart(){}
+    protected void serviceStop(){}
+
+    private void notifyAllListeners(State pre){
+        notifyListeners(listeners, pre);
+        notifyListeners(globalListeners, pre);
+    }
+
+    private void notifyListeners(Collection<ServiceStateChangeListener> listeners, State pre){
+        for(ServiceStateChangeListener listener: listeners){
+            listener.onStateChanged(this, pre);
+        }
+    }
+
+    public void registerGlogalListener(ServiceStateChangeListener listener) {
+        globalListeners.add(listener);
+    }
+
+    public void unregisterGlogalListener(ServiceStateChangeListener listener) {
+        globalListeners.remove(listener);
+    }
+
+    @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + "{" +
+                "serviceName='" + serviceName + '\'' +
+                '}';
+    }
+}
