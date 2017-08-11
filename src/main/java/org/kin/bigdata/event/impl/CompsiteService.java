@@ -10,6 +10,7 @@ import java.util.List;
 
 /**
  * Created by 健勤 on 2017/8/11.
+ * 组合服务,也就是说该类或继承该类的子类会拥有许多服务
  */
 public class CompsiteService extends AbstractService {
     private static Logger log = LoggerFactory.getLogger(CompsiteService.class);
@@ -26,7 +27,7 @@ public class CompsiteService extends AbstractService {
                 service.init();
             }
             else{
-                log.warn(service.toString() + " has inited or started");
+                log.warn(service.toString() + " state is " + service.getCurrentState());
             }
         }
 
@@ -39,6 +40,9 @@ public class CompsiteService extends AbstractService {
             if(service.getCurrentState() == State.INITED){
                 service.start();
             }
+            else{
+                log.warn(service.toString() + " state is " + service.getCurrentState());
+            }
         }
 
         super.serviceStart();
@@ -50,6 +54,9 @@ public class CompsiteService extends AbstractService {
             //初始化或启动后的服务就可以关闭
             if(service.getCurrentState() == State.INITED || service.getCurrentState() == State.STARTED){
                 service.stop();
+            }
+            else{
+                log.warn(service.toString() + " state is " + service.getCurrentState());
             }
         }
         super.serviceStop();
@@ -82,7 +89,7 @@ public class CompsiteService extends AbstractService {
     }
 
     /**
-     * 关闭CompsiteService的钩子
+     * 关闭CompsiteService实例的钩子
      */
     private class CompsiteServiceShutdownHook implements Runnable{
         private CompsiteService service;

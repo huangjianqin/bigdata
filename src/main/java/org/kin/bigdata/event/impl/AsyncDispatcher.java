@@ -15,16 +15,23 @@ import java.util.concurrent.*;
 
 /**
  * Created by 健勤 on 2017/8/8.
+ * 异步事件分发器
  */
 public class AsyncDispatcher extends AbstractService implements Dispatcher {
     private static Logger log = LoggerFactory.getLogger(AsyncDispatcher.class);
 
+    //缓存所有待分发的时间
     private final BlockingQueue<Event> eventQueue;
+    //负责分发事件的线程
     private final ThreadPoolExecutor pool;
+    //存储事件与其对应的事件处理器的映射
     protected final Map<Class<? extends Enum>, EventHandler> event2Dispatcher;
 
+    //负责将事件进队的事件处理器
     private final EventHandler innerHandler = new GenericEventHandler();
+    //事件分发线程
     private List<EventHandlerThread> eventHandlerThreads = new LinkedList<>();
+    //事件分发线程数最大值
     private final int THREADS_LIMIT = 10;
 
     public AsyncDispatcher() {
@@ -42,6 +49,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
     public EventHandler getEventHandler() {
         return innerHandler;
     }
+
 
     @Override
     public void register(Class<? extends Enum> eventType, EventHandler handler) {
@@ -62,6 +70,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
             }
         }
     }
+
 
     @Override
     public void dispatch(Event event) {
@@ -160,7 +169,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
     }
 
     /**
-     * 主要用于接受事件并放入事件队列,等待线程分派
+     * 主要用于接受事件并放入事件队列,等待分发线程分派该事件
      * 支持动态改变线程数来满足事件及时分派的场景
      */
     class GenericEventHandler implements EventHandler<Event>{
@@ -182,17 +191,16 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
                 //如果event-queue大小过大,多开线程进行处理
                 if(size > 0){
                     int coreSize = pool.getCorePoolSize();
-                    int expectedSize = size / 1000;//理想是每条线程处理1000个事件
-                    if(expectedSize > 0){
-                        int finalSize = coreSize;
-                        finalSize = expectedSize <= THREADS_LIMIT? expectedSize : THREADS_LIMIT;
-                        pool.setCorePoolSize(finalSize);
-                        if(finalSize >= coreSize){
-                            runNEventHandlerThread(finalSize - coreSize);
-                        }
-                        else{
-                            shutdownNEventHandlerThread(coreSize - finalSize);
-                        }
+                    //理想是每条线程处理1000个事件
+                    int expectedSize = size % 1000 == 0? (size / 1000) : (size / 1000 + 1);
+                    int finalSize = coreSize;
+                    finalSize = expectedSize <= THREADS_LIMIT? expectedSize : THREADS_LIMIT;
+                    pool.setCorePoolSize(finalSize);
+                    if(finalSize >= coreSize){
+                        runNEventHandlerThread(finalSize - coreSize);
+                    }
+                    else{
+                        shutdownNEventHandlerThread(coreSize - finalSize);
                     }
                 }
                 //end
@@ -205,7 +213,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
     }
 
     /**
-     * 一事件对应多个事件处理器
+     * 一事件对应多个事件处理器的场景
      */
     class MultiListenerHandler implements EventHandler<Event>{
         List<EventHandler<Event>> handlers;

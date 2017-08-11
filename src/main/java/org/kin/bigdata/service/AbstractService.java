@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by 健勤 on 2017/8/8.
+ * 服务抽象
  */
 public abstract class AbstractService implements Service{
     private final String serviceName;
@@ -16,6 +17,7 @@ public abstract class AbstractService implements Service{
     private final List<ServiceStateChangeListener> listeners = new LinkedList<>();
     private static final List<ServiceStateChangeListener> globalListeners = new LinkedList<>();
 
+    //仅仅是
     private final Object lock = new Object();
     private final AtomicBoolean terminationNotification = new AtomicBoolean(false);
 
@@ -26,6 +28,7 @@ public abstract class AbstractService implements Service{
         else{
             this.serviceName = getClass().getSimpleName();
         }
+        //服务初始状态
         this.state = new ServiceState(serviceName, State.NOTINITED);
     }
 
@@ -39,6 +42,7 @@ public abstract class AbstractService implements Service{
             State pre = state.enterState(State.INITED);
             if(pre != State.INITED){
                 serviceInit();
+                //再次判断
                 if(isInState(State.INITED)){
                     notifyAllListeners(pre);
                 }
@@ -57,6 +61,7 @@ public abstract class AbstractService implements Service{
             if(pre != State.STARTED){
                 startTime = System.currentTimeMillis();
                 serviceStart();
+                //再次判断
                 if(isInState(State.STARTED)){
                     notifyAllListeners(pre);
                 }

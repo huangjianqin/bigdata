@@ -4,6 +4,7 @@ import java.io.Closeable;
 
 /**
  * Created by 健勤 on 2017/8/8.
+ * 服务接口
  */
 public interface Service extends Closeable{
     void init();
@@ -12,11 +13,20 @@ public interface Service extends Closeable{
     boolean waitForServiceToStop(long mills);
     void registerServiceListener(ServiceStateChangeListener listener);
     void unregisterServiceListener(ServiceStateChangeListener listener);
+
+    /**
+     * 当前状态是否是指定状态
+     * @param that
+     * @return
+     */
     boolean isInState(State that);
     String getName();
     State getCurrentState();
     long getStartTime();
 
+    /**
+     * 服务状态的枚举类
+     */
     enum State{
         NOTINITED(0, "NOTINITED"),
         INITED(1, "INITED"),

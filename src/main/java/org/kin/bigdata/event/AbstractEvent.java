@@ -2,6 +2,7 @@ package org.kin.bigdata.event;
 
 /**
  * Created by 健勤 on 2017/8/8.
+ * 事件的抽象
  */
 public abstract class AbstractEvent<TYPE extends Enum<TYPE>> implements Event<TYPE> {
     private final TYPE type;
