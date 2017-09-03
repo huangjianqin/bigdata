@@ -8,6 +8,8 @@
     <modules>
         <module>Kafka-Multithread</module>
         <module>DistributedLock</module>
+        <module>KinCrawler</module>
+        <module>Kafka-Multithread-Config</module>
     </modules>
 
     <!--<modules>-->
@@ -15,8 +17,8 @@
     <!--</modules>-->
 
     <properties>
-        <maven.compiler.source>1.7</maven.compiler.source>
-        <maven.compiler.target>1.7</maven.compiler.target>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <scala.version>2.10.5</scala.version>
         <spark.version>1.6.2</spark.version>
@@ -421,6 +423,19 @@
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
             <version>3.8</version>
+        </dependency>
+
+        <!-- 异步日志-->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-core</artifactId>
+            <version>1.2.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>1.2.3</version>
         </dependency>
 
     </dependencies>
