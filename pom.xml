@@ -10,7 +10,6 @@
         <module>Kafka-Multithread</module>
         <module>DistributedLock</module>
         <module>KinCrawler</module>
-        <module>Kafka-Multithread-Config</module>
         <module>Dubbox</module>
         <!--<module>MicroService</module>-->
         <module>BigData-Project</module>
