@@ -3,11 +3,11 @@ package org.kin.kafka.multithread;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.kin.kafka.multithread.api.MultiThreadConsumerManager;
 import org.kin.kafka.multithread.config.PropertiesWrapper;
-import org.kin.kafka.multithread.monitor.Counters;
+import org.kin.kafka.multithread.statistics.Counters;
 import org.kin.kafka.multithread.api.impl.RealEnvironmentMessageHandler;
 import org.kin.kafka.multithread.config.Config;
 import org.kin.kafka.multithread.config.ConfigValue;
-import org.kin.kafka.multithread.monitor.Statistics;
+import org.kin.kafka.multithread.statistics.Statistics;
 
 import java.util.*;
 

@@ -3,7 +3,7 @@ package org.kin.kafka.multithread;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.kin.kafka.multithread.config.PropertiesWrapper;
-import org.kin.kafka.multithread.monitor.Counters;
+import org.kin.kafka.multithread.statistics.Counters;
 
 import java.util.ArrayList;
 import java.util.List;

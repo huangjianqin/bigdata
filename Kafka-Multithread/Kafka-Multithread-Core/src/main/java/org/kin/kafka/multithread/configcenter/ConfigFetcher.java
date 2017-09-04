@@ -1,4 +1,4 @@
-package org.kin.kafka.multithread.configcenter.client;
+package org.kin.kafka.multithread.configcenter;
 
 import org.kin.kafka.multithread.configcenter.ReConfigable;
 

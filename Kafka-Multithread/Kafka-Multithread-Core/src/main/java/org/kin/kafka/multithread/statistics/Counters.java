@@ -1,4 +1,4 @@
-package org.kin.kafka.multithread.monitor;
+package org.kin.kafka.multithread.statistics;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;

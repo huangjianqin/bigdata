@@ -3,7 +3,7 @@ package org.kin.kafka.multithread.core;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.*;
-import org.kin.kafka.multithread.monitor.Statistics;
+import org.kin.kafka.multithread.statistics.Statistics;
 import org.kin.kafka.multithread.api.AbstractConsumerRebalanceListener;
 import org.kin.kafka.multithread.util.ClassUtil;
 import org.kin.kafka.multithread.util.ConsumerRecordInfo;

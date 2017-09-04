@@ -2,7 +2,7 @@ package org.kin.kafka.multithread.api.impl;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.kin.kafka.multithread.api.MessageHandler;
-import org.kin.kafka.multithread.monitor.Counters;
+import org.kin.kafka.multithread.statistics.Counters;
 
 /**
  * Created by hjq on 2017/6/21.
