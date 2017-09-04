@@ -5,5 +5,4 @@ package org.kin.kafka.multithread.configcenter.protocol;
  * 与配置中心rpc通信接口
  */
 public interface DiamondClientProtocol {
-
 }
