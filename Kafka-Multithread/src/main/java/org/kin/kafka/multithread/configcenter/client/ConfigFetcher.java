@@ -1,4 +1,6 @@
-package org.kin.kafka.multithread.experiment;
+package org.kin.kafka.multithread.configcenter.client;
+
+import org.kin.kafka.multithread.configcenter.server.ReConfigable;
 
 import java.util.Properties;
 

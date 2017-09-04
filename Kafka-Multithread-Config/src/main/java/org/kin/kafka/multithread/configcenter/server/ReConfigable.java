@@ -1,4 +1,4 @@
-package org.kin.kafka.multithread.experiment;
+package org.kin.kafka.multithread.configcenter.server;
 
 import java.util.Properties;
 
