@@ -1,4 +1,4 @@
-package org.kin.bigdata.hadoop.common;
+package org.kin.bigdata.hadoop.common.writable;
 
 import org.apache.hadoop.io.*;
 
@@ -8,6 +8,8 @@ import java.io.IOException;
 
 /**
  * Created by 健勤 on 2017/5/21.
+ * 两个值不能为Null
+ * 本质上只是基类而已
  */
 public class PairWritable<FIRST extends WritableComparable, SECOND extends WritableComparable> implements WritableComparable<PairWritable<FIRST, SECOND>> {
     private FIRST first;
@@ -34,6 +36,10 @@ public class PairWritable<FIRST extends WritableComparable, SECOND extends Writa
     }
 
     public void setPair(FIRST first, SECOND second){
+        if(first == null || second == null){
+            throw new IllegalArgumentException("unsupport args is null");
+        }
+
         this.first = first;
         this.second = second;
     }
@@ -81,41 +87,6 @@ public class PairWritable<FIRST extends WritableComparable, SECOND extends Writa
     @Override
     public String toString() {
         return "(" + getFirst().toString() + ", " + getSecond().toString() + ")";
-    }
-
-    static {
-        //为该Writable注册Comparator
-        WritableComparator.define(PairWritable.class, new PairComparator());
-    }
-
-    public static class PairComparator extends WritableComparator{
-        public PairComparator() {
-            super(PairWritable.class);
-        }
-
-        @Override
-        public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
-            try {
-                int firstL1S = WritableUtils.decodeVIntSize(b1[s1]);
-                int firstL2S = WritableUtils.decodeVIntSize(b2[s2]);
-                int firstL1 = firstL1S + readVInt(b1, s1);
-                int firstL2 = firstL2S + readVInt(b2, s2);
-                int cmd1 = compareBytes(b1, s1 + firstL1S, firstL1, b2, s2 + firstL2S, firstL2);
-                if(cmd1 != 0){
-                    return cmd1;
-                }
-
-                int secondL1S = WritableUtils.decodeVIntSize(b1[s1 + firstL1]);
-                int secondL2S = WritableUtils.decodeVIntSize(b2[s2 + firstL2]);
-
-                return compareBytes(b1, s1 + firstL1 + secondL1S, l1 - firstL1 - secondL1S,
-                        b2, s2 + firstL2 + secondL2S, l2 - firstL2 - secondL2S);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            return -1;
-        }
     }
 
 }

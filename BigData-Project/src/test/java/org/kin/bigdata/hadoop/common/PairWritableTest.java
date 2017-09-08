@@ -1,6 +1,9 @@
 package org.kin.bigdata.hadoop.common;
 
 import org.apache.hadoop.io.Text;
+import org.kin.bigdata.hadoop.common.writable.PairItemComparator;
+import org.kin.bigdata.hadoop.common.writable.PairWritable;
+import org.kin.bigdata.hadoop.common.writable.TextPairWritable;
 
 import java.io.IOException;
 
@@ -23,7 +26,7 @@ public class PairWritableTest extends WritableTestBase {
         byte[] b2 = serialize(textPair2);
         byte[] b3 = serialize(textPair3);
 
-        PairWritable.PairComparator comparator = new PairWritable.PairComparator();
+        TextPairWritable.TextPairComparator comparator = new TextPairWritable.TextPairComparator();
         System.out.println(comparator.compare(textPair1, textPair2));
         System.out.println(comparator.compare(textPair1, textPair3));
         System.out.println(comparator.compare(textPair2, textPair3));

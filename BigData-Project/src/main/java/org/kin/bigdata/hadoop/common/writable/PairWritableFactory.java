@@ -1,4 +1,4 @@
-package org.kin.bigdata.hadoop.common;
+package org.kin.bigdata.hadoop.common.writable;
 
 import org.apache.hadoop.io.Text;
 

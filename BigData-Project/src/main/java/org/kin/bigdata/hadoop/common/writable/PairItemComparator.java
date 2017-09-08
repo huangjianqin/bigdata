@@ -1,4 +1,4 @@
-package org.kin.bigdata.hadoop.common;
+package org.kin.bigdata.hadoop.common.writable;
 
 import org.apache.hadoop.io.WritableComparable;
 import org.apache.hadoop.io.WritableComparator;
@@ -8,6 +8,7 @@ import java.io.IOException;
 
 /**
  * Created by 健勤 on 2017/5/21.
+ * 比较item<? extends WritableComparable>
  */
 public class PairItemComparator extends WritableComparator {
     public PairItemComparator(Class<? extends WritableComparable> claxx) {
