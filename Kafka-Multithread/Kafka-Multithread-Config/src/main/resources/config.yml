@@ -1,0 +1,9 @@
+configstoremanager:
+  class:
+  server:
+    host:localhost
+    port:6379
+adminprotocol:
+  port:60000
+diamondmasterprotocol:
+  port:60001

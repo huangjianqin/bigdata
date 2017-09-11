@@ -1,4 +1,4 @@
-package org.kin.kafka.multithread.util;
+package org.kin.kafka.multithread.utils;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  * Created by 37 on 2017/6/22.
  */
-public class StrUtil {
+public class StrUtils {
     /**
      * 生成topicX-partitionX,topicX-partitionX,......字符串
      * @param topicPartitions

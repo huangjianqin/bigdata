@@ -3,7 +3,7 @@ package org.kin.kafka.multithread.api;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.core.OCOTMultiProcessor;
-import org.kin.kafka.multithread.util.StrUtil;
+import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +26,7 @@ public abstract class AbstractConsumerRebalanceListener implements ConsumerRebal
     @Override
     public void onPartitionsRevoked(Collection<TopicPartition> topicPartitions) {
         log.info("message processor-" + processor.getProcessorId() + " onPartitionsRevoked");
-        log.info("message processor-" + processor.getProcessorId() + " origin assignments --->> " + StrUtil.topicPartitionsStr(topicPartitions));
+        log.info("message processor-" + processor.getProcessorId() + " origin assignments --->> " + StrUtils.topicPartitionsStr(topicPartitions));
         try {
             doOnPartitionsRevoked(topicPartitions);
         } catch (Exception e) {
@@ -37,7 +37,7 @@ public abstract class AbstractConsumerRebalanceListener implements ConsumerRebal
     @Override
     public void onPartitionsAssigned(Collection<TopicPartition> topicPartitions) {
         log.info("message processor-" + processor.getProcessorId() + " onPartitionsAssigned");
-        log.info("message processor-" + processor.getProcessorId() + " new assignments --->> " + StrUtil.topicPartitionsStr(topicPartitions));
+        log.info("message processor-" + processor.getProcessorId() + " new assignments --->> " + StrUtils.topicPartitionsStr(topicPartitions));
         try {
             doOnPartitionsAssigned(topicPartitions);
         } catch (Exception e) {

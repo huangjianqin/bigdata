@@ -7,9 +7,9 @@ import org.kin.kafka.multithread.api.CommitStrategy;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.config.Config;
 import org.kin.kafka.multithread.config.ConfigValue;
-import org.kin.kafka.multithread.util.ClassUtil;
-import org.kin.kafka.multithread.util.ConsumerRecordInfo;
-import org.kin.kafka.multithread.util.StrUtil;
+import org.kin.kafka.multithread.utils.ClassUtils;
+import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
+import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -123,7 +123,7 @@ public class MessageFetcher<K, V> extends Thread {
                             offset = record.offset();
                         }
                         //按照某种策略提交线程处理
-                        if(!handlersManager.dispatch(new ConsumerRecordInfo(record, callBackClass != null? ClassUtil.instance(callBackClass) : null), pendingOffsets)){
+                        if(!handlersManager.dispatch(new ConsumerRecordInfo(record, callBackClass != null? ClassUtils.instance(callBackClass) : null), pendingOffsets)){
                             log.info("OPOTMessageHandlersManager reconfig...");
                             log.info("message " + record.toString() + " add cache");
                             msgCache.add(record);
@@ -132,7 +132,7 @@ public class MessageFetcher<K, V> extends Thread {
 
 //                if(!handlersManager.isReConfig()){
 //                    Iterator<ConsumerRecord<K, V>> iterator = msgCache.iterator();
-//                    log.info("consumer[" + StrUtil.topicPartitionsStr(assignment()) + "] handle cached message");
+//                    log.info("consumer[" + StrUtils.topicPartitionsStr(assignment()) + "] handle cached message");
 //                    while(iterator.hasNext()){
 //                        ConsumerRecord<K, V> record = iterator.next();
 //                        if(handlersManager.dispatch(new ConsumerRecordInfo(record, System.currentTimeMillis()), pendingOffsets)){
@@ -188,8 +188,8 @@ public class MessageFetcher<K, V> extends Thread {
 
         log.info("consumer commit offsets Sync...");
         consumer.commitSync(offsets);
-//        Statistics.instance().append("offset", StrUtil.topicPartitionOffsetsStr(offsets) + System.lineSeparator());
-        log.info("consumer offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
+//        Statistics.instance().append("offset", StrUtils.topicPartitionOffsetsStr(offsets) + System.lineSeparator());
+        log.info("consumer offsets [" + StrUtils.topicPartitionOffsetsStr(offsets) + "] committed");
     }
 
     public void commitOffsetsAsync(final Map<TopicPartition, OffsetAndMetadata> offsets){
@@ -223,7 +223,7 @@ public class MessageFetcher<K, V> extends Thread {
                 } else {
                     //成功,打日志
                     nowRetry = 0;
-                    log.info("consumer offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
+                    log.info("consumer offsets [" + StrUtils.topicPartitionOffsetsStr(offsets) + "] committed");
                 }
             }
         });

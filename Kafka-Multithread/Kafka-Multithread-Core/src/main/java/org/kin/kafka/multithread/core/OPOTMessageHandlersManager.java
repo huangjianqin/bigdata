@@ -4,8 +4,8 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
-import org.kin.kafka.multithread.util.ConsumerRecordInfo;
-import org.kin.kafka.multithread.util.StrUtil;
+import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
+import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,7 +23,7 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
 
     @Override
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartition, OffsetAndMetadata> pendingOffsets){
-        log.debug("dispatching message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()));
+        log.debug("dispatching message: " + StrUtils.consumerRecordDetail(consumerRecordInfo.record()));
 
 //        if(isRebalance.get()){
 //            log.debug("dispatch failure ~~~ rebalancing...");
@@ -42,7 +42,7 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
             //已有该topic分区对应的线程启动
             //直接添加队列
             topicPartition2Thread.get(topicPartition).queue().add(consumerRecordInfo);
-            log.debug("message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()) + "queued(" + topicPartition2Thread.get(topicPartition).queue().size() + " rest)");
+            log.debug("message: " + StrUtils.consumerRecordDetail(consumerRecordInfo.record()) + "queued(" + topicPartition2Thread.get(topicPartition).queue().size() + " rest)");
         }
         else{
             //没有该topic分区对应的线程'
@@ -51,7 +51,7 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
             topicPartition2Thread.put(topicPartition, thread);
             thread.queue().add(consumerRecordInfo);
             runThread(thread);
-            log.debug("message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()) + "queued(" + thread.queue.size() + " rest)");
+            log.debug("message: " + StrUtils.consumerRecordDetail(consumerRecordInfo.record()) + "queued(" + thread.queue.size() + " rest)");
         }
 
         return true;

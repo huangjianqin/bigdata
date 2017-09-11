@@ -2,7 +2,7 @@ package org.kin.kafka.multithread.core;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
-import org.kin.kafka.multithread.util.ConsumerRecordInfo;
+import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

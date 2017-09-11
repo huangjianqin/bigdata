@@ -1,7 +1,5 @@
 package org.kin.kafka.multithread.configcenter;
 
-import org.kin.kafka.multithread.configcenter.protocol.ReConfigable;
-
 import java.util.Properties;
 
 /**

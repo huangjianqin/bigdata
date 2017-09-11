@@ -7,9 +7,9 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
-import org.kin.kafka.multithread.util.ConsumerRecordInfo;
-import org.kin.kafka.multithread.util.ClassUtil;
-import org.kin.kafka.multithread.util.StrUtil;
+import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
+import org.kin.kafka.multithread.utils.ClassUtils;
+import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +53,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         Class<? extends MessageHandler> claxx = topic2HandlerClass.get(topic);
         if(claxx != null){
             try {
-                MessageHandler messageHandler = ClassUtil.instance(claxx);
+                MessageHandler messageHandler = ClassUtils.instance(claxx);
                 //初始化message handler
                 messageHandler.setup();
 
@@ -78,7 +78,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         Class<? extends CommitStrategy> claxx = topic2CommitStrategyClass.get(topic);
         if(claxx != null){
             try {
-                CommitStrategy commitStrategy = ClassUtil.instance(claxx);
+                CommitStrategy commitStrategy = ClassUtils.instance(claxx);
                 //初始化message handler
                 commitStrategy.setup();
 
@@ -349,7 +349,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
 
             //缓存当前Consumer poll到的Offset
             if(collection != null && collection.size() > 0){
-                log.info("consumer origin assignment: " + StrUtil.topicPartitionsStr(collection));
+                log.info("consumer origin assignment: " + StrUtils.topicPartitionsStr(collection));
                 log.info("consumer rebalancing...");
                 //保存在jvm内存中
                 for(TopicPartition topicPartition: (Collection<TopicPartition>)collection){
@@ -384,7 +384,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
                     }
                 }
                 log.info("consumer reassigned");
-                log.info("consumer new assignment: " + StrUtil.topicPartitionsStr(collection));
+                log.info("consumer new assignment: " + StrUtils.topicPartitionsStr(collection));
                 //清理offset缓存
                 topicPartition2Offset.clear();
             }

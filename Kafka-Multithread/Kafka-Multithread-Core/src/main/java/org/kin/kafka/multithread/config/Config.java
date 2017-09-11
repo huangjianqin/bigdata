@@ -5,6 +5,5 @@ package org.kin.kafka.multithread.config;
  * kafka多线程工具配置类
  */
 public class Config {
-    public static String MESSAGEHANDLER_MODEL = "messagehandler.model";
-
+    public static final String MESSAGEHANDLER_MODEL = "messagehandler.model";
 }

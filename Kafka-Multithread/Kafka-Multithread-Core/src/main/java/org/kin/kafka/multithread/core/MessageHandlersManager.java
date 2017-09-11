@@ -3,7 +3,7 @@ package org.kin.kafka.multithread.core;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.CommitStrategy;
-import org.kin.kafka.multithread.util.ConsumerRecordInfo;
+import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.kin.kafka.multithread.api.MessageHandler;
 
 import java.util.Map;

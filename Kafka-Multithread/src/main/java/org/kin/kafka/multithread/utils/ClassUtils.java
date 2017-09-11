@@ -1,11 +1,11 @@
-package org.kin.kafka.multithread.util;
+package org.kin.kafka.multithread.utils;
 
 import java.lang.reflect.Field;
 
 /**
  * Created by 健勤 on 2017/7/21.
  */
-public class ClassUtil {
+public class ClassUtils {
     /**
      * 通过无参构造器实例化类
      * @param claxx
@@ -23,6 +23,23 @@ public class ClassUtil {
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static Object instance(String classStr){
+        if(classStr == null){
+            return null;
+        }
+        try {
+            Class claxx = Class.forName(classStr);
+            return claxx.newInstance();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InstantiationException e) {
             e.printStackTrace();
         }
         return null;

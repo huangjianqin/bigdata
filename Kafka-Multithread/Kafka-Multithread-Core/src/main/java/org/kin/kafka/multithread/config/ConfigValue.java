@@ -5,7 +5,7 @@ package org.kin.kafka.multithread.config;
  * 各配置项对应的默认值
  */
 public class ConfigValue {
-    public static String OPOT = "OPOT";
-    public static String OPMT = "OPMT";
-    public static String OPMT2 = "OPMT2";
+    public static final String OPOT = "OPOT";
+    public static final String OPMT = "OPMT";
+    public static final String OPMT2 = "OPMT2";
 }

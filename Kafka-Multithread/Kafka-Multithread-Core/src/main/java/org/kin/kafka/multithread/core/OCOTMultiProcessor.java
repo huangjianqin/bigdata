@@ -5,9 +5,9 @@ import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.*;
 import org.kin.kafka.multithread.statistics.Statistics;
 import org.kin.kafka.multithread.api.AbstractConsumerRebalanceListener;
-import org.kin.kafka.multithread.util.ClassUtil;
-import org.kin.kafka.multithread.util.ConsumerRecordInfo;
-import org.kin.kafka.multithread.util.StrUtil;
+import org.kin.kafka.multithread.utils.ClassUtils;
+import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
+import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,10 +81,10 @@ public class OCOTMultiProcessor<K, V> {
             return new OCOTProcessor<>(processorId,
                             properties,
                             topics,
-                            ClassUtil.instance(messageHandlerClass),
-                            ClassUtil.instance(commitStrategyClass),
+                            ClassUtils.instance(messageHandlerClass),
+                            ClassUtils.instance(commitStrategyClass),
                             consumerRebalanceListenerClass,
-                            callBackClass != null ? ClassUtil.instance(callBackClass) : null);
+                            callBackClass != null ? ClassUtils.instance(callBackClass) : null);
     }
 
     public class OCOTProcessor<K, V> implements Runnable {
@@ -113,7 +113,7 @@ public class OCOTMultiProcessor<K, V> {
 
             if(topics != null && topics.size() > 0){
                 if(consumerRebalanceListenerClass != null){
-                    this.consumerRebalanceListener = (AbstractConsumerRebalanceListener) ClassUtil.instance(consumerRebalanceListenerClass, this);
+                    this.consumerRebalanceListener = (AbstractConsumerRebalanceListener) ClassUtils.instance(consumerRebalanceListenerClass, this);
                 }
                 else {
                     this.consumerRebalanceListener = null;
@@ -193,8 +193,8 @@ public class OCOTMultiProcessor<K, V> {
         private void commitSync(Map<TopicPartition, OffsetAndMetadata> offsets){
             log.info("message processor-" + processorId + " commit latest Offsets Sync...");
             consumer.commitSync(offsets);
-            log.info("message processor-" + processorId + " consumer offsets [" + StrUtil.topicPartitionOffsetsStr(offsets) + "] committed");
-            Statistics.instance().append("offset", StrUtil.topicPartitionOffsetsStr(offsets) + System.lineSeparator());
+            log.info("message processor-" + processorId + " consumer offsets [" + StrUtils.topicPartitionOffsetsStr(offsets) + "] committed");
+            Statistics.instance().append("offset", StrUtils.topicPartitionOffsetsStr(offsets) + System.lineSeparator());
         }
 
         private Map<TopicPartition, OffsetAndMetadata> getOffsets(){

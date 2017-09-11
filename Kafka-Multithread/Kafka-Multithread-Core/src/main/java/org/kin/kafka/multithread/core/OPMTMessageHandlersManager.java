@@ -3,8 +3,8 @@ package org.kin.kafka.multithread.core;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.MessageHandler;
-import org.kin.kafka.multithread.util.ConsumerRecordInfo;
-import org.kin.kafka.multithread.util.StrUtil;
+import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
+import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +47,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
 
     @Override
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartition, OffsetAndMetadata> pendingOffsets) {
-        log.debug("dispatching message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()));
+        log.debug("dispatching message: " + StrUtils.consumerRecordDetail(consumerRecordInfo.record()));
 
         if(isRebalance.get()){
             log.debug("dispatch failure due to rebalancing...");
@@ -87,7 +87,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         MessageHandler handler = messageHandlers.get((int)(topicPartition2Counter.get(topicPartition) % messageHandlers.size()));
         topicPartition2Counter.put(topicPartition, topicPartition2Counter.get(topicPartition) + 1);
 
-        log.debug("message: " + StrUtil.consumerRecordDetail(consumerRecordInfo.record()) + " wrappered as task has submit");
+        log.debug("message: " + StrUtils.consumerRecordDetail(consumerRecordInfo.record()) + " wrappered as task has submit");
         pool.submit(new MessageHandlerTask(handler, pendingWindow, consumerRecordInfo));
 
         return true;
