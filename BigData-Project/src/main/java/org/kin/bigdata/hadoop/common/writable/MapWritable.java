@@ -221,6 +221,11 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
         return result;
     }
 
+    @Override
+    public String toString() {
+        return mkString(",");
+    }
+
     public Class<K> getKeyClass() {
         return keyClass;
     }

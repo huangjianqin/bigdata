@@ -19,13 +19,6 @@
     </properties>
 
     <dependencies>
-        <!-- 依赖于自己的dubbox项目-->
-        <dependency>
-            <groupId>org.kin</groupId>
-            <artifactId>dubbox</artifactId>
-            <version>1.0-SNAPSHOT</version>
-        </dependency>
-
         <!-- 解析yml-->
         <dependency>
             <groupId>org.jyaml</groupId>
@@ -44,6 +37,13 @@
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kafka-multithread-protocol</artifactId>
+            <version>1.0-SNAPSHOT</version>
+        </dependency>
+
+        <!-- 添加父项目共用的api-->
+        <dependency>
+            <groupId>org.kin</groupId>
+            <artifactId>kafka-multithread</artifactId>
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>

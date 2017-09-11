@@ -21,6 +21,8 @@
     </modules>
 
     <build>
+        <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
+        <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
         <plugins>
             <!-- 使用MVN打包jar -->
             <plugin>

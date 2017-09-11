@@ -6,8 +6,7 @@ import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.io.WritableUtils;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
+import java.util.*;
 
 /**
  * Created by huangjianqin on 2017/9/5.
@@ -23,6 +22,23 @@ public class TextCollectionWritable extends CollectionWritable<Text> {
 
     protected TextCollectionWritable(Collection<? extends Text> collection, boolean isOverwrite){
         super(Text.class, (Collection<Text>) collection, isOverwrite);
+    }
+
+    public TextCollectionWritable(Text... texts) {
+        this(Arrays.asList(texts));
+    }
+
+    public TextCollectionWritable(String... strs) {
+        super(Text.class, Collections.EMPTY_LIST, false);
+        super.addAll(Arrays.asList(str2Text(strs)));
+    }
+
+    private Text[] str2Text(String... strs){
+        Text[] result = new Text[strs.length];
+        for(int i = 0; i < strs.length; i++){
+            result[i] = new Text(strs[i]);
+        }
+        return result;
     }
 
     static {
@@ -61,6 +77,7 @@ public class TextCollectionWritable extends CollectionWritable<Text> {
                     }
                     else if(i == b1L - 1){
                         //the last
+                        //此处不能=length,要length-1.非末尾情况,读取s1<=pos<l1
                         cmd = compareBytes(b1, b1RealS + VIntSize1, valueL1 - 1, b2, b2RealS + VIntSize2, valueL2 - 1);
                     }
 

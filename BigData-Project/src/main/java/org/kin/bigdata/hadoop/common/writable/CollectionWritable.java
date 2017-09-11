@@ -210,6 +210,11 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
         return result;
     }
 
+    @Override
+    public String toString() {
+        return mkString(",");
+    }
+
     public Class<? extends WritableComparable> getItemType() {
         return itemType;
     }
