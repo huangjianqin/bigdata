@@ -1,12 +1,9 @@
 package org.kin.kafka.common;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
-import org.kin.kafka.multithread.config.Config;
-import org.kin.kafka.multithread.config.ConfigValue;
 import org.kin.kafka.multithread.config.PropertiesWrapper;
 
 import java.util.*;

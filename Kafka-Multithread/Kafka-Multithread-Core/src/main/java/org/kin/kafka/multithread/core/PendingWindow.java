@@ -51,7 +51,7 @@ public class PendingWindow {
         });
     }
 
-    public synchronized void clean(){
+    public void clean(){
         log.info("queue clean up");
         queue.clear();
     }

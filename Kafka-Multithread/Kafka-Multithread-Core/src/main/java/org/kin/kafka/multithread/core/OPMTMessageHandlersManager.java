@@ -19,6 +19,8 @@ import java.util.concurrent.*;
  * 似乎这种方法是通用实现,只要把线程池线程数设置为1,那么就单线程版本咯
  * 虽然是通用版本,但是大量的线程切换导致性能开销
  *
+ * 创建多个message handler实例,负载均衡地处理所有dispatch的信息
+ *
  * 潜在问题:
  *  1.当高负载的时候,会存在poll()时间执行过长而导致session timeout的可能
  *  这可能是机器CPU资源不够以无法在给定时间内执行相关操作,也有可能就是封装得不够好
@@ -26,13 +28,13 @@ import java.util.concurrent.*;
  *
  *  还是使用OPOT版本,可承受高负载,多开几个实例就好了.
  *
- *  2.该模式下,不能保证MessageHandler线程安全
  */
 public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     private static final Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);
     private Map<TopicPartition, ThreadPoolExecutor> topicPartition2Pools = new HashMap<>();
     private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new HashMap<>();
     private Map<TopicPartition, List<MessageHandler>> topicPartition2MessageHandlers = new HashMap<>();
+    //用于负载均衡,负载线程池每一个线程
     private Map<TopicPartition, Long> topicPartition2Counter = new HashMap<>();
 
     private final int handlerSize;

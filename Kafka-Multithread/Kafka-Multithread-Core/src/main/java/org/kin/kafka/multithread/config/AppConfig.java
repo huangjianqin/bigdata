@@ -1,9 +1,9 @@
-package org.kin.kafka.multithread.configcenter.config;
+package org.kin.kafka.multithread.config;
 
 /**
- * Created by huangjianqin on 2017/9/11.
+ * Created by 健勤 on 2017/7/21.
  * kafka多线程工具配置类
- * 与Kafka-Multithread-core AppConfig相同
+ * 与Kafka-Multithread-config AppConfig相同
  *
  * 此处忽略kafka producer和consumer配置,因为启动对应实例时会自动识别参数是否满足
  */
@@ -53,4 +53,8 @@ public class AppConfig {
     //config fetcher
     public static final String CONFIGFETCHER_FETCHERINTERVAL = "configfetcher.fetcherinterval";
 
+    //本地
+    //配置中心节点信息
+    public static final String CONFIGCENTER_HOST = "configcenter.host";
+    public static final String CONFIGCENTER_PORT = "configcenter.port";
 }

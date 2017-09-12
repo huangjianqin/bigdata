@@ -144,8 +144,7 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
             //只有两种情况:
             //1:
             //  1.1rebalance consumerRebalanceNotify先手动提交最新Offset
-            //  1.2doOnConsumerReAssigned再一次提交之前分配到但此次又没有分配到的TopicPartition对应的最新Offset,从而保证exactly once
-            //      其他消息消费者等待该消费者完成listener方法调用后才能获得分区拥有权
+            //  1.2doOnConsumerReAssigned再一次提交之前分配到但此次又没有分配到的TopicPartition对应的最新Offset
             //2:关闭consumer 抛弃这些待处理信息,提交最近处理的offset
             log.info(LOG_HEAD() + " closing/rebalancing consumer should commit last offsets sync now");
             if(lastRecord != null){

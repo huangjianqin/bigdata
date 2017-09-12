@@ -5,7 +5,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.CallBack;
 import org.kin.kafka.multithread.api.CommitStrategy;
 import org.kin.kafka.multithread.api.MessageHandler;
-import org.kin.kafka.multithread.config.Config;
+import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.config.ConfigValue;
 import org.kin.kafka.multithread.utils.ClassUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
@@ -50,7 +50,7 @@ public class MessageFetcher<K, V> extends Thread {
         this.consumer = new KafkaConsumer<K, V>(properties);
 
         //messagehandler.mode => OPOT/OPMT
-        String model = properties.get(Config.MESSAGEHANDLER_MODEL).toString().toUpperCase();
+        String model = properties.get(AppConfig.MESSAGEHANDLER_MODEL).toString().toUpperCase();
         if (model.equals(ConfigValue.OPOT)){
             this.handlersManager = new OPOTMessageHandlersManager();
         }

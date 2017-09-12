@@ -8,4 +8,9 @@ public class ConfigValue {
     public static final String OPOT = "OPOT";
     public static final String OPMT = "OPMT";
     public static final String OPMT2 = "OPMT2";
+    public static final String OCOT = "OCOT";
+
+
+
+
 }

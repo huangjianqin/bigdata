@@ -16,7 +16,17 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Created by 健勤 on 2017/7/18.
- * 基于OPOT和滑动窗口思想的改进版本
+ * 基于OPOT和滑动窗口思想的OPMT改进版本
+ *
+ * 每个分区多个线程处理,每个线程拥有一个队列,dispatch分发消息,消息负载均衡地在对应分区的所有处理线程之一插队
+ *
+ * 相比OPMT,更可观地控制commit strategy以及消息处理过程
+ *
+ * 可以认为是OPOT的多线程版本,但是也可以实现OPOT模型(只要对应分区的处理线程设置为1)
+ *
+ * 性能提高:
+ * 1.改进PendingWindow类
+ * 2.改进负载均衡策略
  */
 public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager {
     private static final Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);

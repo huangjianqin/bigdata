@@ -4,7 +4,7 @@ package org.kin.kafka.multithread.configcenter.config;
  * Created by huangjianqin on 2017/9/11.
  */
 public class ConfigValue {
-    public static final String DEFAULT_CONFIG_STOREMANAGER_CLASS = "";
+    public static final String DEFAULT_CONFIG_STOREMANAGER_CLASS = "org.kin.kafka.multithread.configcenter.manager.impl.RedisConfigStoreManager";
     public static final String DEFAULT_CONFIG_STOREMANAGER_SERVER_HOST = "localhost";
     public static final String DEFAULT_CONFIG_STOREMANAGER_SERVER_PORT = "6379";
     public static final String DEFAULT_DIAMONDMASTERPROTOCOL_PORT = "60001";

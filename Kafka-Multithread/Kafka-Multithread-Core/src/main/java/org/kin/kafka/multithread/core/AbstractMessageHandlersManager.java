@@ -366,16 +366,12 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
             beforeAssignedTopicPartition.removeAll(collection);
             //还需清理已经交给handler线程
             messageFetcher.getHandlersManager().doOnConsumerReAssigned(beforeAssignedTopicPartition);
-            //再一次提交之前分配到但此次又没有分配到的TopicPartition对应的最新Offset,从而保证exactly once
-            //      其他消息消费者等待该消费者完成listener方法调用后才能获得分区拥有权
+            //再一次提交之前分配到但此次又没有分配到的TopicPartition对应的最新Offset
             messageFetcher.commitOffsetsSyncWhenRebalancing();
             beforeAssignedTopicPartition = null;
 
             //重置consumer position并reset缓存
             if(collection != null && collection.size() > 0){
-                for(TopicPartition topicPartition: (Collection<TopicPartition>)collection){
-                    System.out.println(messageFetcher.position(topicPartition));
-                }
                 for(TopicPartition topicPartition: (Collection<TopicPartition>)collection){
                     Long nowOffset = topicPartition2Offset.get(topicPartition);
                     if(nowOffset != null){
