@@ -6,7 +6,7 @@ import org.kin.kafka.multithread.api.CallBack;
 import org.kin.kafka.multithread.api.CommitStrategy;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.config.AppConfig;
-import org.kin.kafka.multithread.config.ConfigValue;
+import org.kin.kafka.multithread.config.AppConfigValue;
 import org.kin.kafka.multithread.utils.ClassUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.StrUtils;
@@ -41,9 +41,9 @@ public class MessageFetcher<K, V> extends Thread {
     //定时扫描注册中心并在发现新配置时及时更新运行环境
 //    private ConfigFetcher configFetcher;
     private final MessageHandlersManager handlersManager;
-
     //consumer record callback
     private Class<? extends CallBack> callBackClass;
+
 
     public MessageFetcher(Properties properties) {
         super("consumer fetcher thread");
@@ -51,13 +51,13 @@ public class MessageFetcher<K, V> extends Thread {
 
         //messagehandler.mode => OPOT/OPMT
         String model = properties.get(AppConfig.MESSAGEHANDLER_MODEL).toString().toUpperCase();
-        if (model.equals(ConfigValue.OPOT)){
+        if (model.equals(AppConfigValue.OPOT)){
             this.handlersManager = new OPOTMessageHandlersManager();
         }
-        else if(model.equals(ConfigValue.OPMT)){
+        else if(model.equals(AppConfigValue.OPMT)){
             this.handlersManager = new OPMTMessageHandlersManager(10, Runtime.getRuntime().availableProcessors() * 2 - 1, 10000 * 10000);//10 * 1000 * 10000
         }
-        else if(model.equals(ConfigValue.OPMT2)){
+        else if(model.equals(AppConfigValue.OPMT2)){
             this.handlersManager = new OPMT2MessageHandlersManager();
         }
         else{
@@ -103,9 +103,6 @@ public class MessageFetcher<K, V> extends Thread {
         long offset = -1;
         log.info("consumer fetcher thread started");
         try{
-            //jvm缓存,当消息处理线程还没启动完,或者配置更改时,需先缓存消息,等待线程启动好再处理
-            Queue<ConsumerRecord<K, V>> msgCache = new LinkedList<>();
-
             while(!isStopped && !Thread.currentThread().isInterrupted()){
                 //查看有没offset需要提交
                 Map<TopicPartition, OffsetAndMetadata> offsets = allPendingOffsets();
@@ -123,30 +120,8 @@ public class MessageFetcher<K, V> extends Thread {
                             offset = record.offset();
                         }
                         //按照某种策略提交线程处理
-                        if(!handlersManager.dispatch(new ConsumerRecordInfo(record, callBackClass != null? ClassUtils.instance(callBackClass) : null), pendingOffsets)){
-                            log.info("OPOTMessageHandlersManager reconfig...");
-                            log.info("message " + record.toString() + " add cache");
-                            msgCache.add(record);
-                        }
+                        handlersManager.dispatch(new ConsumerRecordInfo(record, callBackClass != null? ClassUtils.instance(callBackClass) : null), pendingOffsets);
                     }
-
-//                if(!handlersManager.isReConfig()){
-//                    Iterator<ConsumerRecord<K, V>> iterator = msgCache.iterator();
-//                    log.info("consumer[" + StrUtils.topicPartitionsStr(assignment()) + "] handle cached message");
-//                    while(iterator.hasNext()){
-//                        ConsumerRecord<K, V> record = iterator.next();
-//                        if(handlersManager.dispatch(new ConsumerRecordInfo(record, System.currentTimeMillis()), pendingOffsets)){
-//                            //删除该元素
-//                            iterator.remove();
-//                        }
-//                        else{
-//                            //可能MessageHandlersManager又发生重新配置了,不处理后面的缓存
-//                            log.info("OPOTMessageHandlersManager reconfig when handle cached message[bad]");
-//                            break;
-//                        }
-//                    }
-//                }
-
             }
         }
         finally {

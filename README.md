@@ -2,17 +2,17 @@
 对大数据及分布式相关技术的研究和实践
 主要使用java和scala语言实现，python实现在另外一个仓库
 
-1.基于Redis和Zookeeper的分布式锁实现
-1.1基于Redis的实现
+##1.基于Redis和Zookeeper的分布式锁实现
+###1.1基于Redis的实现
     利用setnx尝试抢占锁,同时通过设置key的value为超时时间来处理突然dead而不能释放锁的进程.
     支持阻塞锁和超时锁
 
-1.2基于Zookeeper的实现
+###1.2基于Zookeeper的实现
     Zookeeper原生APIs实现
     利用多个进程抢占同一路径的方法来实现,同时该path是"临时的",也就是如果持有锁的进程突然dead.会释放锁
     支持阻塞锁和超时锁
 
-2.kafka多线程封装工具类
+##2.kafka多线程封装工具类
     消息抓取(OCOT除外)
         ConsumerFetcher类,负责单线程从broker抓取record,然后根据topic分区dispatch给MessageHandler.该类还维护了Offset提交队列,每次poll循环时都是把队列中的Offset commit.
 
@@ -43,5 +43,5 @@
             模板设计将支持多种格式(底层内部抽象成一种),实现时先实现json模板,模板信息存储在redis.
             设计dubbox服务.
 
-3.简单的分布式(微)服务开发,管理和监控,并实现一个简易Web App用于测试,暂定场景是电商.
-4.数据挖掘实践.
+##3.简单的分布式(微)服务开发,管理和监控,并实现一个简易Web App用于测试,暂定场景是电商.
+##4.数据挖掘实践.

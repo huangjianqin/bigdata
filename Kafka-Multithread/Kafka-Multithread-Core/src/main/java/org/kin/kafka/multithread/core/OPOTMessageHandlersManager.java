@@ -25,10 +25,6 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartition, OffsetAndMetadata> pendingOffsets){
         log.debug("dispatching message: " + StrUtils.consumerRecordDetail(consumerRecordInfo.record()));
 
-//        if(isRebalance.get()){
-//            log.debug("dispatch failure ~~~ rebalancing...");
-//            return false;
-//        }
         while(isRebalance.get()){
             try {
                 Thread.currentThread().sleep(1000);
@@ -89,6 +85,7 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
         isRebalance.set(true);
 
         //提交所有message handler最新处理的Offset
+        //插入待提交队列
         for(OPOTMessageQueueHandlerThread thread: topicPartition2Thread.values()){
             thread.commitLatest();
         }
