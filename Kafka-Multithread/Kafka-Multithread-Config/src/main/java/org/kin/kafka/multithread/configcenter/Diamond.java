@@ -37,7 +37,7 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     private Properties config = new Properties();
 
     public Diamond() {
-        this("config.yml");
+        this(ConfigValue.DEFALUT_CONFIGPATH);
     }
 
     public Diamond(String configPath) {

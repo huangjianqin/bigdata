@@ -9,35 +9,47 @@ package org.kin.kafka.multithread.configcenter.config;
  */
 public class AppConfig {
     //common
+    //require
     public static final String APPNAME = "appName";
+    //require
     public static final String APPHOST = "appHost";
     /**
      * RUN
+     * UPDATE
      * CLOSE
+     * RESTART
      */
+    //require
     public static final String APPSTATUS = "appStatus";
 
     //kafka consumer
-    //暂停消费的分区,格式是topic-par,
-    public static final String KAFKA_CONSUMER_PAUSE = "";
-    //暂停消费的分区,格式是topic-par,
-    public static final String KAFKA_CONSUMER_RESUME = "";
-    //目前订阅的分区,不一定准确,可能在Rebalancing时还没更新
-    public static final String KAFKA_CONSUMER_NOW_SUBSCRIBE = "";
+    //仅支持RESTART和RUN状态
+    //require
+    //订阅topic
+    //动态topic,topic,
+    //静态topic-par,topic-par(不支持)
+    public static final String KAFKA_CONSUMER_SUBSCRIBE = "kafka.consumer.subscribe";
 
     //message fetcher
     public static final String MESSAGEFETCHER_POLL_TIMEOUT = "messagefetcher.poll.timeout";
     public static final String MESSAGEFETCHER_COMMIT_MAXRETRY = "messagefetcher.commit.maxretry";
+    //仅支持RESTART和RUN状态
     public static final String MESSAGEFETCHER_CONSUME_CALLBACK = "messagefetcher.consume.callback";
 
     //message handler
-    public static final String MESSAGEHANDLER_MODEL = "messagehandler.model";
-    public static final String MESSAGEHANDLER_QUEUEPERTHREAD_POLLTIMEOUT = "messagehandler.queueperthread.polltimeout";
+    //require
+    public static final String MESSAGEHANDLERMANAGER_MODEL = "messagehandlermanager.model";
+    //仅支持RESTART和RUN状态
+    //require
+    public static final String MESSAGEHANDLER = "messagehandler";
+    public static final String COMMITSTRATEGY = "commitstrategy";
+    public static final String CONSUMERREBALANCELISTENER = "consumerrebalancelistener";
 
     //opot
 
     //opmt
-    public static final String OPMT_THREADSIZEPERPARTITION = "opmt.threadsizeperpartition";
+    public static final String OPMT_MAXTHREADSIZEPERPARTITION = "opmt.maxthreadsizeperpartition";
+    public static final String OPMT_MINTHREADSIZEPERPARTITION = "opmt.minthreadsizeperpartition";
     public static final String OPMT_THREADQUEUESIZEPERPARTITION = "opmt.threadqueuesizeperpartition";
     public static final String OPMT_HANDLERSIZE = "opmt.handlersize";
 
@@ -53,4 +65,15 @@ public class AppConfig {
     //config fetcher
     public static final String CONFIGFETCHER_FETCHERINTERVAL = "configfetcher.fetcherinterval";
 
+    //本地
+    //配置中心节点信息
+    public static final String CONFIGCENTER_HOST = "configcenter.host";
+    public static final String CONFIGCENTER_PORT = "configcenter.port";
+
+    //container
+    /**
+     * jvm,与app同一jvm
+     * node,同一节点,不同jvm
+     */
+    public static final String APP_CHILD_RUN_MODEL = "app.child.run.model";
 }

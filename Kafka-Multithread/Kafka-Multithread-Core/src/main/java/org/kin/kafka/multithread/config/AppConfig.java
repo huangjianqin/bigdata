@@ -31,7 +31,7 @@ public class AppConfig {
     //require
     //订阅topic
     //动态topic,topic,
-    //静态topic-par,topic-par
+    //静态topic-par,topic-par(不支持)
     public static final String KAFKA_CONSUMER_SUBSCRIBE = "kafka.consumer.subscribe";
 
     //message fetcher
@@ -77,7 +77,7 @@ public class AppConfig {
     //container
     /**
      * jvm,与app同一jvm
-     * node
+     * node,同一节点,不同jvm
      */
     public static final String APP_CHILD_RUN_MODEL = "app.child.run.model";
 
