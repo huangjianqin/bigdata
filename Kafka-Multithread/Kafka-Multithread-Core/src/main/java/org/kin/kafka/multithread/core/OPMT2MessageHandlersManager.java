@@ -4,6 +4,8 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
+import org.kin.kafka.multithread.config.AppConfig;
+import org.kin.kafka.multithread.utils.ConfigUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
@@ -31,17 +33,18 @@ import java.util.concurrent.TimeUnit;
 public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager {
     private static final Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);
     private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new HashMap<>();
-    private Map<TopicPartition, List<OPMTMessageQueueHandlerThread>> topicPartition2Threads = new HashMap<>();
+    private Map<TopicPartition, List<OPMT2MessageQueueHandlerThread>> topicPartition2Threads = new HashMap<>();
     //所有消息处理线程在同一线程池维护
     private final ThreadPoolExecutor threads = new ThreadPoolExecutor(2, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
-    private final int threadSizePerPartition;
+    private int threadSizePerPartition;
 
     public OPMT2MessageHandlersManager() {
-        this(Runtime.getRuntime().availableProcessors() * 2 - 1);
+        super(AppConfig.DEFAULT_APPCONFIG);
     }
 
-    public OPMT2MessageHandlersManager(int threadSizePerPartition) {
-        this.threadSizePerPartition = threadSizePerPartition;
+    public OPMT2MessageHandlersManager(Properties config) {
+        super(config);
+        this.threadSizePerPartition = Integer.valueOf(config.get(AppConfig.OPMT2_THREADSIZEPERPARTITION).toString());
     }
 
     @Override
@@ -54,14 +57,23 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
         }
 
         TopicPartition topicPartition = consumerRecordInfo.topicPartition();
-        List<OPMTMessageQueueHandlerThread> threads = null;
-        OPMTMessageQueueHandlerThread selectedThread = null;
+        List<OPMT2MessageQueueHandlerThread> threads = null;
+        OPMT2MessageQueueHandlerThread selectedThread = null;
         PendingWindow pendingWindow = topicPartition2PendingWindow.get(topicPartition);
         if(topicPartition2Threads.containsKey(topicPartition)){
             //已有该topic分区对应的线程池启动
             //直接添加队列
             //round进队
             threads = topicPartition2Threads.get(topicPartition);
+            if(threads.size() < threadSizePerPartition){
+                //如果配置的线程数增加,dispatch时动态增加处理线程数
+                log.info("add [" + (threadSizePerPartition - threads.size()) + "] message handler threads for topic-partition(" + topicPartition.topic() + "-" + topicPartition.partition() + ")");
+                for(int i = threads.size(); i < threadSizePerPartition; i++){
+                    OPMT2MessageQueueHandlerThread thread = newThread(topicPartition.topic() + "-" + topicPartition.partition() + "#" + i, pendingOffsets, newMessageHandler(topicPartition.topic()), pendingWindow);
+                    threads.add(thread);
+                    runThread(thread);
+                }
+            }
             selectedThread = threads.get(consumerRecordInfo.record().hashCode() % threads.size());
         }
         else{
@@ -75,7 +87,7 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
             threads = new ArrayList<>();
             log.info("init [" + threadSizePerPartition + "] message handler threads for topic-partition(" + topicPartition.topic() + "-" + topicPartition.partition() + ")");
             for(int i = 0; i < threadSizePerPartition; i++){
-                OPMTMessageQueueHandlerThread thread = newThread(topicPartition.topic() + "-" + topicPartition.partition() + "#" + i, pendingOffsets, newMessageHandler(topicPartition.topic()), pendingWindow);
+                OPMT2MessageQueueHandlerThread thread = newThread(topicPartition.topic() + "-" + topicPartition.partition() + "#" + i, pendingOffsets, newMessageHandler(topicPartition.topic()), pendingWindow);
                 threads.add(thread);
                 runThread(thread);
             }
@@ -92,8 +104,8 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
     }
 
     private boolean checkHandlerTerminated(){
-        for(List<OPMTMessageQueueHandlerThread> threads: topicPartition2Threads.values()){
-            for(OPMTMessageQueueHandlerThread thread: threads){
+        for(List<OPMT2MessageQueueHandlerThread> threads: topicPartition2Threads.values()){
+            for(OPMT2MessageQueueHandlerThread thread: threads){
                 if(!thread.isTerminated()){
                     return false;
                 }
@@ -106,10 +118,10 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
     @Override
     public void consumerCloseNotify(){
         log.info("shutdown all handlers...");
-        List<OPMTMessageQueueHandlerThread> allThreads = new ArrayList<>();
+        List<OPMT2MessageQueueHandlerThread> allThreads = new ArrayList<>();
         //停止所有handler
-        for(List<OPMTMessageQueueHandlerThread> threads: topicPartition2Threads.values()){
-            for(OPMTMessageQueueHandlerThread thread: threads){
+        for(List<OPMT2MessageQueueHandlerThread> threads: topicPartition2Threads.values()){
+            for(OPMT2MessageQueueHandlerThread thread: threads){
                 if(!thread.isTerminated()){
                     thread.stop();
                     allThreads.add(thread);
@@ -158,12 +170,12 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
      */
     @Override
     public void doOnConsumerReAssigned(Set<TopicPartition> topicPartitions) {
-        List<OPMTMessageQueueHandlerThread> allThreads = new ArrayList<>();
+        List<OPMT2MessageQueueHandlerThread> allThreads = new ArrayList<>();
         List<PendingWindow> allPendingWindow = new ArrayList<>();
         //关闭Handler执行,但不关闭线程,达到线程复用的效果
         for(TopicPartition topicPartition: topicPartitions){
             //不清除队列好像也可以
-            for(OPMTMessageQueueHandlerThread thread: topicPartition2Threads.get(topicPartition)){
+            for(OPMT2MessageQueueHandlerThread thread: topicPartition2Threads.get(topicPartition)){
                 if(!thread.isTerminated()){
                     thread.stop();
                 }
@@ -184,18 +196,65 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
         isRebalance.set(false);
     }
 
-    private OPMTMessageQueueHandlerThread newThread(String LOG_HEAD, Map<TopicPartition, OffsetAndMetadata> pendingOffsets, MessageHandler messageHandler, PendingWindow pendingWindow){
-        return new OPMTMessageQueueHandlerThread(LOG_HEAD, pendingOffsets, messageHandler, null, pendingWindow);
+    private OPMT2MessageQueueHandlerThread newThread(String LOG_HEAD, Map<TopicPartition, OffsetAndMetadata> pendingOffsets, MessageHandler messageHandler, PendingWindow pendingWindow){
+        return new OPMT2MessageQueueHandlerThread(LOG_HEAD, pendingOffsets, messageHandler, null, pendingWindow);
     }
 
     private void runThread(Runnable target){
         threads.submit(target);
     }
 
-    private final class OPMTMessageQueueHandlerThread extends AbstractMessageHandlersManager.MessageQueueHandlerThread {
+    @Override
+    public void reConfig(Properties newConfig) {
+        int threadSizePerPartition = this.threadSizePerPartition;
+
+        if(ConfigUtils.isConfigItemChange(threadSizePerPartition, newConfig, AppConfig.OPMT2_THREADSIZEPERPARTITION)){
+            threadSizePerPartition = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT2_THREADSIZEPERPARTITION));
+            if(threadSizePerPartition > 0){
+                //仅仅是处理资源减少的情况,资源动态增加在dispatch中处理
+                if(threadSizePerPartition < this.threadSizePerPartition){
+                    for(TopicPartition key: topicPartition2Threads.keySet()){
+                        List<OPMT2MessageQueueHandlerThread> threads = topicPartition2Threads.get(key);
+
+                        //被移除处理线程所拥有的待处理消息
+                        List<ConsumerRecordInfo> unhandleConsumerRecordInfos = new ArrayList<>();
+                        for(int i = 0; i < this.threadSizePerPartition - threadSizePerPartition; i++){
+                            OPMT2MessageQueueHandlerThread thread = threads.remove(i);
+                            thread.stop();
+                            //缓存待处理消息
+                            unhandleConsumerRecordInfos.addAll(thread.queue);
+                        }
+
+                        //平均分配给'存活'的处理线程
+                        for(int i = 0; i < unhandleConsumerRecordInfos.size(); i++){
+                            threads.get(i % threads.size()).queue.add(unhandleConsumerRecordInfos.get(i));
+                        }
+                    }
+                }
+                this.threadSizePerPartition = threadSizePerPartition;
+            }
+            else {
+                throw new IllegalStateException("config args 'threadSizePerPartition' state wrong");
+            }
+        }
+
+        //更新pendingwindow的配置
+        for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
+            pendingWindow.reConfig(newConfig);
+        }
+
+        //更新每一条处理线程的配置
+        for(List<OPMT2MessageQueueHandlerThread> threads: topicPartition2Threads.values()){
+            for(OPMT2MessageQueueHandlerThread thread: threads){
+                thread.reConfig(newConfig);
+            }
+        }
+    }
+
+    private final class OPMT2MessageQueueHandlerThread extends AbstractMessageHandlersManager.MessageQueueHandlerThread {
         private PendingWindow pendingWindow;
 
-        public OPMTMessageQueueHandlerThread(String LOG_HEAD, Map<TopicPartition, OffsetAndMetadata> pendingOffsets, MessageHandler messageHandler, CommitStrategy commitStrategy, PendingWindow pendingWindow) {
+        public OPMT2MessageQueueHandlerThread(String LOG_HEAD, Map<TopicPartition, OffsetAndMetadata> pendingOffsets, MessageHandler messageHandler, CommitStrategy commitStrategy, PendingWindow pendingWindow) {
             super(LOG_HEAD, pendingOffsets, messageHandler, commitStrategy);
             this.pendingWindow = pendingWindow;
         }
@@ -205,5 +264,9 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
             pendingWindow.commitFinished(record);
         }
 
+        @Override
+        public void reConfig(Properties newConfig) {
+            //不需要实现
+        }
     }
 }

@@ -3,9 +3,12 @@ package org.kin.kafka.multithread.core;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.*;
+import org.kin.kafka.multithread.config.AppConfig;
+import org.kin.kafka.multithread.configcenter.ReConfigable;
 import org.kin.kafka.multithread.statistics.Statistics;
 import org.kin.kafka.multithread.api.AbstractConsumerRebalanceListener;
 import org.kin.kafka.multithread.utils.ClassUtils;
+import org.kin.kafka.multithread.utils.ConfigUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
@@ -14,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by 健勤 on 2017/7/26.
@@ -25,35 +29,39 @@ import java.util.concurrent.ThreadPoolExecutor;
  *
  * 缺点:多个消费者占用资源会更多,单线程处理消费者分配的分区消息,速度会较慢
  */
-public class OCOTMultiProcessor<K, V> {
+public class OCOTMultiProcessor<K, V>  implements Application{
     private static final Logger log = LoggerFactory.getLogger(OCOTMultiProcessor.class);
-    private final int consumerNum;
-    private final Properties properties;
-    private final Set<String> topics;
+    private int consumerNum;
+    private Properties config;
+    private Set<String> topics;
     private final Class<? extends MessageHandler> messageHandlerClass;
     private final Class<? extends CommitStrategy> commitStrategyClass;
     private final Class<? extends ConsumerRebalanceListener> consumerRebalanceListenerClass;
-    private final Class<? extends CallBack> callBackClass;
-    private final ThreadPoolExecutor threads;
+    private Class<? extends CallBack> callBackClass;
+    private ThreadPoolExecutor threads;
     private List<OCOTProcessor<K, V>> processors = new ArrayList<>();
 
-    public OCOTMultiProcessor(int consumerNum,
-                              Properties properties,
-                              Set<String> topics,
-                              Class<? extends MessageHandler> messageHandlerClass,
-                              Class<? extends CommitStrategy> commitStrategyClass,
-                              Class<? extends ConsumerRebalanceListener> consumerRebalanceListenerClass,
-                              Class<? extends CallBack> callBackClass) {
-        this.consumerNum = consumerNum;
-        this.properties = properties;
-        this.topics = topics;
-        this.messageHandlerClass = messageHandlerClass;
-        this.commitStrategyClass = commitStrategyClass;
-        this.consumerRebalanceListenerClass = consumerRebalanceListenerClass;
-        this.callBackClass = callBackClass;
-        this.threads = (ThreadPoolExecutor) Executors.newFixedThreadPool(consumerNum);
+    private AtomicBoolean isReConfig = new AtomicBoolean(false);
+
+    public OCOTMultiProcessor(Properties config) {
+        this.consumerNum = Integer.valueOf(config.getProperty(AppConfig.OCOT_CONSUMERNUM));
+        this.config = config;
+        this.messageHandlerClass = ConfigUtils.getMessageHandlerClass(config);
+        this.commitStrategyClass = ConfigUtils.getCommitStrategyClass(config);
+        this.consumerRebalanceListenerClass = ConfigUtils.getConsumerRebalanceListenerClass(config);
+        updataConfig(config);
+        this.threads = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     }
 
+    private void updataConfig(Properties config){
+        if(config.getProperty(AppConfig.KAFKA_CONSUMER_SUBSCRIBE).contains("-")){
+            throw new IllegalStateException("OCOT doesn't support set messagehandler per topic");
+        }
+        this.topics = ConfigUtils.getSubscribeTopic(config);
+        this.callBackClass = ConfigUtils.getCallbackClass(config);
+    }
+
+    @Override
     public void start(){
         log.info("start [" + consumerNum + "] message processors...");
         for(int i = 0; i < consumerNum; i++){
@@ -64,6 +72,7 @@ public class OCOTMultiProcessor<K, V> {
         log.info("[" + consumerNum + "] message processors started");
     }
 
+    @Override
     public void close(){
         log.info("[" + consumerNum + "] message processors closing");
         for(OCOTProcessor<K, V> processor: processors){
@@ -77,9 +86,14 @@ public class OCOTMultiProcessor<K, V> {
         log.info("[" + consumerNum + "] message processors closed");
     }
 
+    @Override
+    public Properties getConfig() {
+        return this.config;
+    }
+
     private OCOTProcessor<K, V> newProcessor(int processorId){
             return new OCOTProcessor<>(processorId,
-                            properties,
+                    config,
                             topics,
                             ClassUtils.instance(messageHandlerClass),
                             ClassUtils.instance(commitStrategyClass),
@@ -87,16 +101,75 @@ public class OCOTMultiProcessor<K, V> {
                             callBackClass != null ? ClassUtils.instance(callBackClass) : null);
     }
 
-    public class OCOTProcessor<K, V> implements Runnable {
+    @Override
+    public void reConfig(Properties newConfig) {
+        while(isReConfig.compareAndSet(false, true)){
+            log.warn("kafka consumer last reconfig still running!!!");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        updataConfig(newConfig);
+        int consumerNum = this.consumerNum;
+        if(ConfigUtils.isConfigItemChange(consumerNum, newConfig, AppConfig.OCOT_CONSUMERNUM)){
+            consumerNum = Integer.valueOf(newConfig.getProperty(AppConfig.OCOT_CONSUMERNUM));
+            if(consumerNum > 0){
+                if(consumerNum > this.consumerNum){
+                    //更新正在运行的Processor配置
+                    for(int i = 0; i < this.consumerNum; i++){
+                        processors.get(i).reConfig(newConfig);
+                    }
+                    //添加新的消费者线程
+                    for(int i = processors.get(processors.size() - 1).getProcessorId();
+                        i < processors.get(processors.size() - 1).getProcessorId() + (consumerNum - this.consumerNum);
+                        i++){
+                        OCOTProcessor<K, V> processor = newProcessor(i);
+                        processors.add(processor);
+                        threads.submit(processor);
+                    }
+                }
+                else if(consumerNum < this.consumerNum){
+                    //移除多余的Processor
+                    for(int i = 0; i < this.consumerNum - consumerNum; i++){
+                        OCOTProcessor processor = processors.remove(i);
+                        processor.close();
+                    }
+                    //更新余下的Processor配置
+                    for(OCOTProcessor processor: processors){
+                        processor.reConfig(newConfig);
+                    }
+                }
+
+                this.consumerNum = consumerNum;
+            }
+            else {
+                throw new IllegalStateException("config args 'consumerNum' state wrong");
+            }
+        }
+
+        //更新本地配置
+        this.config = newConfig;
+
+        isReConfig.compareAndSet(true,false);
+    }
+
+    public class OCOTProcessor<K, V> implements Runnable, ReConfigable {
         private final Logger log = LoggerFactory.getLogger(OCOTProcessor.class);
         private final int processorId;
         private final KafkaConsumer<K, V>  consumer;
+        private long pollTimeout;
         private final MessageHandler<K, V> messageHandler;
         private final CommitStrategy commitStrategy;
         private final AbstractConsumerRebalanceListener consumerRebalanceListener;
         private final CallBack callBack;
         private boolean isStopped = false;
         private Map<TopicPartition, ConsumerRecord> topicPartition2ConsumerRecord = new HashMap<>();
+
+        //kafka consumer订阅topic partition
+        private List<TopicPartition> subscribed;
 
         private OCOTProcessor(int processorId,
                               Properties properties,
@@ -129,11 +202,11 @@ public class OCOTMultiProcessor<K, V> {
             log.info("initing message processor-" + processorId + " ...");
             try {
                 if(messageHandler != null){
-                    messageHandler.setup();
+                    messageHandler.setup(config);
                 }
 
                 if(commitStrategy != null){
-                    commitStrategy.setup();
+                    commitStrategy.setup(config);
                 }
 
                 if(consumerRebalanceListenerClass != null){
@@ -141,7 +214,7 @@ public class OCOTMultiProcessor<K, V> {
                 }
 
                 if(callBack != null){
-                    callBack.setup();
+                    callBack.setup(config, null);
                 }
 
                 if(topics != null && topics.size() > 0){
@@ -155,16 +228,19 @@ public class OCOTMultiProcessor<K, V> {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            subscribed = new ArrayList<>(consumer.assignment());
+
             log.info("message processor-" + processorId + " inited");
         }
 
         public void doHandle(ConsumerRecordInfo<K, V> consumerRecordInfo){
             try {
                 messageHandler.handle(consumerRecordInfo.record());
-                consumerRecordInfo.callBack(null);
+                consumerRecordInfo.callBack(messageHandler, commitStrategy,null);
             } catch (Exception e) {
                 try {
-                    consumerRecordInfo.callBack(e);
+                    consumerRecordInfo.callBack(messageHandler, commitStrategy, e);
                 } catch (Exception e1) {
                     e1.printStackTrace();
                 }
@@ -219,7 +295,20 @@ public class OCOTMultiProcessor<K, V> {
             log.info("start message processor-" + processorId);
             try{
                 while (!isStopped && !Thread.currentThread().isInterrupted()){
-                    ConsumerRecords<K, V> records = consumer.poll(1000);
+                    //重新导入配置中....
+                    //会停止接受消息(因为consumer与broker存在session timout,该过程要尽量快)
+                    //message handler会停止处理消息
+                    if(isReConfig.get()){
+                        log.info("kafka consumer pause receive all records");
+                        //停止消费消息
+                        consumer.pause(subscribed);
+                        consumer.poll(0);
+                    }
+                    while(isReConfig.get()){
+                        Thread.sleep(1000);
+                    }
+
+                    ConsumerRecords<K, V> records = consumer.poll(pollTimeout);
                     log.debug("message processor-" + processorId + " receive [" + records.count() + "] messages");
                     for(ConsumerRecord<K, V> record: records){
                         ConsumerRecordInfo<K, V> consumerRecordInfo = new ConsumerRecordInfo<K, V>(record, callBack);
@@ -242,9 +331,16 @@ public class OCOTMultiProcessor<K, V> {
                         commit(consumerRecordInfo);
                     }
 
+                    //缓存订阅的topic-partition
+                    if(subscribed == null){
+                        subscribed = new ArrayList<>(consumer.assignment());
+                    }
+
                 }
                 log.info("message processor-" + processorId + " message processor-" + processorId + "closed");
-            }finally {
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } finally {
                 log.info("message processor-" + processorId + " clean up message handler and commit strategy");
                 try {
                     if(messageHandler != null){
@@ -278,6 +374,16 @@ public class OCOTMultiProcessor<K, V> {
 
         public int getProcessorId() {
             return processorId;
+        }
+
+        @Override
+        public void reConfig(Properties newConfig) {
+            if(ConfigUtils.isConfigItemChange(config, newConfig, AppConfig.MESSAGEFETCHER_POLL_TIMEOUT)){
+                pollTimeout = Long.valueOf(newConfig.get(AppConfig.MESSAGEFETCHER_POLL_TIMEOUT).toString());
+            }
+
+            //恢复接受已订阅分区的消息
+            consumer.resume(subscribed);
         }
     }
 }

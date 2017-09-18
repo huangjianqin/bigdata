@@ -3,6 +3,8 @@ package org.kin.kafka.multithread.core;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.MessageHandler;
+import org.kin.kafka.multithread.config.AppConfig;
+import org.kin.kafka.multithread.utils.ConfigUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
@@ -15,6 +17,7 @@ import java.util.concurrent.*;
  * Created by hjq on 2017/7/4.
  * OPMT ==> one partition more thread
  * 貌似这样子的设计CommitStrategy无法使用
+ * 不能保证message handler线程安全
  *
  * 似乎这种方法是通用实现,只要把线程池线程数设置为1,那么就单线程版本咯
  * 虽然是通用版本,但是大量的线程切换导致性能开销
@@ -37,14 +40,21 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     //用于负载均衡,负载线程池每一个线程
     private Map<TopicPartition, Long> topicPartition2Counter = new HashMap<>();
 
-    private final int handlerSize;
-    private final int threadSizePerPartition;
-    private final int threadQueueSizePerPartition;
+    private int handlerSize;
+    private int maxThreadSizePerPartition;
+    private int minThreadSizePerPartition;
+    private int threadQueueSizePerPartition;
 
-    public OPMTMessageHandlersManager(int handlerSize, int threadSizePerPartition, int threadQueueSizePerPartition) {
-        this.handlerSize = handlerSize;
-        this.threadSizePerPartition = threadSizePerPartition;
-        this.threadQueueSizePerPartition = threadQueueSizePerPartition;
+    public OPMTMessageHandlersManager() {
+        super(AppConfig.DEFAULT_APPCONFIG);
+    }
+
+    public OPMTMessageHandlersManager(Properties config){
+        super(config);
+        this.handlerSize = Integer.valueOf(config.get(AppConfig.OPMT_HANDLERSIZE).toString());
+        this.minThreadSizePerPartition = Integer.valueOf(config.get(AppConfig.OPMT_MINTHREADSIZEPERPARTITION).toString());
+        this.maxThreadSizePerPartition = Integer.valueOf(config.get(AppConfig.OPMT_MAXTHREADSIZEPERPARTITION).toString());
+        this.threadQueueSizePerPartition = Integer.valueOf(config.get(AppConfig.OPMT_THREADQUEUESIZEPERPARTITION).toString());
     }
 
     @Override
@@ -61,8 +71,8 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         ThreadPoolExecutor pool = topicPartition2Pools.get(topicPartition);
         if(pool == null){
             //消息处理线程池还没启动,则启动并绑定
-            log.info("no thread pool cache, new one(MaxPoolSize = " + threadSizePerPartition + ", QueueSize = "  + threadQueueSizePerPartition + ")");
-            pool = new ThreadPoolExecutor(2, threadSizePerPartition, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(this.threadQueueSizePerPartition));
+            log.info("no thread pool cache, new one(MaxPoolSize = " + maxThreadSizePerPartition + ", QueueSize = "  + threadQueueSizePerPartition + ")");
+            pool = new ThreadPoolExecutor(minThreadSizePerPartition, maxThreadSizePerPartition, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(this.threadQueueSizePerPartition));
             topicPartition2Pools.put(topicPartition, pool);
         }
 
@@ -85,6 +95,14 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
             topicPartition2Counter.put(topicPartition, 1L);
             topicPartition2MessageHandlers.put(topicPartition, messageHandlers);
         }
+        //只会存在增加资源的情况,较少资源意味着需要同步,所以在stop the world的时候处理掉
+        if(messageHandlers.size() < handlerSize){
+            log.info("add message handlers(size = " + (handlerSize - messageHandlers.size()) + ")");
+            for(int i = messageHandlers.size(); i < handlerSize; i++){
+                messageHandlers.add(newMessageHandler(topicPartition.topic()));
+            }
+        }
+
         //round选择message handler
         MessageHandler handler = messageHandlers.get((int)(topicPartition2Counter.get(topicPartition) % messageHandlers.size()));
         topicPartition2Counter.put(topicPartition, topicPartition2Counter.get(topicPartition) + 1);
@@ -177,6 +195,92 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         }
 
         isRebalance.set(false);
+    }
+
+    @Override
+    public void reConfig(Properties newConfig) {
+        int minThreadSizePerPartition = this.minThreadSizePerPartition;
+        int maxThreadSizePerPartition = this.maxThreadSizePerPartition;
+        int threadQueueSizePerPartition = this.threadQueueSizePerPartition;
+        int handlerSize = this.handlerSize;
+
+        if(ConfigUtils.isConfigItemChange(minThreadSizePerPartition, newConfig, AppConfig.OPMT_MINTHREADSIZEPERPARTITION)){
+            minThreadSizePerPartition = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT_MINTHREADSIZEPERPARTITION));
+        }
+
+        if(ConfigUtils.isConfigItemChange(maxThreadSizePerPartition, newConfig, AppConfig.OPMT_MAXTHREADSIZEPERPARTITION)){
+            maxThreadSizePerPartition = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT_MAXTHREADSIZEPERPARTITION));
+        }
+        if(ConfigUtils.isConfigItemChange(threadQueueSizePerPartition, newConfig, AppConfig.OPMT_THREADQUEUESIZEPERPARTITION)){
+            threadQueueSizePerPartition = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT_THREADQUEUESIZEPERPARTITION));
+        }
+        if(ConfigUtils.isConfigItemChange(handlerSize, newConfig, AppConfig.OPMT_HANDLERSIZE)){
+            handlerSize = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT_HANDLERSIZE));
+        }
+
+        if(minThreadSizePerPartition > 0 &&
+                maxThreadSizePerPartition > 0 &&
+                threadQueueSizePerPartition > 0 &&
+                minThreadSizePerPartition <= Integer.MAX_VALUE &&
+                maxThreadSizePerPartition <= Integer.MAX_VALUE &&
+                threadQueueSizePerPartition <= Integer.MAX_VALUE){
+            if(minThreadSizePerPartition <= maxThreadSizePerPartition){
+                //因为更新配置时,不会接受消息,所以可以重新分配线程池,原线程池等待消息处理完自动销毁
+                //shutdown,不再从队列取task并且任务完成时会更新
+                for(TopicPartition topicPartition: topicPartition2Pools.keySet()){
+                    ThreadPoolExecutor nowPool = topicPartition2Pools.get(topicPartition);
+                    //转换到pool的 STOP的状态,该状态时仅仅会处理完pool的线程就转到TERMINAL
+                    List<Runnable> originTask = nowPool.shutdownNow();
+                    ThreadPoolExecutor newPool = new ThreadPoolExecutor(minThreadSizePerPartition, maxThreadSizePerPartition, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>(threadQueueSizePerPartition));
+                    for(Runnable runnable: originTask){
+                        newPool.execute(runnable);
+                    }
+                    topicPartition2Pools.put(topicPartition, newPool);
+                }
+
+                this.minThreadSizePerPartition = minThreadSizePerPartition;
+                this.maxThreadSizePerPartition = maxThreadSizePerPartition;
+                this.threadQueueSizePerPartition = threadQueueSizePerPartition;
+            }
+            else{
+                throw new IllegalStateException("config args 'minThreadSizePerPartition' and 'maxThreadSizePerPartition' state wrong");
+            }
+        }
+        else{
+            throw new IllegalStateException("config args 'minThreadSizePerPartition' or 'maxThreadSizePerPartition' or 'threadQueueSizePerPartition' state wrong");
+        }
+
+
+        if(this.handlerSize > handlerSize){
+            log.info("reduce message handlers(size = " + (this.handlerSize - handlerSize) + ")");
+            for(int i = 0; i < this.handlerSize - handlerSize; i++){
+                for(TopicPartition key: topicPartition2MessageHandlers.keySet()){
+                    List<MessageHandler> messageHandlers = topicPartition2MessageHandlers.get(key);
+                    MessageHandler oldMessageHandler = messageHandlers.remove(i);
+                    //释放message handler占用的资源
+                    try {
+                        oldMessageHandler.cleanup();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+
+                    //round-bin地将余下message handler替代移除的message handler
+                    int round = 0;
+                    for(Runnable task: topicPartition2Pools.get(key).getQueue()){
+                        MessageHandlerTask wrapperTask = (MessageHandlerTask) task;
+                        if(oldMessageHandler == wrapperTask.handler){
+                            wrapperTask.handler = messageHandlers.get((round++) % messageHandlers.size());
+                        }
+                    }
+                }
+            }
+        }
+        this.handlerSize = handlerSize;
+
+        //更新pendingwindow的配置
+        for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
+            pendingWindow.reConfig(newConfig);
+        }
     }
 
     private final class MessageHandlerTask implements Runnable{

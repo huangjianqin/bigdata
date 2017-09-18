@@ -4,6 +4,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
+import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
@@ -21,10 +22,19 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
     private Map<TopicPartition, OPOTMessageQueueHandlerThread> topicPartition2Thread = new ConcurrentHashMap<>();
     private final ThreadPoolExecutor threads = new ThreadPoolExecutor(2, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
 
+    public OPOTMessageHandlersManager() {
+        super(AppConfig.DEFAULT_APPCONFIG);
+    }
+
+    public OPOTMessageHandlersManager(Properties config) {
+        super(config);
+    }
+
     @Override
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartition, OffsetAndMetadata> pendingOffsets){
         log.debug("dispatching message: " + StrUtils.consumerRecordDetail(consumerRecordInfo.record()));
 
+        System.out.println(1);
         while(isRebalance.get()){
             try {
                 Thread.currentThread().sleep(1000);
@@ -130,6 +140,16 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
         threads.submit(target);
     }
 
+    @Override
+    public void reConfig(Properties newConfig) {
+        //不需要实现,没有必要线程资源变更
+        //考虑到每个分区对应一条线程,加多线程显得不合理,消耗更多自恋,减少线程则更加不合理,违背的设计初衷
+        super.config = newConfig;
+        for(OPOTMessageQueueHandlerThread thread: topicPartition2Thread.values()){
+            thread.reConfig(newConfig);
+        }
+    }
+
     private final class OPOTMessageQueueHandlerThread extends AbstractMessageHandlersManager.MessageQueueHandlerThread {
 
         public OPOTMessageQueueHandlerThread(String LOG_HEAD, Map<TopicPartition, OffsetAndMetadata> pendingOffsets, MessageHandler messageHandler, CommitStrategy commitStrategy) {
@@ -150,5 +170,9 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
             super.preTerminated();
         }
 
+        @Override
+        public void reConfig(Properties newConfig) {
+            //不需要实现
+        }
     }
 }

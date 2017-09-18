@@ -2,6 +2,9 @@ package org.kin.kafka.multithread.core;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.kin.kafka.multithread.config.AppConfig;
+import org.kin.kafka.multithread.configcenter.ReConfigable;
+import org.kin.kafka.multithread.utils.ConfigUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,11 +17,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 /**
  * Created by hjq on 2017/7/4.
  */
-public class PendingWindow {
+public class PendingWindow implements ReConfigable{
     private static  final Logger log = LoggerFactory.getLogger(PendingWindow.class);
     private final Map<TopicPartition, OffsetAndMetadata> pendingOffsets;
     private ConcurrentSkipListSet<ConsumerRecordInfo> queue;
-    private final int slidingWindow;
+    private int slidingWindow;
 
     //标识是否有处理线程正在判断窗口满足
     private AtomicBoolean isChecking = new AtomicBoolean(false);
@@ -131,5 +134,16 @@ public class PendingWindow {
     private void pendingToCommit(TopicPartition topicPartition, OffsetAndMetadata offset){
         log.debug("pending to commit offset = " + offset);
         this.pendingOffsets.put(topicPartition, offset);
+    }
+
+    @Override
+    public void reConfig(Properties newConfig) {
+        int slidingWindow = this.slidingWindow;
+
+        if(ConfigUtils.isConfigItemChange(slidingWindow, newConfig, AppConfig.PENDINGWINDOW_SLIDINGWINDOW)){
+            slidingWindow = Integer.valueOf(newConfig.get(AppConfig.PENDINGWINDOW_SLIDINGWINDOW).toString());
+            //不需要同步,因为stop the world(处理线程停止处理消息)
+            this.slidingWindow = slidingWindow;
+        }
     }
 }

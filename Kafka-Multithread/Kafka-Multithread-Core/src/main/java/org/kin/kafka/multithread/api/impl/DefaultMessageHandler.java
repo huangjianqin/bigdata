@@ -4,6 +4,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.statistics.Counters;
 
+import java.util.Properties;
+
 /**
  * Created by hjq on 2017/6/21.
  * 默认的Message handler
@@ -12,7 +14,7 @@ import org.kin.kafka.multithread.statistics.Counters;
 public class DefaultMessageHandler implements MessageHandler<String, String> {
 
     @Override
-    public void setup() throws Exception {
+    public void setup(Properties config) throws Exception {
 
     }
 

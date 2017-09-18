@@ -7,6 +7,9 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
+import org.kin.kafka.multithread.config.AppConfig;
+import org.kin.kafka.multithread.configcenter.ReConfigable;
+import org.kin.kafka.multithread.utils.ConfigUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.ClassUtils;
 import org.kin.kafka.multithread.utils.StrUtils;
@@ -24,9 +27,20 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class AbstractMessageHandlersManager implements MessageHandlersManager {
     private static final Logger log = LoggerFactory.getLogger(AbstractMessageHandlersManager.class);
     protected AtomicBoolean isRebalance = new AtomicBoolean(false);
+    protected AtomicBoolean isReconfig = new AtomicBoolean(false);
+    protected Properties config;
 
     private Map<String, Class<? extends MessageHandler>> topic2HandlerClass;
     private Map<String, Class<? extends CommitStrategy>> topic2CommitStrategyClass;
+
+    AbstractMessageHandlersManager(Properties config){
+        this.config = config;
+
+        for(String topic: ConfigUtils.getSubscribeTopic(config)){
+            topic2HandlerClass.put(topic, ClassUtils.getClass(config.getProperty(AppConfig.MESSAGEHANDLER)));
+            topic2HandlerClass.put(topic, ClassUtils.getClass(config.getProperty(AppConfig.COMMITSTRATEGY)));
+        }
+    }
 
     /**
      * 注册topics对应的message handlers class实例
@@ -55,7 +69,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
             try {
                 MessageHandler messageHandler = ClassUtils.instance(claxx);
                 //初始化message handler
-                messageHandler.setup();
+                messageHandler.setup(config);
 
                 return messageHandler;
             } catch (IllegalAccessException e) {
@@ -80,7 +94,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
             try {
                 CommitStrategy commitStrategy = ClassUtils.instance(claxx);
                 //初始化message handler
-                commitStrategy.setup();
+                commitStrategy.setup(config);
 
                 return commitStrategy;
             } catch (IllegalAccessException e) {
@@ -132,9 +146,19 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
     }
 
     /**
+     * 更新更新配置标识状态
+     * @param expected
+     * @param update
+     * @return
+     */
+    public boolean updateReConfigStatus(boolean expected, boolean update){
+        return isReconfig.compareAndSet(expected, update);
+    }
+
+    /**
      * 内部抽象的消息处理线程的默认实现
      */
-    protected abstract class MessageQueueHandlerThread implements Runnable{
+    protected abstract class MessageQueueHandlerThread implements Runnable, ReConfigable{
         protected Logger log = LoggerFactory.getLogger(MessageQueueHandlerThread.class);
         private String LOG_HEAD = "";
 
@@ -207,10 +231,10 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         private void execute(ConsumerRecordInfo record){
             try {
                 doExecute(record);
-                record.callBack(null);
+                record.callBack(messageHandler, commitStrategy, null);
             } catch (Exception e) {
                 try {
-                    record.callBack(e);
+                    record.callBack(messageHandler, commitStrategy, e);
                 } catch (Exception e1) {
                     e1.printStackTrace();
                 }
@@ -310,6 +334,13 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
 //                        log.info(LOG_HEAD + " thread idle --> sleep 200ms");
                         Thread.sleep(200);
                     }
+
+                    /**
+                     * 配置更新中,停止处理消息
+                     */
+                    while(isReconfig.get()){
+                        Thread.sleep(1000);
+                    }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -319,73 +350,27 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         }
     }
 
-    /**
-     * Created by 健勤 on 2017/7/25.
-     * 并不能保证多个实例不会重复消费消息
-     * 感觉只有每个线程一个消费者才能做到,不然消费了的消息很难做到及时提交Offset并且其他实例还没有启动
-     *
-     * 该监听器的主要目的是释放那些无用资源
-     */
-    static class InnerConsumerRebalanceListener<K, V> implements ConsumerRebalanceListener {
-        protected static final org.apache.log4j.Logger log = org.apache.log4j.Logger.getLogger(InnerConsumerRebalanceListener.class);
-        protected final MessageFetcher<K, V> messageFetcher;
-        protected Set<TopicPartition> beforeAssignedTopicPartition;
-        //jvm内存缓存目前消费到的Offset
-        private Map<TopicPartition, Long> topicPartition2Offset = new HashMap<>();
+    public static enum MsgHandlerManagerModel{
+        OPOT("OPOT"), OPMT("OPMT"), OPMT2("OPMT2"), OCOT("OCOT");
 
-        public InnerConsumerRebalanceListener(MessageFetcher<K, V> messageFetcher) {
-            this.messageFetcher = messageFetcher;
+        private String desc;
+
+        MsgHandlerManagerModel(String desc) {
+            this.desc = desc;
         }
 
-        @Override
-        public void onPartitionsRevoked(Collection<TopicPartition> collection) {
-            log.debug("kafka consumer onPartitionsRevoked...");
-            //设置标识,禁止message fetcher dispatch 消息
-            messageFetcher.getHandlersManager().consumerRebalanceNotify(new HashSet<TopicPartition>(collection));
-            //保存之前分配到的TopicPartition
-            beforeAssignedTopicPartition = new HashSet<>(collection);
-            //提交最新处理完的Offset
-            messageFetcher.commitOffsetsSyncWhenRebalancing();
+        public String getDesc() {
+            return desc;
+        }
 
-            //缓存当前Consumer poll到的Offset
-            if(collection != null && collection.size() > 0){
-                log.info("consumer origin assignment: " + StrUtils.topicPartitionsStr(collection));
-                log.info("consumer rebalancing...");
-                //保存在jvm内存中
-                for(TopicPartition topicPartition: (Collection<TopicPartition>)collection){
-                    topicPartition2Offset.put(topicPartition, messageFetcher.position(topicPartition));
+        public static MsgHandlerManagerModel getByDesc(String arg){
+            for(MsgHandlerManagerModel model: values()){
+                if(arg.toUpperCase().equals(model.getDesc())){
+                    return model;
                 }
             }
+
+            throw new IllegalStateException(arg + " => unknown message handler manager model");
         }
-
-        @Override
-        public void onPartitionsAssigned(Collection<TopicPartition> collection)
-        {
-            log.debug("kafka consumer onPartitionsAssigned!!!");
-            //获取之前分配到但此次又没有分配到的TopicPartitions
-            beforeAssignedTopicPartition.removeAll(collection);
-            //还需清理已经交给handler线程
-            messageFetcher.getHandlersManager().doOnConsumerReAssigned(beforeAssignedTopicPartition);
-            //再一次提交之前分配到但此次又没有分配到的TopicPartition对应的最新Offset
-            messageFetcher.commitOffsetsSyncWhenRebalancing();
-            beforeAssignedTopicPartition = null;
-
-            //重置consumer position并reset缓存
-            if(collection != null && collection.size() > 0){
-                for(TopicPartition topicPartition: (Collection<TopicPartition>)collection){
-                    Long nowOffset = topicPartition2Offset.get(topicPartition);
-                    if(nowOffset != null){
-                        messageFetcher.seek(topicPartition, nowOffset);
-                        log.info(topicPartition.topic() + "-" + topicPartition.partition() + "'s Offset seek to " + nowOffset);
-                    }
-                }
-                log.info("consumer reassigned");
-                log.info("consumer new assignment: " + StrUtils.topicPartitionsStr(collection));
-                //清理offset缓存
-                topicPartition2Offset.clear();
-            }
-//            Statistics.instance().append("offset", System.lineSeparator());
-        }
-
     }
 }

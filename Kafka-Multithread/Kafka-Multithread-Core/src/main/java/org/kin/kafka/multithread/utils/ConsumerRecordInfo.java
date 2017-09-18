@@ -3,6 +3,8 @@ package org.kin.kafka.multithread.utils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.CallBack;
+import org.kin.kafka.multithread.api.CommitStrategy;
+import org.kin.kafka.multithread.api.MessageHandler;
 
 
 /**
@@ -30,9 +32,9 @@ public class ConsumerRecordInfo<K, V>{
         return record.offset();
     }
 
-    public void callBack(Exception e) throws Exception {
+    public void callBack(MessageHandler messageHandler, CommitStrategy commitStrategy, Exception e) throws Exception {
         if(callBack != null){
-            callBack.onComplete(record, e);
+            callBack.onComplete(record, messageHandler, commitStrategy, e);
             callBack.cleanup();
         }
     }

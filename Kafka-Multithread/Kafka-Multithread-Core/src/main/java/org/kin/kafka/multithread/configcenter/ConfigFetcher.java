@@ -40,14 +40,17 @@ public abstract class ConfigFetcher extends Thread{
         Properties lastConfig = null;
         while(!isStopped && !isInterrupted()){
             Properties newConfig = diamondMasterProtocol.getAppConfig(new ApplicationHost());
-            //填充默认值
+            //检查必要配置
             ConfigUtils.checkRequireConfig(newConfig);
+            //检查配置格式
+            //...
+            //填充默认值
             ConfigUtils.fillDefaultConfig(newConfig);
             //如果配置更新,插队,准备更新运行时配置
             if(isChange(lastConfig, newConfig)){
                 configQueue.offer(newConfig);
                 //如果config fetcher interval改变
-                if(!newConfig.get(AppConfig.CONFIGFETCHER_FETCHERINTERVAL).equals(lastConfig.get(AppConfig.CONFIGFETCHER_FETCHERINTERVAL))){
+                if(ConfigUtils.isConfigItemChange(lastConfig, newConfig, AppConfig.CONFIGFETCHER_FETCHERINTERVAL)){
                     fetcherInterval = Long.valueOf(newConfig.get(AppConfig.CONFIGFETCHER_FETCHERINTERVAL).toString());
                 }
                 lastConfig = newConfig;

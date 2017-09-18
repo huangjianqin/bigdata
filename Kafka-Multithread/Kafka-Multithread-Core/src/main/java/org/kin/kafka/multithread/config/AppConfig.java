@@ -19,33 +19,41 @@ public class AppConfig {
     public static final String APPHOST = "appHost";
     /**
      * RUN
+     * UPDATE
      * CLOSE
+     * RESTART
      */
     //require
     public static final String APPSTATUS = "appStatus";
 
     //kafka consumer
-    //暂停消费的分区,格式是topic-par,
-    public static final String KAFKA_CONSUMER_PAUSE = "kafka.consumer.pause";
-    //暂停消费的分区,格式是topic-par,
-    public static final String KAFKA_CONSUMER_RESUME = "kafka.consumer.resume";
+    //仅支持RESTART和RUN状态
+    //require
     //订阅topic
+    //动态topic,topic,
+    //静态topic-par,topic-par
     public static final String KAFKA_CONSUMER_SUBSCRIBE = "kafka.consumer.subscribe";
 
     //message fetcher
     public static final String MESSAGEFETCHER_POLL_TIMEOUT = "messagefetcher.poll.timeout";
     public static final String MESSAGEFETCHER_COMMIT_MAXRETRY = "messagefetcher.commit.maxretry";
+    //仅支持RESTART和RUN状态
     public static final String MESSAGEFETCHER_CONSUME_CALLBACK = "messagefetcher.consume.callback";
 
     //message handler
     //require
-    public static final String MESSAGEHANDLER_MODEL = "messagehandler.model";
-    public static final String MESSAGEHANDLER_QUEUEPERTHREAD_POLLTIMEOUT = "messagehandler.queueperthread.polltimeout";
+    public static final String MESSAGEHANDLERMANAGER_MODEL = "messagehandlermanager.model";
+    //仅支持RESTART和RUN状态
+    //require
+    public static final String MESSAGEHANDLER = "messagehandler";
+    public static final String COMMITSTRATEGY = "commitstrategy";
+    public static final String CONSUMERREBALANCELISTENER = "consumerrebalancelistener";
 
     //opot
 
     //opmt
-    public static final String OPMT_THREADSIZEPERPARTITION = "opmt.threadsizeperpartition";
+    public static final String OPMT_MAXTHREADSIZEPERPARTITION = "opmt.maxthreadsizeperpartition";
+    public static final String OPMT_MINTHREADSIZEPERPARTITION = "opmt.minthreadsizeperpartition";
     public static final String OPMT_THREADQUEUESIZEPERPARTITION = "opmt.threadqueuesizeperpartition";
     public static final String OPMT_HANDLERSIZE = "opmt.handlersize";
 
@@ -74,18 +82,14 @@ public class AppConfig {
     public static final String APP_CHILD_RUN_MODEL = "app.child.run.model";
 
     static {
-        DEFAULT_APPCONFIG.put(AppConfig.KAFKA_CONSUMER_PAUSE, AppConfigValue.DEFAULT_KAFKA_CONSUMER_PAUSE);
-        DEFAULT_APPCONFIG.put(AppConfig.KAFKA_CONSUMER_RESUME, AppConfigValue.DEFAULT_KAFKA_CONSUMER_RESUME);
-
         DEFAULT_APPCONFIG.put(AppConfig.MESSAGEFETCHER_COMMIT_MAXRETRY, AppConfigValue.DEFAULT_MESSAGEFETCHER_COMMIT_MAXRETRY);
         DEFAULT_APPCONFIG.put(AppConfig.MESSAGEFETCHER_CONSUME_CALLBACK, AppConfigValue.DEFAULT_MESSAGEFETCHER_CONSUME_CALLBACK);
         DEFAULT_APPCONFIG.put(AppConfig.MESSAGEFETCHER_POLL_TIMEOUT, AppConfigValue.DEFAULT_MESSAGEFETCHER_POLL_TIMEOUT);
 
-        DEFAULT_APPCONFIG.put(AppConfig.MESSAGEHANDLER_QUEUEPERTHREAD_POLLTIMEOUT, AppConfigValue.DEFAULT_MESSAGEHANDLER_QUEUEPERTHREAD_POLLTIMEOUT);
-
         DEFAULT_APPCONFIG.put(AppConfig.OPMT_HANDLERSIZE, AppConfigValue.DEFAULT_OPMT_HANDLERSIZE);
         DEFAULT_APPCONFIG.put(AppConfig.OPMT_THREADQUEUESIZEPERPARTITION, AppConfigValue.DEFAULT_OPMT_THREADQUEUESIZEPERPARTITION);
-        DEFAULT_APPCONFIG.put(AppConfig.OPMT_THREADSIZEPERPARTITION, AppConfigValue.DEFAULT_OPMT_THREADSIZEPERPARTITION);
+        DEFAULT_APPCONFIG.put(AppConfig.OPMT_MAXTHREADSIZEPERPARTITION, AppConfigValue.DEFAULT_OPMT_MAXTHREADSIZEPERPARTITION);
+        DEFAULT_APPCONFIG.put(AppConfig.OPMT_MINTHREADSIZEPERPARTITION, AppConfigValue.DEFAULT_OPMT_MINTHREADSIZEPERPARTITION);
 
         DEFAULT_APPCONFIG.put(AppConfig.OPMT2_THREADSIZEPERPARTITION, AppConfigValue.DEFAULT_OPMT2_THREADSIZEPERPARTITION);
 

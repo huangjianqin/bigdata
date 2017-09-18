@@ -13,7 +13,7 @@ import java.util.Properties;
  * 而admin可以上传或下载配置,期间就涉及格式转换
  */
 public interface ConfigStoreManager{
-    //appHost:aapName
+    //appHost:appName
     String KEY_FORMAT = "%s:%s";
 
     void setup(Properties config);

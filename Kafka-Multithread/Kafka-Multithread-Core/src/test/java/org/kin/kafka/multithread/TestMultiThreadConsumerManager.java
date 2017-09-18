@@ -1,6 +1,7 @@
 package org.kin.kafka.multithread;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.kin.kafka.multithread.api.ApplicationContext;
 import org.kin.kafka.multithread.api.MultiThreadConsumerManager;
 import org.kin.kafka.multithread.config.PropertiesWrapper;
 import org.kin.kafka.multithread.statistics.Counters;
@@ -25,13 +26,14 @@ public class TestMultiThreadConsumerManager {
                 .set(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
-                .set(AppConfig.MESSAGEHANDLER_MODEL, AppConfigValue.OPMT)
+                .set(AppConfig.MESSAGEHANDLERMANAGER_MODEL, AppConfigValue.OPMT)
+                .set(AppConfig.KAFKA_CONSUMER_SUBSCRIBE, "msg1")
+                .set(AppConfig.MESSAGEHANDLER, RealEnvironmentMessageHandler.class.getName())
                 .properties();
-        Set<String> topic = new HashSet<>();
-        topic.add("msg1");
 
         //1.一个consumer
-        MultiThreadConsumerManager.instance().<String, String>registerConsumer("test", config, topic, null, (Map)Collections.singletonMap("msg1", RealEnvironmentMessageHandler.class), null);
+        ApplicationContext context = MultiThreadConsumerManager.instance().newApplication(config);
+        context.start();
         startTime = System.currentTimeMillis();
 
         long runTime = 5 * 60 * 1000;
@@ -63,7 +65,7 @@ public class TestMultiThreadConsumerManager {
             endTime -= 5 * 60 * 1000;
         }
 
-        MultiThreadConsumerManager.instance().stopConsumerSync("test");
+        context.close();
 
         long sum = Counters.getCounters().get("consumer-counter");
         long sum1 = Counters.getCounters().get("consumer-byte-counter");

@@ -1,8 +1,10 @@
 package org.kin.kafka.multithread;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.kin.kafka.multithread.api.ApplicationContext;
 import org.kin.kafka.multithread.api.MultiThreadConsumerManager;
 import org.kin.kafka.multithread.api.impl.RealEnvironmentMessageHandler;
+import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.config.PropertiesWrapper;
 import org.kin.kafka.multithread.statistics.Counters;
 import org.kin.kafka.multithread.statistics.Statistics;
@@ -23,21 +25,18 @@ public class TestOCOTConsumerManager {
                 .set(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
+                .set(AppConfig.KAFKA_CONSUMER_SUBSCRIBE, "test")
+                .set(AppConfig.OCOT_CONSUMERNUM, "1")
+                .set(AppConfig.MESSAGEHANDLER, RealEnvironmentMessageHandler.class.getName())
+                .set(AppConfig.MESSAGEHANDLERMANAGER_MODEL, "OCOT")
                 .properties();
         Set<String> topics = new HashSet<>();
         topics.add("msg1");
 
         //1.一个consumer
-        MultiThreadConsumerManager.instance()
-                .newOCOTMultiProcessor(
-                        "test",
-                        1,
-                        config,
-                        topics,
-                        RealEnvironmentMessageHandler.class,
-                        null,
-                        null,
-                        null);
+        ApplicationContext applicationContext = MultiThreadConsumerManager.instance()
+                .newApplication(config);
+        applicationContext.start();
 
         startTime = System.currentTimeMillis();
 
@@ -70,7 +69,7 @@ public class TestOCOTConsumerManager {
             endTime -= 5 * 60 * 1000;
         }
 
-        MultiThreadConsumerManager.instance().stopOCOTMultiProcessor("test");
+        applicationContext.close();
 
         long sum = Counters.getCounters().get("consumer-counter");
         long sum1 = Counters.getCounters().get("consumer-byte-counter");

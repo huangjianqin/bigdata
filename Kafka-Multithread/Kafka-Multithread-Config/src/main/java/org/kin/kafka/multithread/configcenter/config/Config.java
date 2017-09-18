@@ -2,6 +2,7 @@ package org.kin.kafka.multithread.configcenter.config;
 
 /**
  * Created by huangjianqin on 2017/9/11.
+ * 本地配置
  */
 public class Config {
     public static final String CONFIG_STOREMANAGER_CLASS = "configstoremanager.class";

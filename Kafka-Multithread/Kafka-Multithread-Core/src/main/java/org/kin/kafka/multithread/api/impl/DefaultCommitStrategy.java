@@ -4,6 +4,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
 
+import java.util.Properties;
+
 /**
  * Created by hjq on 2017/6/21.
  * 默认的commit strategy
@@ -21,7 +23,7 @@ public class DefaultCommitStrategy implements CommitStrategy {
     }
 
     @Override
-    public void setup() throws Exception {
+    public void setup(Properties config) throws Exception {
 
     }
 

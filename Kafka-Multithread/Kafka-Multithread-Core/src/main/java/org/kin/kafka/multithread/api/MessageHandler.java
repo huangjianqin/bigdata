@@ -2,6 +2,8 @@ package org.kin.kafka.multithread.api;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 
+import java.util.Properties;
+
 /**
  * Created by hjq on 2017/6/19.
  * 消息处理具体逻辑
@@ -11,7 +13,7 @@ public interface MessageHandler<K, V> {
      * 初始化
      * @throws Exception
      */
-    void setup() throws Exception;
+    void setup(Properties config) throws Exception;
 
     /**
      * 消息处理

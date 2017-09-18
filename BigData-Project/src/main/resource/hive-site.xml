@@ -773,7 +773,7 @@
     <description>Default property values for newly created tables</description>
   </property>
   <property>
-    <name>hive.ddl.createtablelike.properties.whitelist</name>
+    <name>hive.ddl.createtablelike.config.whitelist</name>
     <value/>
     <description>Table Properties to copy over when executing a Create Table Like.</description>
   </property>
@@ -821,10 +821,10 @@
     <description>List of comma separated listeners for the end of metastore functions.</description>
   </property>
   <property>
-    <name>hive.metastore.partition.inherit.table.properties</name>
+    <name>hive.metastore.partition.inherit.table.config</name>
     <value/>
     <description>
-      List of comma separated keys occurring in table properties which will get inherited to newly created partitions. 
+      List of comma separated keys occurring in table config which will get inherited to newly created partitions.
       * implies all the keys will get inherited.
     </description>
   </property>
@@ -1221,7 +1221,7 @@
     <name>hive.map.groupby.sorted</name>
     <value>false</value>
     <description>
-      If the bucketing/sorting properties of the table exactly match the grouping key, whether to perform 
+      If the bucketing/sorting config of the table exactly match the grouping key, whether to perform
       the group by in the mapper by using BucketizedHiveInputFormat. The only downside to this
       is that it limits the number of mappers to the number of files.
     </description>
@@ -1230,7 +1230,7 @@
     <name>hive.map.groupby.sorted.testmode</name>
     <value>false</value>
     <description>
-      If the bucketing/sorting properties of the table exactly match the grouping key, whether to perform 
+      If the bucketing/sorting config of the table exactly match the grouping key, whether to perform
       the group by in the mapper by using BucketizedHiveInputFormat. If the test mode is set, the plan
       is not converted, but a query property is set to denote the same.
     </description>
@@ -2930,8 +2930,8 @@
     <value/>
     <description>
       Hive log4j configuration file.
-      If the property is not set, then logging will be initialized using hive-log4j.properties found on the classpath.
-      If the property is set, the value must be a valid URI (java.net.URI, e.g. "file:///tmp/my-logging.properties"), 
+      If the property is not set, then logging will be initialized using hive-log4j.config found on the classpath.
+      If the property is set, the value must be a valid URI (java.net.URI, e.g. "file:///tmp/my-logging.config"),
       which you can then extract a URL from and pass to PropertyConfigurator.configure(URL).
     </description>
   </property>
@@ -2940,8 +2940,8 @@
     <value/>
     <description>
       Hive log4j configuration file for execution mode(sub command).
-      If the property is not set, then logging will be initialized using hive-exec-log4j.properties found on the classpath.
-      If the property is set, the value must be a valid URI (java.net.URI, e.g. "file:///tmp/my-logging.properties"), 
+      If the property is not set, then logging will be initialized using hive-exec-log4j.config found on the classpath.
+      If the property is set, the value must be a valid URI (java.net.URI, e.g. "file:///tmp/my-logging.config"),
       which you can then extract a URL from and pass to PropertyConfigurator.configure(URL).
     </description>
   </property>
@@ -3482,7 +3482,7 @@
     <value>false</value>
     <description>
       If this is set, when writing partitions, the metadata will include the bucketing/sorting
-      properties with which the data was written if any (this will not overwrite the metadata
+      config with which the data was written if any (this will not overwrite the metadata
       inherited from the table if the table is bucketed/sorted)
     </description>
   </property>
