@@ -16,12 +16,12 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <config>
+    <properties>
         <maven.compiler.source>1.7</maven.compiler.source>
         <maven.compiler.target>1.7</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <springframework.version>4.2.5.RELEASE</springframework.version>
-    </config>
+    </properties>
 
     <dependencyManagement>
         <dependencies>

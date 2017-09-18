@@ -12,7 +12,7 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <config>
+    <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -24,7 +24,7 @@
         <hbase.version>1.2.4</hbase.version>
         <hive.version>1.2.1</hive.version>
         <mongo.version>3.2.2</mongo.version>
-    </config>
+    </properties>
 
     <repositories>
         <!-- scala-->

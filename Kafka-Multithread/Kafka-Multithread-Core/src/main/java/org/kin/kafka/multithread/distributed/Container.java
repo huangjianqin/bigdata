@@ -5,4 +5,5 @@ package org.kin.kafka.multithread.distributed;
  * Application容器,
  */
 public class Container {
+
 }

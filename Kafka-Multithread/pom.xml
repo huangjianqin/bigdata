@@ -8,16 +8,17 @@
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <config>
+    <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </config>
+    </properties>
 
     <modules>
         <module>Kafka-Multithread-Config</module>
         <module>Kafka-Multithread-Core</module>
         <module>Kafka-Multithread-Protocol</module>
+        <module>Kafka-Multithread-Distributed</module>
     </modules>
 
     <build>
