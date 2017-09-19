@@ -3,11 +3,12 @@ package org.kin.kafka.multithread.configcenter;
 import org.kin.kafka.multithread.configcenter.common.StoreCodec;
 import org.kin.kafka.multithread.configcenter.common.StoreCodecs;
 import org.kin.kafka.multithread.configcenter.config.Config;
-import org.kin.kafka.multithread.configcenter.config.ConfigValue;
+import org.kin.kafka.multithread.configcenter.config.DefaultConfig;
 import org.kin.kafka.multithread.configcenter.manager.ConfigStoreManager;
 import org.kin.kafka.multithread.configcenter.utils.PropertiesUtils;
 import org.kin.kafka.multithread.configcenter.utils.YAMLUtils;
-import org.kin.kafka.multithread.protocol.app.ApplicationConfig;
+import org.kin.kafka.multithread.domain.ConfigFetchResult;
+import org.kin.kafka.multithread.domain.ConfigSetupResult;
 import org.kin.kafka.multithread.protocol.app.ApplicationHost;
 import org.kin.kafka.multithread.protocol.configcenter.AdminProtocol;
 import org.kin.kafka.multithread.protocol.configcenter.DiamondMasterProtocol;
@@ -35,9 +36,10 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     private static final Logger log = LoggerFactory.getLogger(Diamond.class);
     private ConfigStoreManager configStoreManager;
     private Properties config = new Properties();
+    private Map<String, Map<String, Properties>> host2AppName2Config = new HashMap<>();
 
     public Diamond() {
-        this(ConfigValue.DEFALUT_CONFIGPATH);
+        this(DefaultConfig.DEFALUT_CONFIGPATH);
     }
 
     public Diamond(String configPath) {
@@ -45,7 +47,7 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     }
 
     public void init(){
-        String storeManagerClass = (String) config.getOrDefault(Config.CONFIG_STOREMANAGER_CLASS, ConfigValue.DEFAULT_CONFIG_STOREMANAGER_CLASS);
+        String storeManagerClass = (String) config.getOrDefault(Config.CONFIG_STOREMANAGER_CLASS, DefaultConfig.DEFAULT_CONFIG_STOREMANAGER_CLASS);
         configStoreManager = (ConfigStoreManager) ClassUtils.instance(storeManagerClass);
         configStoreManager.setup(config);
     }
@@ -60,12 +62,29 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
             String host,
             String type,
             String config) {
-        ApplicationHost appHost = new ApplicationHost(appName, host);
-        ApplicationConfig appConfig = new ApplicationConfig(config, type);
-        boolean result = configStoreManager.storeConfig(appHost, appConfig);
-        return Collections.singletonMap("result", result? 1 : 0);
+//        ApplicationHost appHost = new ApplicationHost(appName, host);
+//        ApplicationConfig appConfig = new ApplicationConfig(config, type);
+//        boolean result = configStoreManager.storeConfig(appHost, appConfig);
+        //先缓存,等待判断是否配置成功后才持久化
+        Map<String, Properties> appName2Config = new HashMap<>();
+
+        if(host2AppName2Config.get(host) != null){
+            appName2Config = host2AppName2Config.get(host);
+        }
+        StoreCodec storeCodec = StoreCodecs.getCodecByName(type);
+        appName2Config.put(appName, PropertiesUtils.map2Properties(storeCodec.deSerialize(config)));
+        host2AppName2Config.put(host, appName2Config);
+
+        return Collections.singletonMap("result", 1);
     }
 
+    /**
+     * 仅仅获取持久化的配置,也就是应用的真实配置
+     * @param appName
+     * @param host
+     * @param type
+     * @return
+     */
     @Override
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
@@ -89,9 +108,14 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     }
 
     @Override
-    public Properties getAppConfig(ApplicationHost appHost) {
-        Map<String, String> config = configStoreManager.getAppConfigMap(appHost);
-        return PropertiesUtils.map2Properties(config);
+    public ConfigFetchResult getAppConfig(ApplicationHost appHost) {
+        ConfigFetchResult result = new ConfigFetchResult(configStoreManager.getAllAppConfig(appHost), System.currentTimeMillis());
+        return result;
+    }
+
+    @Override
+    public void configFail(ConfigSetupResult result) {
+
     }
 
     public void close(){

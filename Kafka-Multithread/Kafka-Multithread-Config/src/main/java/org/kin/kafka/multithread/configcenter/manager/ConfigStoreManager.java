@@ -4,6 +4,7 @@ import org.kin.kafka.multithread.protocol.app.ApplicationConfig;
 import org.kin.kafka.multithread.protocol.app.ApplicationHost;
 import org.kin.kafka.multithread.protocol.configcenter.AdminProtocol;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -20,4 +21,5 @@ public interface ConfigStoreManager{
     void clearup();
     boolean storeConfig(ApplicationHost appHost, ApplicationConfig appConfig);
     Map<String, String> getAppConfigMap(ApplicationHost appHost);
+    List<Properties> getAllAppConfig(ApplicationHost appHost);
 }

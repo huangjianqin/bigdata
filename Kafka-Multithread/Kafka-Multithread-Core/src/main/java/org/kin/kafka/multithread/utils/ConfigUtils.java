@@ -5,12 +5,10 @@ import org.kin.kafka.multithread.api.CallBack;
 import org.kin.kafka.multithread.api.CommitStrategy;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.config.AppConfig;
-import org.kin.kafka.multithread.config.AppConfigValue;
+import org.kin.kafka.multithread.config.DefaultAppConfig;
 
 import javax.security.auth.callback.Callback;
-import java.util.HashSet;
-import java.util.Properties;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by huangjianqin on 2017/9/12.
@@ -124,7 +122,7 @@ public class ConfigUtils {
 
     public static Class<? extends MessageHandler> getMessageHandlerClass(Properties config){
         try {
-            Class claxx = Class.forName(config.getOrDefault(AppConfig.MESSAGEHANDLER, AppConfigValue.DEFAULT_MESSAGEHANDLER).toString());
+            Class claxx = Class.forName(config.getOrDefault(AppConfig.MESSAGEHANDLER, DefaultAppConfig.DEFAULT_MESSAGEHANDLER).toString());
             if(claxx.isAssignableFrom(MessageHandler.class)){
                 return claxx;
             }
@@ -136,7 +134,7 @@ public class ConfigUtils {
 
     public static Class<? extends CommitStrategy> getCommitStrategyClass(Properties config){
         try {
-            Class claxx = Class.forName(config.getOrDefault(AppConfig.COMMITSTRATEGY, AppConfigValue.DEFAULT_COMMITSTRATEGY).toString());
+            Class claxx = Class.forName(config.getOrDefault(AppConfig.COMMITSTRATEGY, DefaultAppConfig.DEFAULT_COMMITSTRATEGY).toString());
             if(claxx.isAssignableFrom(CommitStrategy.class)){
                 return claxx;
             }
@@ -148,7 +146,7 @@ public class ConfigUtils {
 
     public static Class<? extends AbstractConsumerRebalanceListener> getConsumerRebalanceListenerClass(Properties config){
         try {
-            Class claxx = Class.forName(config.getOrDefault(AppConfig.CONSUMERREBALANCELISTENER, AppConfigValue.DEFAULT_CONSUMERREBALANCELISTENER).toString());
+            Class claxx = Class.forName(config.getOrDefault(AppConfig.CONSUMERREBALANCELISTENER, DefaultAppConfig.DEFAULT_CONSUMERREBALANCELISTENER).toString());
             if(claxx.isAssignableFrom(AbstractConsumerRebalanceListener.class)){
                 return claxx;
             }
@@ -160,7 +158,7 @@ public class ConfigUtils {
 
     public static Class<? extends CallBack> getCallbackClass(Properties config){
         try {
-            Class claxx = Class.forName(config.getOrDefault(AppConfig.MESSAGEFETCHER_CONSUME_CALLBACK, AppConfigValue.DEFAULT_MESSAGEFETCHER_CONSUME_CALLBACK).toString());
+            Class claxx = Class.forName(config.getOrDefault(AppConfig.MESSAGEFETCHER_CONSUME_CALLBACK, DefaultAppConfig.DEFAULT_MESSAGEFETCHER_CONSUME_CALLBACK).toString());
             if(claxx.isAssignableFrom(Callback.class)){
                 return claxx;
             }
@@ -172,5 +170,26 @@ public class ConfigUtils {
 
     public static boolean isAutoSubscribe(Properties config){
         return config.get(AppConfig.KAFKA_CONSUMER_SUBSCRIBE).toString().split(",")[0].split("-").length == 2;
+    }
+
+    public static List<Properties> allNecessaryCheckAndFill(List<Properties> newConfigs){
+        List<Properties> result = new ArrayList<>();
+        for(Properties config: newConfigs){
+            if(oneNecessaryCheckAndFill(config)){
+                result.add(config);
+            }
+        }
+        return result;
+    }
+
+    public static boolean oneNecessaryCheckAndFill(Properties newConfig){
+        //检查必要配置
+        ConfigUtils.checkRequireConfig(newConfig);
+        //检查配置格式
+        //...
+        //填充默认值
+        ConfigUtils.fillDefaultConfig(newConfig);
+
+        return true;
     }
 }

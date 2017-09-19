@@ -8,7 +8,7 @@
         <artifactId>kafka-multithread</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <artifactId>kafka-multithread-config</artifactId>
+    <artifactId>kafka-multithread-nodeConfig</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
 

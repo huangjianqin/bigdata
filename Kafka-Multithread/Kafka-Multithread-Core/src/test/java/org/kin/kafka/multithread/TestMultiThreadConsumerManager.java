@@ -7,7 +7,7 @@ import org.kin.kafka.multithread.config.PropertiesWrapper;
 import org.kin.kafka.multithread.statistics.Counters;
 import org.kin.kafka.multithread.api.impl.RealEnvironmentMessageHandler;
 import org.kin.kafka.multithread.config.AppConfig;
-import org.kin.kafka.multithread.config.AppConfigValue;
+import org.kin.kafka.multithread.config.DefaultAppConfig;
 import org.kin.kafka.multithread.statistics.Statistics;
 
 import java.util.*;
@@ -26,7 +26,7 @@ public class TestMultiThreadConsumerManager {
                 .set(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringDeserializer")
                 .set(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
-                .set(AppConfig.MESSAGEHANDLERMANAGER_MODEL, AppConfigValue.OPMT)
+                .set(AppConfig.MESSAGEHANDLERMANAGER_MODEL, DefaultAppConfig.OPMT)
                 .set(AppConfig.KAFKA_CONSUMER_SUBSCRIBE, "msg1")
                 .set(AppConfig.MESSAGEHANDLER, RealEnvironmentMessageHandler.class.getName())
                 .properties();

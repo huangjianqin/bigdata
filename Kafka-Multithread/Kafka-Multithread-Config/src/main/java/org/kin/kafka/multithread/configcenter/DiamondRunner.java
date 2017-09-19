@@ -18,12 +18,10 @@ public class DiamondRunner {
         RPCFactories.serviceWithoutRegistry(
                 DiamondMasterProtocol.class,
                 diamond,
-                "dubbo",
                 Integer.valueOf(config.get(Config.DIAMONDMASTERPROTOCOL_PORT).toString())
         );
         RPCFactories.serviceWithoutRegistry(AdminProtocol.class,
                 diamond,
-                "rest",
                 Integer.valueOf(config.get(Config.ADMINPROTOCOL_PORT).toString())
         );
 

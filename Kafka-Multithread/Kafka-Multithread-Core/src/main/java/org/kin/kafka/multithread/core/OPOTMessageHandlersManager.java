@@ -71,18 +71,14 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
             thread.stop();
         }
 
-        //等待所有handler完成,超过10s,强制关闭
-        boolean isTimeOut = waitingThreadPoolIdle((Collection)topicPartition2Thread.values(), 10000);
+//        //等待所有handler完成,超过10s,强制关闭
+//        因为都是while true线程,所一shutdown等价于shutdownNow
+//        boolean isTimeOut = waitingThreadPoolIdle((Collection)topicPartition2Thread.values(), 10000);
 
         //关闭线程池
-        if(!isTimeOut){
-            log.info("shutdown thread pool...");
-            threads.shutdown();
-        }
-        else{
-            log.warn("force shutdown thread pool...");
-            threads.shutdownNow();
-        }
+        log.info("shutdown thread pool...");
+        threads.shutdown();
+
         log.info("thread pool terminated");
     }
 

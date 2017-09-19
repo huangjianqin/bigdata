@@ -21,18 +21,25 @@ public class RPCFactories {
         factory = (RPCFactory) ClassUtils.instance(factoryClass);
     }
 
-    public static void service(Class protocol, Object service, String registryAddress, String protocolName){
+    public static void service(Class protocol, Object service, String registryAddress, String protocolName, int protocolPort){
         if(factory == null){
             init(DEFAULT_RPCFACTORY);
         }
-        factory.service(protocol, service, registryAddress, protocolName);
+        factory.service(protocol, service, registryAddress, protocolName, protocolPort);
     }
 
-    public static void serviceWithoutRegistry(Class service, Object serviceImpl, String protocolName, int port){
+    public static void serviceWithoutRegistry(Class service, Object serviceImpl, int protocolPort){
         if(factory == null){
             init(DEFAULT_RPCFACTORY);
         }
-        factory.serviceWithoutRegistry(service, serviceImpl, protocolName, port);
+        factory.serviceWithoutRegistry(service, serviceImpl, protocolPort);
+    }
+
+    public static void restService(Class service, Object serviceImpl, int protocolPort) {
+        if(factory == null){
+            init(DEFAULT_RPCFACTORY);
+        }
+        factory.restService(service, serviceImpl, protocolPort);
     }
 
     public static <T> T client(Class service, String registryAddress){

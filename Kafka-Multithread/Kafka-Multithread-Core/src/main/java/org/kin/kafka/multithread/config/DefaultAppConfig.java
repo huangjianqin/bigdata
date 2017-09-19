@@ -6,7 +6,7 @@ import org.kin.kafka.multithread.core.AbstractMessageHandlersManager;
  * Created by 健勤 on 2017/7/21.
  * 各配置项对应的默认值
  */
-public class AppConfigValue {
+public class DefaultAppConfig {
     public static final String OPOT = AbstractMessageHandlersManager.MsgHandlerManagerModel.OPOT.getDesc();
     public static final String OPMT = AbstractMessageHandlersManager.MsgHandlerManagerModel.OPMT.getDesc();
     public static final String OPMT2 = AbstractMessageHandlersManager.MsgHandlerManagerModel.OPMT2.getDesc();

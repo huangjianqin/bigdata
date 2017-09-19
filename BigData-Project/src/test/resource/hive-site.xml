@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?><!--
    Licensed to the Apache Software Foundation (ASF) under one or more
-   contributor license agreements.  See the NOTICE file distributed with
+   contributor license agreements.  See the NOTICE file org.kin.kafka.multithread.distributed with
    this work for additional information regarding copyright ownership.
    The ASF licenses this file to You under the Apache License, Version 2.0
    (the "License"); you may not use this file except reader compliance with
@@ -10,7 +10,7 @@
        http://www.apache.org/licenses/LICENSE-2.0
 
    Unless required by applicable law or agreed to reader writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
+   org.kin.kafka.multithread.distributed under the License is org.kin.kafka.multithread.distributed on an "AS IS" BASIS,
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
@@ -107,7 +107,7 @@
     <value>false</value>
     <description>
       This controls whether the final outputs of a query (to a local/HDFS file or a Hive table) is compressed. 
-      The compression codec and other options are determined from Hadoop config variables mapred.output.compress*
+      The compression codec and other options are determined from Hadoop nodeConfig variables mapred.output.compress*
     </description>
   </property>
   <property>
@@ -115,7 +115,7 @@
     <value>false</value>
     <description>
       This controls whether intermediate files produced by Hive between multiple map-reduce jobs are compressed. 
-      The compression codec and other options are determined from Hadoop config variables mapred.output.compress*
+      The compression codec and other options are determined from Hadoop nodeConfig variables mapred.output.compress*
     </description>
   </property>
   <property>
@@ -773,7 +773,7 @@
     <description>Default property values for newly created tables</description>
   </property>
   <property>
-    <name>hive.ddl.createtablelike.config.whitelist</name>
+    <name>hive.ddl.createtablelike.nodeConfig.whitelist</name>
     <value/>
     <description>Table Properties to copy over when executing a Create Table Like.</description>
   </property>
@@ -821,10 +821,10 @@
     <description>List of comma separated listeners for the end of metastore functions.</description>
   </property>
   <property>
-    <name>hive.metastore.partition.inherit.table.config</name>
+    <name>hive.metastore.partition.inherit.table.nodeConfig</name>
     <value/>
     <description>
-      List of comma separated keys occurring in table config which will get inherited to newly created partitions.
+      List of comma separated keys occurring in table nodeConfig which will get inherited to newly created partitions.
       * implies all the keys will get inherited.
     </description>
   </property>
@@ -1221,7 +1221,7 @@
     <name>hive.map.groupby.sorted</name>
     <value>false</value>
     <description>
-      If the bucketing/sorting config of the table exactly match the grouping key, whether to perform
+      If the bucketing/sorting nodeConfig of the table exactly match the grouping key, whether to perform
       the group by in the mapper by using BucketizedHiveInputFormat. The only downside to this
       is that it limits the number of mappers to the number of files.
     </description>
@@ -1230,7 +1230,7 @@
     <name>hive.map.groupby.sorted.testmode</name>
     <value>false</value>
     <description>
-      If the bucketing/sorting config of the table exactly match the grouping key, whether to perform
+      If the bucketing/sorting nodeConfig of the table exactly match the grouping key, whether to perform
       the group by in the mapper by using BucketizedHiveInputFormat. If the test mode is set, the plan
       is not converted, but a query property is set to denote the same.
     </description>
@@ -1494,9 +1494,9 @@
     <value>true</value>
     <description>
       When hive.merge.mapfiles, hive.merge.mapredfiles or hive.merge.tezfiles is enabled
-      while writing a table with ORC file format, enabling this config will do stripe-level
-      fast merge for small ORC files. Note that enabling this config will not honor the
-      padding tolerance config (hive.exec.orc.block.padding.tolerance).
+      while writing a table with ORC file format, enabling this nodeConfig will do stripe-level
+      fast merge for small ORC files. Note that enabling this nodeConfig will not honor the
+      padding tolerance nodeConfig (hive.exec.orc.block.padding.tolerance).
     </description>
   </property>
   <property>
@@ -1539,7 +1539,7 @@
     <description>
       Maximum fraction of heap that can be used by Parquet file writers in one task.
       It is for avoiding OutOfMemory error in tasks. Work with Parquet 1.6.0 and above.
-      This config parameter is defined in Parquet, so that it does not start with 'hive.'.
+      This nodeConfig parameter is defined in Parquet, so that it does not start with 'hive.'.
     </description>
   </property>
   <property>
@@ -1656,7 +1656,7 @@
     <value>HYBRID</value>
     <description>
       Expects one of [hybrid, bi, etl].
-      This is not a user level config. BI strategy is used when the requirement is to spend less time in split generation as opposed to query execution (split generation does not read or cache file footers). ETL strategy is used when spending little more time in split generation is acceptable (split generation reads and caches file footers). HYBRID chooses between the above strategies based on heuristics.
+      This is not a user level nodeConfig. BI strategy is used when the requirement is to spend less time in split generation as opposed to query execution (split generation does not read or cache file footers). ETL strategy is used when spending little more time in split generation is acceptable (split generation reads and caches file footers). HYBRID chooses between the above strategies based on heuristics.
     </description>
   </property>
   <property>
@@ -1740,7 +1740,7 @@
     <value>false</value>
     <description>
       For conditional joins, if input stream from a small alias can be directly applied to join operator without 
-      filtering or projection, the alias need not to be pre-staged in distributed cache via mapred local task.
+      filtering or projection, the alias need not to be pre-staged in org.kin.kafka.multithread.distributed cache via mapred local task.
       Currently, this is not working with vectorization or tez execution engine.
     </description>
   </property>
@@ -2089,7 +2089,7 @@
   <property>
     <name>hive.optimize.distinct.rewrite</name>
     <value>true</value>
-    <description>When applicable this optimization rewrites distinct aggregates from a single stage to multi-stage aggregation. This may not be optimal in all cases. Ideally, whether to trigger it or not should be cost based decision. Until Hive formalizes cost model for this, this is config driven.</description>
+    <description>When applicable this optimization rewrites distinct aggregates from a single stage to multi-stage aggregation. This may not be optimal in all cases. Ideally, whether to trigger it or not should be cost based decision. Until Hive formalizes cost model for this, this is nodeConfig driven.</description>
   </property>
   <property>
     <name>hive.optimize.union.remove</name>
@@ -2332,7 +2332,7 @@
       average row size is multiplied with the total number of rows coming out of each operator.
       Average row size is computed from average column size of all columns in the row. In the absence
       of column statistics and for variable length complex columns like list, the average number of
-      entries/values can be specified using this config.
+      entries/values can be specified using this nodeConfig.
     </description>
   </property>
   <property>
@@ -2343,7 +2343,7 @@
       average row size is multiplied with the total number of rows coming out of each operator.
       Average row size is computed from average column size of all columns in the row. In the absence
       of column statistics and for variable length complex columns like map, the average number of
-      entries/values can be specified using this config.
+      entries/values can be specified using this nodeConfig.
     </description>
   </property>
   <property>
@@ -2670,7 +2670,7 @@
     <value>false</value>
     <description>
       When set to true Hive will answer a few queries like count(1) purely using stats
-      stored in metastore. For basic stats collection turn on the config hive.stats.autogather to true.
+      stored in metastore. For basic stats collection turn on the nodeConfig hive.stats.autogather to true.
       For more advanced stats collection need to run analyze table queries.
     </description>
   </property>
@@ -2930,8 +2930,8 @@
     <value/>
     <description>
       Hive log4j configuration file.
-      If the property is not set, then logging will be initialized using hive-log4j.config found on the classpath.
-      If the property is set, the value must be a valid URI (java.net.URI, e.g. "file:///tmp/my-logging.config"),
+      If the property is not set, then logging will be initialized using hive-log4j.nodeConfig found on the classpath.
+      If the property is set, the value must be a valid URI (java.net.URI, e.g. "file:///tmp/my-logging.nodeConfig"),
       which you can then extract a URL from and pass to PropertyConfigurator.configure(URL).
     </description>
   </property>
@@ -2940,8 +2940,8 @@
     <value/>
     <description>
       Hive log4j configuration file for execution mode(sub command).
-      If the property is not set, then logging will be initialized using hive-exec-log4j.config found on the classpath.
-      If the property is set, the value must be a valid URI (java.net.URI, e.g. "file:///tmp/my-logging.config"),
+      If the property is not set, then logging will be initialized using hive-exec-log4j.nodeConfig found on the classpath.
+      If the property is set, the value must be a valid URI (java.net.URI, e.g. "file:///tmp/my-logging.nodeConfig"),
       which you can then extract a URL from and pass to PropertyConfigurator.configure(URL).
     </description>
   </property>
@@ -3469,7 +3469,7 @@
       multi-insert query will only begin once the dependencies for all these move tasks have been
       met.
       Advantages: If concurrency is enabled, the locks will only be released once the query has
-                  finished, so with this config enabled, the time when the table/partition is
+                  finished, so with this nodeConfig enabled, the time when the table/partition is
                   generated will be much closer to when the lock on it is released.
       Disadvantages: If concurrency is not enabled, with this disabled, the tables/partitions which
                      are produced by this query and finish earlier will be available for querying
@@ -3482,7 +3482,7 @@
     <value>false</value>
     <description>
       If this is set, when writing partitions, the metadata will include the bucketing/sorting
-      config with which the data was written if any (this will not overwrite the metadata
+      nodeConfig with which the data was written if any (this will not overwrite the metadata
       inherited from the table if the table is bucketed/sorted)
     </description>
   </property>

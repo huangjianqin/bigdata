@@ -13,10 +13,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.Response;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Created by huangjianqin on 2017/9/11.
@@ -104,5 +101,34 @@ public class RedisConfigStoreManager  implements ConfigStoreManager{
             }
         }
         return null;
+    }
+
+    @Override
+    public List<Properties> getAllAppConfig(ApplicationHost appHost) {
+        List<Properties> configs = new ArrayList<>();
+        try(Jedis jedis = pool.getResource()){
+            String rootKey = String.format(KEY_FORMAT, appHost.getHost(), "");
+            Set<String> keys = jedis.keys(rootKey);
+            for(String configKey: keys){
+                Set<String> childKeys = jedis.hkeys(configKey);
+                Pipeline pipeline = jedis.pipelined();
+                pipeline.multi();
+                for(String childKey: childKeys){
+                    pipeline.hget(childKey, childKey);
+                }
+                List<Object> result = pipeline.exec().get();
+                pipeline.sync();
+
+                String[] childKeysArr = childKeys.toArray(new String[1]);
+
+                Properties config = new Properties();
+                for(int i = 0; i < childKeysArr.length; i++){
+                    config.put(childKeysArr[i], result.get(i));
+                }
+
+                configs.add(config);
+            }
+        }
+        return configs;
     }
 }

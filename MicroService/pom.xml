@@ -76,10 +76,10 @@
             <version>1.1.5.RELEASE</version>
         </dependency>
 
-        <!-- Spring cloud config-->
+        <!-- Spring cloud nodeConfig-->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-config</artifactId>
+            <artifactId>spring-cloud-starter-nodeConfig</artifactId>
         </dependency>
 
         <!-- ribbon-->
@@ -107,7 +107,7 @@
 
         <dependency>
             <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-zookeeper-config</artifactId>
+            <artifactId>spring-cloud-starter-zookeeper-nodeConfig</artifactId>
         </dependency>
 
         <!-- 配置servlet容器包-->

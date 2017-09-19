@@ -15,7 +15,7 @@ public class DefaultRPCFactoryImpl implements RPCFactory {
     }
 
     @Override
-    public void service(Class service, Object serviceImpl, String registryAddress, String protocolName){
+    public void service(Class service, Object serviceImpl, String registryAddress, String protocolName, int protocolPort){
         ApplicationConfig applicationConfig = new ApplicationConfig();
         applicationConfig.setName(service.getName() + "-service" + applicationConfig.getId());
 
@@ -24,6 +24,7 @@ public class DefaultRPCFactoryImpl implements RPCFactory {
 
         ProtocolConfig protocolConfig = new ProtocolConfig();
         protocolConfig.setName(protocolName);
+        protocolConfig.setPort(protocolPort);
 
         ServiceConfig serviceConfig = new ServiceConfig();
         serviceConfig.setInterface(service.getName());
@@ -42,14 +43,13 @@ public class DefaultRPCFactoryImpl implements RPCFactory {
         }));
     }
 
-    @Override
-    public void serviceWithoutRegistry(Class service, Object serviceImpl, String protocolName, int port){
+    private void serviceWithoutRegistry(Class service, Object serviceImpl, String protocolName, int protocolPort){
         ApplicationConfig applicationConfig = new ApplicationConfig();
         applicationConfig.setName(service.getName() + "-service" + applicationConfig.getId());
 
         ProtocolConfig protocolConfig = new ProtocolConfig();
         protocolConfig.setName(protocolName);
-        protocolConfig.setPort(port);
+        protocolConfig.setPort(protocolPort);
 
         ServiceConfig serviceConfig = new ServiceConfig();
         serviceConfig.setInterface(service.getName());
@@ -65,6 +65,16 @@ public class DefaultRPCFactoryImpl implements RPCFactory {
                 serviceConfig.unexport();
             }
         }));
+    }
+
+    @Override
+    public void serviceWithoutRegistry(Class service, Object serviceImpl, int protocolPort){
+        serviceWithoutRegistry(service, serviceImpl, "dubbo", protocolPort);
+    }
+
+    @Override
+    public void restService(Class service, Object serviceImpl, int protocolPort) {
+        serviceWithoutRegistry(service, serviceImpl, "rest", protocolPort);
     }
 
     @Override
