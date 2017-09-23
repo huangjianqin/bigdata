@@ -7,7 +7,7 @@ import org.kin.kafka.multithread.core.Application;
 import org.kin.kafka.multithread.core.MessageFetcher;
 import org.kin.kafka.multithread.core.OCOTMultiProcessor;
 import org.kin.kafka.multithread.distributed.ChildRunModel;
-import org.kin.kafka.multithread.utils.ConfigUtils;
+import org.kin.kafka.multithread.utils.AppConfigUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +28,7 @@ import java.util.*;
 public class MultiThreadConsumerManager implements ReConfigable{
     private static final Logger log = LoggerFactory.getLogger(MultiThreadConsumerManager.class);
     private static final MultiThreadConsumerManager manager = new MultiThreadConsumerManager();
-    private static Map<String, ApplicationContext> name2ApplicationContext = new HashMap();
+    private static final Map<String, ApplicationContext> appName2ApplicationContext = new HashMap();
 
     public static MultiThreadConsumerManager instance(){
         return manager;
@@ -38,10 +38,10 @@ public class MultiThreadConsumerManager implements ReConfigable{
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
-                for(ApplicationContext applicationContext: name2ApplicationContext.values()){
+                for(ApplicationContext applicationContext: appName2ApplicationContext.values()){
                     applicationContext.close();
                 }
-                name2ApplicationContext.clear();
+                appName2ApplicationContext.clear();
             }
         }));
     }
@@ -50,22 +50,13 @@ public class MultiThreadConsumerManager implements ReConfigable{
     }
 
     private void checkAppName(String appName){
-        if (name2ApplicationContext.containsKey(appName)){
+        if (appName2ApplicationContext.containsKey(appName)){
             throw new IllegalStateException("Manager has same app name");
         }
     }
 
-    private void checkConfig(Properties config){
-        //检查必要配置
-        ConfigUtils.checkRequireConfig(config);
-        //检查配置格式
-        //...
-        //填充默认值
-        ConfigUtils.fillDefaultConfig(config);
-    }
-
     public <K, V> ApplicationContext newApplication(Properties config){
-        checkConfig(config);
+        AppConfigUtils.oneNecessaryCheckAndFill(config);
 
         String appName = config.getProperty(AppConfig.APPNAME);
 
@@ -100,7 +91,7 @@ public class MultiThreadConsumerManager implements ReConfigable{
                     appHost,
                     childRunModel
             );
-            name2ApplicationContext.put(appName, applicationContext);
+            appName2ApplicationContext.put(appName, applicationContext);
             return applicationContext;
         }
         else{
@@ -109,20 +100,33 @@ public class MultiThreadConsumerManager implements ReConfigable{
     }
 
     public ApplicationContext getApplicationContext(String appName){
-        if(name2ApplicationContext.containsKey(appName)){
-            return name2ApplicationContext.get(appName);
+        if(appName2ApplicationContext.containsKey(appName)){
+            return appName2ApplicationContext.get(appName);
         }
         return null;
     }
 
+    public int getAppSize(){
+        return appName2ApplicationContext.size();
+    }
+
+    public boolean containsAppName(String appName){
+        return appName2ApplicationContext.containsKey(appName);
+    }
+
+    public void shutdownApp(String appName){
+        appName2ApplicationContext.get(appName).close();
+        appName2ApplicationContext.remove(appName);
+    }
+
     @Override
     public void reConfig(Properties newConfig) {
-        checkConfig(newConfig);
+        AppConfigUtils.oneNecessaryCheckAndFill(newConfig);
 
         String appName = newConfig.getProperty(AppConfig.APPNAME);
 
         checkAppName(appName);
 
-        String model = newConfig.getProperty(AppConfig.MESSAGEHANDLERMANAGER_MODEL);
+        appName2ApplicationContext.get(appName).reConfig(newConfig);
     }
 }

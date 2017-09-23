@@ -8,6 +8,6 @@ import org.kin.kafka.multithread.domain.HealthReport;
  * 告诉Node关闭Container
  */
 public interface NodeMasterProtocol {
-    Boolean closeContainer(int containerId);
+    Boolean closeContainer(long containerId);
     void report(HealthReport report);
 }

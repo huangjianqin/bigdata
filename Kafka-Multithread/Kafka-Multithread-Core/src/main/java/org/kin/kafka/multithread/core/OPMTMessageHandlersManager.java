@@ -4,7 +4,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.config.AppConfig;
-import org.kin.kafka.multithread.utils.ConfigUtils;
+import org.kin.kafka.multithread.utils.AppConfigUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
@@ -204,17 +204,17 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         int threadQueueSizePerPartition = this.threadQueueSizePerPartition;
         int handlerSize = this.handlerSize;
 
-        if(ConfigUtils.isConfigItemChange(minThreadSizePerPartition, newConfig, AppConfig.OPMT_MINTHREADSIZEPERPARTITION)){
+        if(AppConfigUtils.isConfigItemChange(minThreadSizePerPartition, newConfig, AppConfig.OPMT_MINTHREADSIZEPERPARTITION)){
             minThreadSizePerPartition = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT_MINTHREADSIZEPERPARTITION));
         }
 
-        if(ConfigUtils.isConfigItemChange(maxThreadSizePerPartition, newConfig, AppConfig.OPMT_MAXTHREADSIZEPERPARTITION)){
+        if(AppConfigUtils.isConfigItemChange(maxThreadSizePerPartition, newConfig, AppConfig.OPMT_MAXTHREADSIZEPERPARTITION)){
             maxThreadSizePerPartition = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT_MAXTHREADSIZEPERPARTITION));
         }
-        if(ConfigUtils.isConfigItemChange(threadQueueSizePerPartition, newConfig, AppConfig.OPMT_THREADQUEUESIZEPERPARTITION)){
+        if(AppConfigUtils.isConfigItemChange(threadQueueSizePerPartition, newConfig, AppConfig.OPMT_THREADQUEUESIZEPERPARTITION)){
             threadQueueSizePerPartition = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT_THREADQUEUESIZEPERPARTITION));
         }
-        if(ConfigUtils.isConfigItemChange(handlerSize, newConfig, AppConfig.OPMT_HANDLERSIZE)){
+        if(AppConfigUtils.isConfigItemChange(handlerSize, newConfig, AppConfig.OPMT_HANDLERSIZE)){
             handlerSize = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT_HANDLERSIZE));
         }
 

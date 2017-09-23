@@ -5,7 +5,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
 import org.kin.kafka.multithread.config.AppConfig;
-import org.kin.kafka.multithread.utils.ConfigUtils;
+import org.kin.kafka.multithread.utils.AppConfigUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
@@ -208,7 +208,7 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
     public void reConfig(Properties newConfig) {
         int threadSizePerPartition = this.threadSizePerPartition;
 
-        if(ConfigUtils.isConfigItemChange(threadSizePerPartition, newConfig, AppConfig.OPMT2_THREADSIZEPERPARTITION)){
+        if(AppConfigUtils.isConfigItemChange(threadSizePerPartition, newConfig, AppConfig.OPMT2_THREADSIZEPERPARTITION)){
             threadSizePerPartition = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT2_THREADSIZEPERPARTITION));
             if(threadSizePerPartition > 0){
                 //仅仅是处理资源减少的情况,资源动态增加在dispatch中处理

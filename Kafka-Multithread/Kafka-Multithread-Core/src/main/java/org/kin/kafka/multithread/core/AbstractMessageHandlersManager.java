@@ -1,7 +1,6 @@
 package org.kin.kafka.multithread.core;
 
 
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -9,10 +8,9 @@ import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.ReConfigable;
-import org.kin.kafka.multithread.utils.ConfigUtils;
+import org.kin.kafka.multithread.utils.AppConfigUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.ClassUtils;
-import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,9 +34,9 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
     AbstractMessageHandlersManager(Properties config){
         this.config = config;
 
-        for(String topic: ConfigUtils.getSubscribeTopic(config)){
-            topic2HandlerClass.put(topic, ClassUtils.getClass(config.getProperty(AppConfig.MESSAGEHANDLER)));
-            topic2HandlerClass.put(topic, ClassUtils.getClass(config.getProperty(AppConfig.COMMITSTRATEGY)));
+        for(String topic: AppConfigUtils.getSubscribeTopic(config)){
+            topic2HandlerClass.put(topic, AppConfigUtils.getMessageHandlerClass(config));
+            topic2CommitStrategyClass.put(topic, AppConfigUtils.getCommitStrategyClass(config));
         }
     }
 

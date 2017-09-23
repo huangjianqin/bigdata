@@ -1,5 +1,6 @@
 package org.kin.kafka.multithread.utils;
 
+import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.AbstractConsumerRebalanceListener;
 import org.kin.kafka.multithread.api.CallBack;
 import org.kin.kafka.multithread.api.CommitStrategy;
@@ -13,62 +14,42 @@ import java.util.*;
 /**
  * Created by huangjianqin on 2017/9/12.
  */
-public class ConfigUtils {
+public class AppConfigUtils {
     public static void fillDefaultConfig(Properties config){
         if(config == null){
             return;
         }
-        Properties defaultConfig = AppConfig.DEFAULT_APPCONFIG;
-        for(Object key: defaultConfig.keySet()){
-            if(config.containsKey(key) && (config.get(key) == null || config.get(key).equals(""))){
-                config.put(key, defaultConfig.get(key));
-            }
+        Properties tmp = deepCopy(AppConfig.DEFAULT_APPCONFIG);
+        tmp.putAll(config);
+        config.clear();
+        config.putAll(tmp);
+    }
+
+    public static Properties deepCopy(Properties config){
+        if(config == null){
+            return null;
         }
+
+        Properties clonedProperties = new Properties();
+        for(Map.Entry<Object, Object> entry: config.entrySet()){
+            clonedProperties.put(new String(entry.getKey().toString()), new String(entry.getValue().toString()));
+        }
+        return clonedProperties;
     }
 
     public static void checkRequireConfig(Properties config){
         if(config == null){
-            return;
+            throw new IllegalArgumentException("config is null");
         }
         //----------------------------------------------
-        if(!config.containsKey(AppConfig.APPNAME)){
-            throw new IllegalArgumentException("config \"" +  AppConfig.APPNAME + "\" is required");
-        }
+        for(String requireConfigKey: AppConfig.REQUIRE_APPCONFIGS){
+            if(!config.containsKey(requireConfigKey)){
+                throw new IllegalArgumentException("config \"" +  requireConfigKey + "\" is required");
+            }
 
-        if(config.getProperty(AppConfig.APPNAME) == null || config.getProperty(AppConfig.APPNAME).equals("")){
-            throw new IllegalArgumentException("config \"" +  AppConfig.APPNAME + "\" is required");
-        }
-        //----------------------------------------------
-        if(!config.containsKey(AppConfig.APPHOST)){
-            throw new IllegalArgumentException("config \"" +  AppConfig.APPHOST + "\" is required");
-        }
-
-        if(config.getProperty(AppConfig.APPHOST) == null || config.getProperty(AppConfig.APPHOST).equals("")){
-            throw new IllegalArgumentException("config \"" +  AppConfig.APPHOST + "\" is required");
-        }
-        //----------------------------------------------
-        if(!config.containsKey(AppConfig.APPSTATUS)){
-            throw new IllegalArgumentException("config \"" +  AppConfig.APPSTATUS + "\" is required");
-        }
-
-        if(config.getProperty(AppConfig.APPSTATUS) == null || config.getProperty(AppConfig.APPSTATUS).equals("")){
-            throw new IllegalArgumentException("config \"" +  AppConfig.APPSTATUS + "\" is required");
-        }
-        //----------------------------------------------
-        if(!config.containsKey(AppConfig.MESSAGEHANDLERMANAGER_MODEL)){
-            throw new IllegalArgumentException("config \"" +  AppConfig.MESSAGEHANDLERMANAGER_MODEL + "\" is required");
-        }
-
-        if(config.getProperty(AppConfig.MESSAGEHANDLERMANAGER_MODEL) == null || config.getProperty(AppConfig.MESSAGEHANDLERMANAGER_MODEL).equals("")){
-            throw new IllegalArgumentException("config \"" +  AppConfig.MESSAGEHANDLERMANAGER_MODEL + "\" is required");
-        }
-        //----------------------------------------------
-        if(!config.containsKey(AppConfig.KAFKA_CONSUMER_SUBSCRIBE)){
-            throw new IllegalArgumentException("config \"" +  AppConfig.KAFKA_CONSUMER_SUBSCRIBE + "\" is required");
-        }
-
-        if(config.getProperty(AppConfig.KAFKA_CONSUMER_SUBSCRIBE) == null || config.getProperty(AppConfig.KAFKA_CONSUMER_SUBSCRIBE).equals("")){
-            throw new IllegalArgumentException("config \"" +  AppConfig.KAFKA_CONSUMER_SUBSCRIBE + "\" is required");
+            if(config.getProperty(requireConfigKey) == null || config.getProperty(requireConfigKey).equals("")){
+                throw new IllegalArgumentException("config \"" +  requireConfigKey + "\" is required");
+            }
         }
     }
 
@@ -113,11 +94,29 @@ public class ConfigUtils {
     }
 
     public static Set<String> getSubscribeTopic(Properties config){
+        if(isStaticSubscribe(config)){
+           throw new IllegalStateException("topic(and partition) format is not right");
+        }
+
         Set<String> topics = new HashSet<>();
-        for(String topic: config.get(AppConfig.KAFKA_CONSUMER_SUBSCRIBE).toString().split(",")){
+        for(String topic: config.getProperty(AppConfig.KAFKA_CONSUMER_SUBSCRIBE).split(",")){
             topics.add(topic);
         }
         return topics;
+    }
+
+    public static Set<TopicPartition> getAssignTopicPartition(Properties config){
+        if(!isStaticSubscribe(config)){
+            throw new IllegalStateException("topic(and partition) format is not right");
+        }
+
+        Set<TopicPartition> topicPartitions = new HashSet<>();
+        for(String topicPartition: config.getProperty(AppConfig.KAFKA_CONSUMER_SUBSCRIBE).split(",")){
+            String topic = topicPartition.split("-")[0];
+            int partition = Integer.valueOf(topicPartition.split("-")[1]);
+            topicPartitions.add(new TopicPartition(topic, partition));
+        }
+        return topicPartitions;
     }
 
     public static Class<? extends MessageHandler> getMessageHandlerClass(Properties config){
@@ -168,28 +167,42 @@ public class ConfigUtils {
         throw new IllegalStateException("message handler class wrong");
     }
 
-    public static boolean isAutoSubscribe(Properties config){
-        return config.get(AppConfig.KAFKA_CONSUMER_SUBSCRIBE).toString().split(",")[0].split("-").length == 2;
+    public static boolean isStaticSubscribe(Properties config){
+        if(!config.containsKey(AppConfig.KAFKA_CONSUMER_SUBSCRIBE)){
+            throw new IllegalStateException("topic(and partition) is not set up");
+        }
+
+        return config.getProperty(AppConfig.KAFKA_CONSUMER_SUBSCRIBE).split(",")[0].split("-").length == 2;
     }
 
     public static List<Properties> allNecessaryCheckAndFill(List<Properties> newConfigs){
         List<Properties> result = new ArrayList<>();
         for(Properties config: newConfigs){
-            if(oneNecessaryCheckAndFill(config)){
+            oneNecessaryCheckAndFill(config);
+            if(config != null){
                 result.add(config);
             }
         }
         return result;
     }
 
-    public static boolean oneNecessaryCheckAndFill(Properties newConfig){
+    public static void oneNecessaryCheckAndFill(Properties newConfig){
         //检查必要配置
-        ConfigUtils.checkRequireConfig(newConfig);
+        AppConfigUtils.checkRequireConfig(newConfig);
         //检查配置格式
-        //...
+        if(!checkConfigValueFormat(newConfig)){
+            return;
+        }
         //填充默认值
-        ConfigUtils.fillDefaultConfig(newConfig);
+        AppConfigUtils.fillDefaultConfig(newConfig);
+    }
 
+    public static boolean checkConfigValueFormat(Properties config){
+        for(Map.Entry<String, String> entry: AppConfig.CONFIG2FORMATOR.entrySet()){
+            if(!config.getProperty(entry.getKey()).matches(entry.getValue())){
+                throw new IllegalStateException("config \"" +  entry.getKey() + "\" 's value \"" + entry.getValue() + "\" format is not correct");
+            }
+        }
         return true;
     }
 }

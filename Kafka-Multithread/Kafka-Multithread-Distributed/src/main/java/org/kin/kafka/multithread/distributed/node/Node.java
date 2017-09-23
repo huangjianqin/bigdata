@@ -3,7 +3,7 @@ package org.kin.kafka.multithread.distributed.node;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.ConfigFetcher;
 import org.kin.kafka.multithread.distributed.ChildRunModel;
-import org.kin.kafka.multithread.distributed.container.JVMContainer;
+import org.kin.kafka.multithread.distributed.container.impl.JVMContainer;
 import org.kin.kafka.multithread.distributed.container.allocator.ContainerAllocator;
 import org.kin.kafka.multithread.distributed.container.allocator.impl.LocalContainerAllocator;
 import org.kin.kafka.multithread.distributed.node.config.NodeConfig;
@@ -30,6 +30,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 public class Node implements NodeMasterProtocol{
     private static final Long nodeId = Long.valueOf(HostUtils.localhost().replaceAll(".", ""));
     public static final int CONTAINER_NUM_LIMIT = 10;
+    public static final long NODE_JVM_CONTAINER = nodeId * CONTAINER_NUM_LIMIT;
 
     private ConfigFetcher configFetcher;
     private ContainerAllocator containerAllocator;
@@ -102,7 +103,7 @@ public class Node implements NodeMasterProtocol{
                         //不使用默认的构造
                         containerContext = new ContainerContext(
                                 nodeId * CONTAINER_NUM_LIMIT,
-                                getContainerProtocolPort(containerInitProtocolPort, nodeId * CONTAINER_NUM_LIMIT),
+                                getContainerProtocolPort(containerInitProtocolPort, NODE_JVM_CONTAINER),
                                 containerContext.getIdleTimeout(),
                                 containerHealthReportInternal);
                         containerMasterProtocol = new JVMContainer(containerContext, nodeContext, this);
@@ -110,6 +111,9 @@ public class Node implements NodeMasterProtocol{
                         break;
                     case NODE:
                         containerMasterProtocol = containerAllocator.containerAllocate(containerContext, nodeContext);
+                        if(containerMasterProtocol == null){
+                            configFetcher.configFail(Collections.singletonList(newConfig));
+                        }
                         break;
                     default:
                         throw new IllegalStateException("unknown AppChildRunModel '" + newConfig.getProperty(AppConfig.APP_CHILD_RUN_MODEL) + "'");
@@ -130,13 +134,13 @@ public class Node implements NodeMasterProtocol{
     }
 
     @Override
-    public Boolean closeContainer(int containerId) {
+    public Boolean closeContainer(long containerId) {
         return id2Container.remove(containerId) == null;
     }
 
     @Override
     public void report(HealthReport report) {
-
+        containerAllocator.updateContainerStatus(report);
     }
 
     private long getContainerId(){

@@ -8,7 +8,7 @@ import org.kin.kafka.multithread.configcenter.ReConfigable;
 import org.kin.kafka.multithread.statistics.Statistics;
 import org.kin.kafka.multithread.api.AbstractConsumerRebalanceListener;
 import org.kin.kafka.multithread.utils.ClassUtils;
-import org.kin.kafka.multithread.utils.ConfigUtils;
+import org.kin.kafka.multithread.utils.AppConfigUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
@@ -46,9 +46,9 @@ public class OCOTMultiProcessor<K, V>  implements Application{
     public OCOTMultiProcessor(Properties config) {
         this.consumerNum = Integer.valueOf(config.getProperty(AppConfig.OCOT_CONSUMERNUM));
         this.config = config;
-        this.messageHandlerClass = ConfigUtils.getMessageHandlerClass(config);
-        this.commitStrategyClass = ConfigUtils.getCommitStrategyClass(config);
-        this.consumerRebalanceListenerClass = ConfigUtils.getConsumerRebalanceListenerClass(config);
+        this.messageHandlerClass = AppConfigUtils.getMessageHandlerClass(config);
+        this.commitStrategyClass = AppConfigUtils.getCommitStrategyClass(config);
+        this.consumerRebalanceListenerClass = AppConfigUtils.getConsumerRebalanceListenerClass(config);
         updataConfig(config);
         this.threads = (ThreadPoolExecutor) Executors.newCachedThreadPool();
     }
@@ -57,8 +57,8 @@ public class OCOTMultiProcessor<K, V>  implements Application{
         if(config.getProperty(AppConfig.KAFKA_CONSUMER_SUBSCRIBE).contains("-")){
             throw new IllegalStateException("OCOT doesn't support set messagehandler per topic");
         }
-        this.topics = ConfigUtils.getSubscribeTopic(config);
-        this.callBackClass = ConfigUtils.getCallbackClass(config);
+        this.topics = AppConfigUtils.getSubscribeTopic(config);
+        this.callBackClass = AppConfigUtils.getCallbackClass(config);
     }
 
     @Override
@@ -114,7 +114,7 @@ public class OCOTMultiProcessor<K, V>  implements Application{
 
         updataConfig(newConfig);
         int consumerNum = this.consumerNum;
-        if(ConfigUtils.isConfigItemChange(consumerNum, newConfig, AppConfig.OCOT_CONSUMERNUM)){
+        if(AppConfigUtils.isConfigItemChange(consumerNum, newConfig, AppConfig.OCOT_CONSUMERNUM)){
             consumerNum = Integer.valueOf(newConfig.getProperty(AppConfig.OCOT_CONSUMERNUM));
             if(consumerNum > 0){
                 if(consumerNum > this.consumerNum){
@@ -378,7 +378,7 @@ public class OCOTMultiProcessor<K, V>  implements Application{
 
         @Override
         public void reConfig(Properties newConfig) {
-            if(ConfigUtils.isConfigItemChange(config, newConfig, AppConfig.MESSAGEFETCHER_POLL_TIMEOUT)){
+            if(AppConfigUtils.isConfigItemChange(config, newConfig, AppConfig.MESSAGEFETCHER_POLL_TIMEOUT)){
                 pollTimeout = Long.valueOf(newConfig.get(AppConfig.MESSAGEFETCHER_POLL_TIMEOUT).toString());
             }
 

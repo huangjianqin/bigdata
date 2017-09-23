@@ -7,16 +7,19 @@ import org.kin.kafka.multithread.core.AbstractMessageHandlersManager;
  * 各配置项对应的默认值
  */
 public class DefaultAppConfig {
+    public static final String DEFAULT_NULL = "";
+
     public static final String OPOT = AbstractMessageHandlersManager.MsgHandlerManagerModel.OPOT.getDesc();
     public static final String OPMT = AbstractMessageHandlersManager.MsgHandlerManagerModel.OPMT.getDesc();
     public static final String OPMT2 = AbstractMessageHandlersManager.MsgHandlerManagerModel.OPMT2.getDesc();
-    public static final String OCOT = "OCOT";
+    public static final String OCOT = AbstractMessageHandlersManager.MsgHandlerManagerModel.OCOT.getDesc();;
 
     //kafka consumer
     public static final String DEFAULT_KAFKA_CONSUMER_SUBSCRIBE = "";
 
     //message fetcher
     public static final String DEFAULT_MESSAGEFETCHER_POLL_TIMEOUT = "1000";
+    public static final String DEFAULT_MESSAGEFETCHER_COMMIT_ENABLERETRY = "false";
     public static final String DEFAULT_MESSAGEFETCHER_COMMIT_MAXRETRY = "5";
     public static final String DEFAULT_MESSAGEFETCHER_CONSUME_CALLBACK = "";
 

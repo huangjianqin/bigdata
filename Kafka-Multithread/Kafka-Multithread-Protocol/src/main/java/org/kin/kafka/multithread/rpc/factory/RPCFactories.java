@@ -35,7 +35,7 @@ public class RPCFactories {
         factory.serviceWithoutRegistry(service, serviceImpl, protocolPort);
     }
 
-    public static void restService(Class service, Object serviceImpl, int protocolPort) {
+    public static void restServiceWithoutRegistry(Class service, Object serviceImpl, int protocolPort) {
         if(factory == null){
             init(DEFAULT_RPCFACTORY);
         }

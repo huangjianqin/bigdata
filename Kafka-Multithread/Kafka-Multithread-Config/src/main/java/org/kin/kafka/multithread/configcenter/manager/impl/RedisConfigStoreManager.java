@@ -2,7 +2,7 @@ package org.kin.kafka.multithread.configcenter.manager.impl;
 
 import org.kin.kafka.multithread.configcenter.common.StoreCodec;
 import org.kin.kafka.multithread.configcenter.common.StoreCodecs;
-import org.kin.kafka.multithread.configcenter.config.Config;
+import org.kin.kafka.multithread.configcenter.config.ConfigCenterConfig;
 import org.kin.kafka.multithread.configcenter.manager.ConfigStoreManager;
 import org.kin.kafka.multithread.protocol.app.ApplicationConfig;
 import org.kin.kafka.multithread.protocol.app.ApplicationHost;
@@ -24,8 +24,8 @@ public class RedisConfigStoreManager  implements ConfigStoreManager{
 
     @Override
     public void setup(Properties config) {
-        String host = (String) config.get(Config.CONFIG_STOREMANAGER_SERVER_HOST);
-        String port = (String) config.get(Config.CONFIG_STOREMANAGER_SERVER_PORT);
+        String host = (String) config.get(ConfigCenterConfig.CONFIG_STOREMANAGER_SERVER_HOST);
+        String port = (String) config.get(ConfigCenterConfig.CONFIG_STOREMANAGER_SERVER_PORT);
 
         pool = new JedisPool(host, Integer.valueOf(port));
     }

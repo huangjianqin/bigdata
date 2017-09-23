@@ -4,7 +4,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.ReConfigable;
-import org.kin.kafka.multithread.utils.ConfigUtils;
+import org.kin.kafka.multithread.utils.AppConfigUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,7 +140,7 @@ public class PendingWindow implements ReConfigable{
     public void reConfig(Properties newConfig) {
         int slidingWindow = this.slidingWindow;
 
-        if(ConfigUtils.isConfigItemChange(slidingWindow, newConfig, AppConfig.PENDINGWINDOW_SLIDINGWINDOW)){
+        if(AppConfigUtils.isConfigItemChange(slidingWindow, newConfig, AppConfig.PENDINGWINDOW_SLIDINGWINDOW)){
             slidingWindow = Integer.valueOf(newConfig.get(AppConfig.PENDINGWINDOW_SLIDINGWINDOW).toString());
             //不需要同步,因为stop the world(处理线程停止处理消息)
             this.slidingWindow = slidingWindow;

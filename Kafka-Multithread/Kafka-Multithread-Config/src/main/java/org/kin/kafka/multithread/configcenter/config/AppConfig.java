@@ -19,6 +19,7 @@ public class AppConfig {
      * CLOSE
      * RESTART
      */
+    //一次有效,仅仅是标识配置目的
     //require
     public static final String APPSTATUS = "appStatus";
 
@@ -32,6 +33,7 @@ public class AppConfig {
 
     //message fetcher
     public static final String MESSAGEFETCHER_POLL_TIMEOUT = "messagefetcher.poll.timeout";
+    public static final String MESSAGEFETCHER_COMMIT_ENABLERETRY = "messagefetcher.commit.enableretry";
     public static final String MESSAGEFETCHER_COMMIT_MAXRETRY = "messagefetcher.commit.maxretry";
     //仅支持RESTART和RUN状态
     public static final String MESSAGEFETCHER_CONSUME_CALLBACK = "messagefetcher.consume.callback";
@@ -43,6 +45,7 @@ public class AppConfig {
     //require
     public static final String MESSAGEHANDLER = "messagehandler";
     public static final String COMMITSTRATEGY = "commitstrategy";
+    //end
     public static final String CONSUMERREBALANCELISTENER = "consumerrebalancelistener";
 
     //opot
@@ -62,10 +65,10 @@ public class AppConfig {
     //pendingwindow
     public static final String PENDINGWINDOW_SLIDINGWINDOW = "slidingWindow";
 
+    //本地
     //config fetcher
     public static final String CONFIGFETCHER_FETCHERINTERVAL = "configfetcher.fetcherinterval";
 
-    //本地
     //配置中心节点信息
     public static final String CONFIGCENTER_HOST = "configcenter.host";
     public static final String CONFIGCENTER_PORT = "configcenter.port";

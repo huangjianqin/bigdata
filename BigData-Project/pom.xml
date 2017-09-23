@@ -104,6 +104,13 @@
             <version>${spark.version}</version>
         </dependency>
 
+        <!--优化过的java集合实现,可减少使用内存-->
+        <dependency>
+            <groupId>it.unimi.dsi</groupId>
+            <artifactId>fastutil</artifactId>
+            <version>8.1.0</version>
+        </dependency>
+
         <!--  spark mongodb-->
         <dependency>
             <groupId>org.mongodb.spark</groupId>

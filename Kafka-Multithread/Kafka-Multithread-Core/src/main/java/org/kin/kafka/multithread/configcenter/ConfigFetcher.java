@@ -7,7 +7,7 @@ import org.kin.kafka.multithread.domain.ConfigSetupResult;
 import org.kin.kafka.multithread.protocol.app.ApplicationHost;
 import org.kin.kafka.multithread.protocol.configcenter.DiamondMasterProtocol;
 import org.kin.kafka.multithread.rpc.factory.RPCFactories;
-import org.kin.kafka.multithread.utils.ConfigUtils;
+import org.kin.kafka.multithread.utils.AppConfigUtils;
 import org.kin.kafka.multithread.utils.HostUtils;
 
 import java.util.*;
@@ -60,17 +60,17 @@ public class ConfigFetcher extends Thread{
             ConfigFetchResult configFetchResult = diamondMasterProtocol.getAppConfig(myAppHost);
 
             //配置内容,格式匹配成功的配置
-            List<Properties> halfSuccessConfigs = ConfigUtils.allNecessaryCheckAndFill(configFetchResult.getNewConfigs());
+            List<Properties> halfSuccessConfigs = AppConfigUtils.allNecessaryCheckAndFill(configFetchResult.getNewConfigs());
             List<Properties> failConfigs = configFetchResult.getNewConfigs();
             failConfigs.removeAll(halfSuccessConfigs);
 
             //通知config center配置更新失败,回滚以前的配置
             if(failConfigs.size() > 0){
-                List<String> failAppName = new ArrayList<>();
-                for(Properties properties: failConfigs){
-                    failAppName.add(properties.getProperty(AppConfig.APPNAME));
+                List<String> failAppNames = new ArrayList<>();
+                for(Properties config: failConfigs){
+                    failAppNames.add(config.getProperty(AppConfig.APPNAME));
                 }
-                ConfigSetupResult result = new ConfigSetupResult(failAppName, System.currentTimeMillis());
+                ConfigSetupResult result = new ConfigSetupResult(failAppNames, System.currentTimeMillis());
                 diamondMasterProtocol.configFail(result);
             }
 
@@ -132,9 +132,16 @@ public class ConfigFetcher extends Thread{
         return false;
     }
 
-
     public void close(){
         isStopped = true;
     }
 
+    public void configFail(List<Properties> failConfigs){
+        List<String> failAppNames = new ArrayList<>();
+        for(Properties config: failConfigs){
+            failAppNames.add(config.getProperty(AppConfig.APPNAME));
+        }
+        ConfigSetupResult result = new ConfigSetupResult(failAppNames, System.currentTimeMillis());
+        diamondMasterProtocol.configFail(result);
+    }
 }

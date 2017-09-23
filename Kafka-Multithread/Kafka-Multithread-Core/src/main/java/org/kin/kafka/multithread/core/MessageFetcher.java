@@ -3,11 +3,9 @@ package org.kin.kafka.multithread.core;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.CallBack;
-import org.kin.kafka.multithread.api.CommitStrategy;
-import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.utils.ClassUtils;
-import org.kin.kafka.multithread.utils.ConfigUtils;
+import org.kin.kafka.multithread.utils.AppConfigUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.StrUtils;
 import org.slf4j.Logger;
@@ -58,6 +56,7 @@ public class MessageFetcher<K, V> extends Thread implements Application {
 
         this.config = config;
         pollTimeout = Long.valueOf(config.getProperty(AppConfig.MESSAGEFETCHER_POLL_TIMEOUT));
+        enableRetry = Boolean.valueOf(config.getProperty(AppConfig.MESSAGEFETCHER_COMMIT_ENABLERETRY));
         maxRetry = Integer.valueOf(config.getProperty(AppConfig.MESSAGEFETCHER_COMMIT_MAXRETRY));
 
         //messagehandler.mode => OPOT/OPMT
@@ -82,7 +81,7 @@ public class MessageFetcher<K, V> extends Thread implements Application {
         callBackClass = ClassUtils.getClass(config.getProperty(AppConfig.MESSAGEFETCHER_CONSUME_CALLBACK));
 
         this.consumer = new KafkaConsumer<K, V>(config);
-        this.consumer.subscribe(ConfigUtils.getSubscribeTopic(config), new MessageFetcher.InnerConsumerRebalanceListener<>(this));
+        this.consumer.subscribe(AppConfigUtils.getSubscribeTopic(config), new MessageFetcher.InnerConsumerRebalanceListener<>(this));
     }
 
     @Override
@@ -279,11 +278,11 @@ public class MessageFetcher<K, V> extends Thread implements Application {
     }
 
     private void doUpdateConfig(Properties newConfig){
-        if(ConfigUtils.isConfigItemChange(config, newConfig, AppConfig.MESSAGEFETCHER_POLL_TIMEOUT)){
+        if(AppConfigUtils.isConfigItemChange(config, newConfig, AppConfig.MESSAGEFETCHER_POLL_TIMEOUT)){
             pollTimeout = Long.valueOf(newConfig.getProperty(AppConfig.MESSAGEFETCHER_POLL_TIMEOUT));
         }
 
-        if(ConfigUtils.isConfigItemChange(config, newConfig, AppConfig.MESSAGEFETCHER_COMMIT_MAXRETRY)){
+        if(AppConfigUtils.isConfigItemChange(config, newConfig, AppConfig.MESSAGEFETCHER_COMMIT_MAXRETRY)){
             maxRetry = Integer.valueOf(newConfig.getProperty(AppConfig.MESSAGEFETCHER_COMMIT_MAXRETRY));
         }
 

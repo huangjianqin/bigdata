@@ -2,8 +2,8 @@ package org.kin.kafka.multithread.configcenter;
 
 import org.kin.kafka.multithread.configcenter.common.StoreCodec;
 import org.kin.kafka.multithread.configcenter.common.StoreCodecs;
-import org.kin.kafka.multithread.configcenter.config.Config;
-import org.kin.kafka.multithread.configcenter.config.DefaultConfig;
+import org.kin.kafka.multithread.configcenter.config.ConfigCenterConfig;
+import org.kin.kafka.multithread.configcenter.config.DefaultConfigCenterConfig;
 import org.kin.kafka.multithread.configcenter.manager.ConfigStoreManager;
 import org.kin.kafka.multithread.configcenter.utils.PropertiesUtils;
 import org.kin.kafka.multithread.configcenter.utils.YAMLUtils;
@@ -39,7 +39,7 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     private Map<String, Map<String, Properties>> host2AppName2Config = new HashMap<>();
 
     public Diamond() {
-        this(DefaultConfig.DEFALUT_CONFIGPATH);
+        this(DefaultConfigCenterConfig.DEFALUT_CONFIGPATH);
     }
 
     public Diamond(String configPath) {
@@ -47,7 +47,7 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     }
 
     public void init(){
-        String storeManagerClass = (String) config.getOrDefault(Config.CONFIG_STOREMANAGER_CLASS, DefaultConfig.DEFAULT_CONFIG_STOREMANAGER_CLASS);
+        String storeManagerClass = (String) config.getOrDefault(ConfigCenterConfig.CONFIG_STOREMANAGER_CLASS, DefaultConfigCenterConfig.DEFAULT_CONFIG_STOREMANAGER_CLASS);
         configStoreManager = (ConfigStoreManager) ClassUtils.instance(storeManagerClass);
         configStoreManager.setup(config);
     }
