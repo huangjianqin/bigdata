@@ -74,6 +74,7 @@ public abstract class Container implements ContainerMasterProtocol {
                 }
             }
         }, 0, idleTimeout, TimeUnit.MILLISECONDS);
+
         doStart();
     }
 

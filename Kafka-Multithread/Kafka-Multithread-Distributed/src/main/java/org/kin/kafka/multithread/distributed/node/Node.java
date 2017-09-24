@@ -7,6 +7,7 @@ import org.kin.kafka.multithread.distributed.container.impl.JVMContainer;
 import org.kin.kafka.multithread.distributed.container.allocator.ContainerAllocator;
 import org.kin.kafka.multithread.distributed.container.allocator.impl.LocalContainerAllocator;
 import org.kin.kafka.multithread.distributed.node.config.NodeConfig;
+import org.kin.kafka.multithread.distributed.utils.NodeConfigUtils;
 import org.kin.kafka.multithread.domain.HealthReport;
 import org.kin.kafka.multithread.protocol.distributed.ContainerMasterProtocol;
 import org.kin.kafka.multithread.protocol.distributed.NodeMasterProtocol;
@@ -42,16 +43,21 @@ public class Node implements NodeMasterProtocol{
     private LinkedBlockingQueue<Properties> appConfigs;
 
     public Node() {
+        //加载配置
         this.nodeConfig = new Properties();
         try {
             this.nodeConfig.load(getClass().getClassLoader().getResourceAsStream("application.properties"));
         } catch (IOException e) {
             e.printStackTrace();
         }
+        //校验配置
+        NodeConfigUtils.oneNecessaryCheckAndFill(nodeConfig);
     }
 
     public Node(Properties nodeConfig) {
         this.nodeConfig = nodeConfig;
+        //校验配置
+        NodeConfigUtils.oneNecessaryCheckAndFill(nodeConfig);
     }
 
     public void init(){
@@ -100,14 +106,19 @@ public class Node implements NodeMasterProtocol{
                         containerHealthReportInternal);
                 switch (runModel){
                     case JVM:
-                        //不使用默认的构造
-                        containerContext = new ContainerContext(
-                                nodeId * CONTAINER_NUM_LIMIT,
-                                getContainerProtocolPort(containerInitProtocolPort, NODE_JVM_CONTAINER),
-                                containerContext.getIdleTimeout(),
-                                containerHealthReportInternal);
-                        containerMasterProtocol = new JVMContainer(containerContext, nodeContext, this);
-                        id2Container.put(containerContext.getContainerId(), containerMasterProtocol);
+                        if(id2Container.containsKey(NODE_JVM_CONTAINER)){
+                            containerMasterProtocol = id2Container.get(NODE_JVM_CONTAINER);
+                        }
+                        else{
+                            //不使用默认的构造
+                            containerContext = new ContainerContext(
+                                    nodeId * CONTAINER_NUM_LIMIT,
+                                    getContainerProtocolPort(containerInitProtocolPort, NODE_JVM_CONTAINER),
+                                    containerContext.getIdleTimeout(),
+                                    containerHealthReportInternal);
+                            containerMasterProtocol = new JVMContainer(containerContext, nodeContext, this);
+                            id2Container.put(containerContext.getContainerId(), containerMasterProtocol);
+                        }
                         break;
                     case NODE:
                         containerMasterProtocol = containerAllocator.containerAllocate(containerContext, nodeContext);

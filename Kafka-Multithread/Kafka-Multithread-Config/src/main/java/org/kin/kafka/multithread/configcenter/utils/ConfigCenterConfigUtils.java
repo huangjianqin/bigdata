@@ -1,21 +1,17 @@
-package org.kin.kafka.multithread.distributed.utils;
+package org.kin.kafka.multithread.configcenter.utils;
 
-import org.kin.kafka.multithread.distributed.node.config.NodeConfig;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import org.kin.kafka.multithread.configcenter.config.ConfigCenterConfig;
+import java.util.*;
 
 /**
- * Created by huangjianqin on 2017/9/20.
+ * Created by huangjianqin on 2017/9/12.
  */
-public class NodeConfigUtils {
+public class ConfigCenterConfigUtils {
     public static void fillDefaultConfig(Properties config){
         if(config == null){
             return;
         }
-        Properties tmp = deepCopy(NodeConfig.DEFAULT_NODECONFIG);
+        Properties tmp = deepCopy(ConfigCenterConfig.DEFAULT_CONFIG);
         tmp.putAll(config);
         config.clear();
         config.putAll(tmp);
@@ -90,11 +86,11 @@ public class NodeConfigUtils {
             return;
         }
         //填充默认值
-       NodeConfigUtils.fillDefaultConfig(newConfig);
+        ConfigCenterConfigUtils.fillDefaultConfig(newConfig);
     }
 
     public static boolean checkConfigValueFormat(Properties config){
-        for(Map.Entry<String, String> entry: NodeConfig.CONFIG2FORMATOR.entrySet()){
+        for(Map.Entry<String, String> entry: ConfigCenterConfig.CONFIG2FORMATOR.entrySet()){
             if(!config.getProperty(entry.getKey()).matches(entry.getValue())){
                 throw new IllegalStateException("config \"" +  entry.getKey() + "\" 's value \"" + entry.getValue() + "\" format is not correct");
             }

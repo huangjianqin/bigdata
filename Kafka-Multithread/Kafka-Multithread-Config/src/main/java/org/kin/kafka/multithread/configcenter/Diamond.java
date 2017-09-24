@@ -5,6 +5,7 @@ import org.kin.kafka.multithread.configcenter.common.StoreCodecs;
 import org.kin.kafka.multithread.configcenter.config.ConfigCenterConfig;
 import org.kin.kafka.multithread.configcenter.config.DefaultConfigCenterConfig;
 import org.kin.kafka.multithread.configcenter.manager.ConfigStoreManager;
+import org.kin.kafka.multithread.configcenter.utils.ConfigCenterConfigUtils;
 import org.kin.kafka.multithread.configcenter.utils.PropertiesUtils;
 import org.kin.kafka.multithread.configcenter.utils.YAMLUtils;
 import org.kin.kafka.multithread.domain.ConfigFetchResult;
@@ -44,6 +45,7 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
 
     public Diamond(String configPath) {
         config = YAMLUtils.loadYML2Properties(configPath);
+        ConfigCenterConfigUtils.oneNecessaryCheckAndFill(config);
     }
 
     public void init(){

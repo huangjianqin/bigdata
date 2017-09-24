@@ -13,7 +13,6 @@ import java.util.concurrent.Executors;
 
 /**
  * Created by huangjianqin on 2017/9/18.
- * 与Node实例同一JVM的Container不支持空闲自动关闭
  *
  */
 public class JVMContainer extends Container {

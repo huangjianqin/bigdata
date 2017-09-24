@@ -11,6 +11,7 @@ import org.kin.kafka.multithread.utils.HostUtils;
 
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by huangjianqin on 2017/9/18.
