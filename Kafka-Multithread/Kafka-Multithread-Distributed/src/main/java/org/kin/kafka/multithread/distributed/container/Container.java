@@ -9,6 +9,8 @@ import org.kin.kafka.multithread.distributed.node.NodeContext;
 import org.kin.kafka.multithread.domain.HealthReport;
 import org.kin.kafka.multithread.protocol.distributed.ContainerMasterProtocol;
 import org.kin.kafka.multithread.protocol.distributed.NodeMasterProtocol;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +23,8 @@ import java.util.concurrent.*;
  * Application容器,多JVM运行,充分利用同一节点的计算和存储资源
  */
 public abstract class Container implements ContainerMasterProtocol {
+    protected final Logger log = LoggerFactory.getLogger(this.getClass());
+
     protected long containerId;
     protected long idleTimeout;
     protected long reportInternal;
@@ -55,6 +59,7 @@ public abstract class Container implements ContainerMasterProtocol {
     public abstract void doClose();
 
     public void start(){
+        log.info("container(id=" + containerId + ", nodeId=" + belong2 + ") starting");
         //启动定时汇报心跳线程
         scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
             @Override
@@ -76,17 +81,22 @@ public abstract class Container implements ContainerMasterProtocol {
         }, 0, idleTimeout, TimeUnit.MILLISECONDS);
 
         doStart();
+        log.info("container(id=" + containerId + ", nodeId=" + belong2 + ") started");
+
     }
 
     public void close(){
+        log.info("container(id=" + containerId + ", nodeId=" + belong2 + ") closing");
         //先通知Node,但不关闭通信,为了避免再次分配Application到当前的Container,再自行关闭
         nodeMasterProtocol.closeContainer(containerId);
         scheduledExecutorService.shutdownNow();
         appStartPool.shutdownNow();
         doClose();
+        log.info("container(id=" + containerId + ", nodeId=" + belong2 + ") closed");
     }
 
     private void healthReport(){
+        log.info("container(id=" + containerId + ", nodeId=" + belong2 + ") do health report");
         HealthReport healthReport = new HealthReport(appManager.getAppSize(), containerId);
         nodeMasterProtocol.report(healthReport);
     }
@@ -95,7 +105,9 @@ public abstract class Container implements ContainerMasterProtocol {
     public Boolean updateConfig(List<Properties> configs) {
         lastCommunicateTime = System.currentTimeMillis();
 
-        //考虑添加黑名单!!!!
+        log.info("got " + configs.size() + " configs");
+        log.info("deploy or close app...");
+        //可考虑添加黑名单!!!!
         for(Properties config: configs){
             String appName = config.getProperty(AppConfig.APPNAME);
 
@@ -108,8 +120,10 @@ public abstract class Container implements ContainerMasterProtocol {
                         callable = new Callable() {
                             @Override
                             public Object call() throws Exception {
+                                log.info("runing app '" + appName + "'...");
                                 Application application = MultiThreadConsumerManager.instance().newApplication(config);
                                 application.start();
+                                log.info("app '" + appName + "' runned");
                                 return null;
                             }
                         };
@@ -123,7 +137,9 @@ public abstract class Container implements ContainerMasterProtocol {
                         callable = new Callable() {
                             @Override
                             public Object call() throws Exception {
+                                log.info("reconfig app '" + appName + "'...");
                                 appManager.reConfig(config);
+                                log.info("app '" + appName + "' reconfiged");
                                 return null;
                             }
                         };
@@ -137,7 +153,9 @@ public abstract class Container implements ContainerMasterProtocol {
                         callable = new Callable() {
                             @Override
                             public Object call() throws Exception {
+                                log.info("app '" + appName + "' closing...");
                                 appManager.shutdownApp(appName);
+                                log.info("app '" + appName + "' closed");
                                 return null;
                             }
                         };
@@ -151,9 +169,11 @@ public abstract class Container implements ContainerMasterProtocol {
                         callable = new Callable() {
                             @Override
                             public Object call() throws Exception {
+                                log.info("restart app '" + appName + "'...");
                                 appManager.shutdownApp(appName);
                                 Application newApplication = MultiThreadConsumerManager.instance().newApplication(config);
                                 newApplication.start();
+                                log.info("app '" + appName + "' restarted");
                                 return null;
                             }
                         };
@@ -165,7 +185,7 @@ public abstract class Container implements ContainerMasterProtocol {
             }
             appStartPool.submit(callable);
         }
-
+        log.info("deploy or close app finished");
         return true;
     }
 

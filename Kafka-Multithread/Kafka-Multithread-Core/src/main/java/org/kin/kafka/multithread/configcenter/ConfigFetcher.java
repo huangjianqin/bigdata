@@ -2,13 +2,16 @@ package org.kin.kafka.multithread.configcenter;
 
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.config.DefaultAppConfig;
-import org.kin.kafka.multithread.domain.ConfigFetchResult;
+import org.kin.kafka.multithread.domain.ConfigFetchResponse;
+import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeat;
 import org.kin.kafka.multithread.domain.ConfigSetupResult;
 import org.kin.kafka.multithread.protocol.app.ApplicationHost;
 import org.kin.kafka.multithread.protocol.configcenter.DiamondMasterProtocol;
 import org.kin.kafka.multithread.rpc.factory.RPCFactories;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
 import org.kin.kafka.multithread.utils.HostUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -19,6 +22,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * 在其他线程对Application进行更新配置
  */
 public class ConfigFetcher extends Thread{
+    private static final Logger log = LoggerFactory.getLogger(ConfigFetcher.class);
+
     private boolean isStopped = false;
     //用于防止同时两个配置在生效,导致组件同时配置两个配置而导致最后配置信息不一致,不完整
     //异步触发应用重构配置
@@ -27,6 +32,11 @@ public class ConfigFetcher extends Thread{
     private long fetcherInterval = 3 * 1000;
     private DiamondMasterProtocol diamondMasterProtocol;
 
+    //与配置中心Diamond的定时心跳,不可配置,主要用于反馈配置是否生效
+    private Timer heartbeatTimer;
+    private List<String> succeedAppNames = new ArrayList<>();
+    private List<String> failAppNames = new ArrayList<>();
+
     public ConfigFetcher(LinkedBlockingQueue<Properties> configQueue) {
         super("ConfigFetcher");
         //创建与配置中心的RPC接口
@@ -34,6 +44,7 @@ public class ConfigFetcher extends Thread{
         int port = Integer.valueOf(DefaultAppConfig.DEFAULT_CONFIGCENTER_PORT);
         this.diamondMasterProtocol = RPCFactories.clientWithoutRegistry(DiamondMasterProtocol.class, host, port);
         this.configQueue = configQueue;
+        log.info("ready to fetch config from config center(" + host + ":" + port + ")");
     }
 
     public ConfigFetcher(String host, int port, LinkedBlockingQueue<Properties> configQueue) {
@@ -41,6 +52,7 @@ public class ConfigFetcher extends Thread{
         //创建与配置中心的RPC接口
         this.diamondMasterProtocol = RPCFactories.clientWithoutRegistry(DiamondMasterProtocol.class, host, port);
         this.configQueue = configQueue;
+        log.info("ready to fetch config from config center(" + host + ":" + port + ")");
     }
 
     public long getFetcherInterval() {
@@ -53,25 +65,51 @@ public class ConfigFetcher extends Thread{
 
     @Override
     public void run() {
+        log.info("start to fetch config");
+
+        //启动定时心跳
+        heartbeatTimer = new Timer();
+        heartbeatTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                ApplicationHost appHost = new ApplicationHost("", HostUtils.localhost());
+
+                List<String> tmpSucceedAppNames = succeedAppNames.subList(0, succeedAppNames.size());
+                List<String> tmpFailAppNames = failAppNames.subList(0, succeedAppNames.size());
+                succeedAppNames.removeAll(tmpSucceedAppNames);
+                failAppNames.removeAll(tmpFailAppNames);
+                ConfigFetcherHeartbeat heartbeat = new ConfigFetcherHeartbeat(
+                        appHost,
+                        tmpSucceedAppNames,
+                        tmpFailAppNames,
+                        System.currentTimeMillis());
+                diamondMasterProtocol.heartbeat(heartbeat);
+            }
+        }, 0, 5 * 1000);
+
         Map<String, Properties> app2Config = null;
         ApplicationHost myAppHost = new ApplicationHost();
         myAppHost.setHost(HostUtils.localhost());
         while(!isStopped && !isInterrupted()){
-            ConfigFetchResult configFetchResult = diamondMasterProtocol.getAppConfig(myAppHost);
+            ConfigFetchResponse configFetchResponse = diamondMasterProtocol.getAppConfig(myAppHost);
 
+            log.info("fetch " + configFetchResponse.getNewConfigs().size() + " configs at " + configFetchResponse.getFetchTime());
+
+            long startTime = System.currentTimeMillis();
             //配置内容,格式匹配成功的配置
-            List<Properties> halfSuccessConfigs = AppConfigUtils.allNecessaryCheckAndFill(configFetchResult.getNewConfigs());
-            List<Properties> failConfigs = configFetchResult.getNewConfigs();
+            List<Properties> halfSuccessConfigs = AppConfigUtils.allNecessaryCheckAndFill(configFetchResponse.getNewConfigs());
+            List<Properties> failConfigs = configFetchResponse.getNewConfigs();
             failConfigs.removeAll(halfSuccessConfigs);
 
             //通知config center配置更新失败,回滚以前的配置
             if(failConfigs.size() > 0){
                 List<String> failAppNames = new ArrayList<>();
                 for(Properties config: failConfigs){
-                    failAppNames.add(config.getProperty(AppConfig.APPNAME));
+                    String failAppName = config.getProperty(AppConfig.APPNAME);
+                    failAppNames.add(failAppName);
+                    log.info(failAppName + " config set up fail");
                 }
-                ConfigSetupResult result = new ConfigSetupResult(failAppNames, System.currentTimeMillis());
-                diamondMasterProtocol.configFail(result);
+                this.failAppNames.addAll(failAppNames);
             }
 
             Map<String, Properties> newApp2Config = new HashMap<>();
@@ -85,63 +123,59 @@ public class ConfigFetcher extends Thread{
                 Properties newConfig = newApp2Config.get(appName);
                 if(lastConfig != null){
                     //如果配置更新,插队,准备更新运行时配置
-                    if(isChange(lastConfig, newConfig)){
+                    if(AppConfigUtils.isConfigChange(lastConfig, newConfig)){
+                        log.info(appName + " config changed, ready to update app config");
                         configQueue.offer(newConfig);
                         app2Config.put(appName, newConfig);
                     }
+                    else{
+                        log.info(appName + " config not changed");
+                    }
                 }
                 else{
+                    log.info(appName + " is a new app, ready to config and run");
                     configQueue.offer(newConfig);
                     app2Config.put(appName, newConfig);
                 }
             }
+
+            long endTime = System.currentTimeMillis();
+
             try {
-                sleep(fetcherInterval);
+                if(endTime - startTime < fetcherInterval){
+                    sleep(fetcherInterval - (endTime - startTime));
+                }
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
-    }
-
-    private boolean isChange(Properties lastConfig, Properties newConfig){
-        if(lastConfig != null && newConfig == null){
-            return false;
-        }
-
-        //刚启动
-        if(lastConfig == null && newConfig != null){
-            return true;
-        }
-
-        boolean result = false;
-        if(lastConfig != null && newConfig != null){
-            if(lastConfig.size() == newConfig.size()){
-                for(Object key: lastConfig.keySet()){
-                    if(newConfig.contains(key)){
-                        if(lastConfig.get(key).equals(newConfig.get(key))){
-                            continue;
-                        }
-                    }
-                    result = true;
-                    break;
-                }
-                return result;
-            }
-            return true;
-        }
-        return false;
+        log.info("config fetcher closed");
     }
 
     public void close(){
+        log.info("config fetcher closing...");
         isStopped = true;
     }
 
     public void configFail(List<Properties> failConfigs){
         List<String> failAppNames = new ArrayList<>();
         for(Properties config: failConfigs){
-            failAppNames.add(config.getProperty(AppConfig.APPNAME));
+            String failAppName = config.getProperty(AppConfig.APPNAME);
+            failAppNames.add(failAppName);
+            log.info(failAppName + " config set up fail");
         }
-        ConfigSetupResult result = new ConfigSetupResult(failAppNames, System.currentTimeMillis());
-        diamondMasterProtocol.configFail(result);
+        this.failAppNames.addAll(failAppNames);
+        log.info(failAppNames.size() + " configs set up fail");
+    }
+
+    public void configSucceed(List<Properties> succeedConfigs){
+        List<String> succeedAppNames = new ArrayList<>();
+        for(Properties config: succeedConfigs){
+            String succeedAppName = config.getProperty(AppConfig.APPNAME);
+            succeedAppNames.add(succeedAppName);
+            log.info(succeedAppName + " config set up succeed");
+        }
+        this.succeedAppNames.addAll(succeedAppNames);
+        log.info(succeedAppNames.size() + " configs set up succeed");
     }
 }

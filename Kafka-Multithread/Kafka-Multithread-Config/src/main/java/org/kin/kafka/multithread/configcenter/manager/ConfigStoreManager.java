@@ -19,7 +19,7 @@ public interface ConfigStoreManager{
 
     void setup(Properties config);
     void clearup();
-    boolean storeConfig(ApplicationHost appHost, ApplicationConfig appConfig);
+    boolean storeConfig(Properties appConfig);
     Map<String, String> getAppConfigMap(ApplicationHost appHost);
     List<Properties> getAllAppConfig(ApplicationHost appHost);
 }

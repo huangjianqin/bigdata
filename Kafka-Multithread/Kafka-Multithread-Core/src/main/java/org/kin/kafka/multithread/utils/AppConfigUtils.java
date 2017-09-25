@@ -93,6 +93,35 @@ public class AppConfigUtils {
         }
     }
 
+    public static boolean isConfigChange(Properties lastConfig, Properties newConfig){
+        if(lastConfig != null && newConfig == null){
+            return false;
+        }
+
+        //刚启动
+        if(lastConfig == null && newConfig != null){
+            return true;
+        }
+
+        boolean result = false;
+        if(lastConfig != null && newConfig != null){
+            if(lastConfig.size() == newConfig.size()){
+                for(Object key: lastConfig.keySet()){
+                    if(newConfig.contains(key)){
+                        if(lastConfig.get(key).equals(newConfig.get(key))){
+                            continue;
+                        }
+                    }
+                    result = true;
+                    break;
+                }
+                return result;
+            }
+            return true;
+        }
+        return false;
+    }
+
     public static Set<String> getSubscribeTopic(Properties config){
         if(isStaticSubscribe(config)){
            throw new IllegalStateException("topic(and partition) format is not right");
@@ -204,5 +233,13 @@ public class AppConfigUtils {
             }
         }
         return true;
+    }
+
+    public static String toString(Properties config){
+        StringBuilder sb = new StringBuilder();
+        for(Map.Entry<Object, Object> entry: config.entrySet()){
+            sb.append(entry.getKey() + "  =  " + entry.getValue() + System.lineSeparator());
+        }
+        return sb.toString();
     }
 }

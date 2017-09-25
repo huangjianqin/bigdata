@@ -103,6 +103,7 @@ public class OCOTMultiProcessor<K, V>  implements Application{
 
     @Override
     public void reConfig(Properties newConfig) {
+        log.info("OCOTMultiProcessor reconfiging...");
         while(isReConfig.compareAndSet(false, true)){
             log.warn("kafka consumer last reconfig still running!!!");
             try {
@@ -118,6 +119,7 @@ public class OCOTMultiProcessor<K, V>  implements Application{
             consumerNum = Integer.valueOf(newConfig.getProperty(AppConfig.OCOT_CONSUMERNUM));
             if(consumerNum > 0){
                 if(consumerNum > this.consumerNum){
+                    log.info("add " + (consumerNum - this.consumerNum) + " consumer processor");
                     //更新正在运行的Processor配置
                     for(int i = 0; i < this.consumerNum; i++){
                         processors.get(i).reConfig(newConfig);
@@ -132,6 +134,7 @@ public class OCOTMultiProcessor<K, V>  implements Application{
                     }
                 }
                 else if(consumerNum < this.consumerNum){
+                    log.info("remove " + (this.consumerNum - consumerNum) + " consumer processor");
                     //移除多余的Processor
                     for(int i = 0; i < this.consumerNum - consumerNum; i++){
                         OCOTProcessor processor = processors.remove(i);
@@ -154,6 +157,7 @@ public class OCOTMultiProcessor<K, V>  implements Application{
         this.config = newConfig;
 
         isReConfig.compareAndSet(true,false);
+        log.info("OCOTMultiProcessor reconfiged");
     }
 
     public class OCOTProcessor<K, V> implements Runnable, ReConfigable {

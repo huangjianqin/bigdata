@@ -206,6 +206,7 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
 
     @Override
     public void reConfig(Properties newConfig) {
+        log.info("OPMT2 message handler manager reconfiging...");
         int threadSizePerPartition = this.threadSizePerPartition;
 
         if(AppConfigUtils.isConfigItemChange(threadSizePerPartition, newConfig, AppConfig.OPMT2_THREADSIZEPERPARTITION)){
@@ -213,6 +214,7 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
             if(threadSizePerPartition > 0){
                 //仅仅是处理资源减少的情况,资源动态增加在dispatch中处理
                 if(threadSizePerPartition < this.threadSizePerPartition){
+                    log.info("reduce message handler threads per partition(size = " + (this.threadSizePerPartition - threadSizePerPartition) + ")");
                     for(TopicPartition key: topicPartition2Threads.keySet()){
                         List<OPMT2MessageQueueHandlerThread> threads = topicPartition2Threads.get(key);
 
@@ -249,6 +251,7 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
                 thread.reConfig(newConfig);
             }
         }
+        log.info("OPMT2 message handler manager reconfiged");
     }
 
     private final class OPMT2MessageQueueHandlerThread extends AbstractMessageHandlersManager.MessageQueueHandlerThread {
@@ -267,6 +270,8 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
         @Override
         public void reConfig(Properties newConfig) {
             //不需要实现
+            log.info("OPMT2 message handler thread reconfiging...");
+            log.info("OPMT2 message handler thread reconfiged");
         }
     }
 }

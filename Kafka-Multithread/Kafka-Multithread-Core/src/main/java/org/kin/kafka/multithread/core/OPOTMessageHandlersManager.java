@@ -138,12 +138,14 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
 
     @Override
     public void reConfig(Properties newConfig) {
+        log.info("OPOT message handler manager reconfiging...");
         //不需要实现,没有必要线程资源变更
         //考虑到每个分区对应一条线程,加多线程显得不合理,消耗更多自恋,减少线程则更加不合理,违背的设计初衷
         super.config = newConfig;
         for(OPOTMessageQueueHandlerThread thread: topicPartition2Thread.values()){
             thread.reConfig(newConfig);
         }
+        log.info("OPOT message handler manager reconfiged");
     }
 
     private final class OPOTMessageQueueHandlerThread extends AbstractMessageHandlersManager.MessageQueueHandlerThread {
@@ -169,6 +171,8 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
         @Override
         public void reConfig(Properties newConfig) {
             //不需要实现
+            log.info("OPOT message handler thread reconfiging...");
+            log.info("OPOT message handler thread reconfiged");
         }
     }
 }

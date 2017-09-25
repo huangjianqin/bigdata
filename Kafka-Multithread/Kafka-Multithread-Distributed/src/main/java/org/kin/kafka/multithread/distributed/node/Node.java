@@ -13,6 +13,8 @@ import org.kin.kafka.multithread.protocol.distributed.ContainerMasterProtocol;
 import org.kin.kafka.multithread.protocol.distributed.NodeMasterProtocol;
 import org.kin.kafka.multithread.rpc.factory.RPCFactories;
 import org.kin.kafka.multithread.utils.HostUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -29,6 +31,8 @@ import java.util.concurrent.LinkedBlockingQueue;
  * 每个节点限制启动10个Container
  */
 public class Node implements NodeMasterProtocol{
+    private static final Logger log = LoggerFactory.getLogger(Node.class);
+
     private static final Long nodeId = Long.valueOf(HostUtils.localhost().replaceAll(".", ""));
     public static final int CONTAINER_NUM_LIMIT = 10;
     public static final long NODE_JVM_CONTAINER = nodeId * CONTAINER_NUM_LIMIT;
@@ -50,24 +54,27 @@ public class Node implements NodeMasterProtocol{
         } catch (IOException e) {
             e.printStackTrace();
         }
+        log.info("node config loaded");
         //校验配置
         NodeConfigUtils.oneNecessaryCheckAndFill(nodeConfig);
+        log.info("config is Safe" + System.lineSeparator() + NodeConfigUtils.toString(nodeConfig));
     }
 
     public Node(Properties nodeConfig) {
         this.nodeConfig = nodeConfig;
+        log.info("node config loaded");
         //校验配置
         NodeConfigUtils.oneNecessaryCheckAndFill(nodeConfig);
+        log.info("config is Safe" + System.lineSeparator() + NodeConfigUtils.toString(nodeConfig));
     }
 
     public void init(){
-        //检查必要配置
-        //检查配置格式
-        //填充默认值
+        log.info("node initing...");
 
         this.appConfigs =  new LinkedBlockingQueue<>();
         this.containerAllocator = new LocalContainerAllocator(id2Container);
         this.containerAllocator.init();
+        log.info("container allocator(" + containerAllocator.getClass().getName() + ") inited");
 
         String configCenterHost = nodeConfig.getProperty(AppConfig.CONFIGCENTER_HOST);
         int configCenterPort = Integer.valueOf(nodeConfig.getProperty(AppConfig.CONFIGCENTER_PORT));
@@ -77,6 +84,7 @@ public class Node implements NodeMasterProtocol{
         this.configFetcher.start();
 
         RPCFactories.serviceWithoutRegistry(NodeMasterProtocol.class, this, nodeProtocolPort);
+        log.info("NodeMasterProtocol rpc interface inited, binding " + nodeProtocolPort + " port");
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
@@ -84,9 +92,11 @@ public class Node implements NodeMasterProtocol{
                 configFetcher.close();
             }
         }));
+        log.info("node inited");
     }
 
     public void start(){
+        log.info("node started. ready to maintenance app status");
         long containerIdleTimeout = Long.valueOf(nodeConfig.getProperty(NodeConfig.CONTAINER_IDLETIMEOUT));
         long containerHealthReportInternal = Long.valueOf(nodeConfig.getProperty(NodeConfig.CONTAINER_HEALTHREPORT_INTERNAL));
         int nodeProtocolPort = Integer.valueOf(nodeConfig.getProperty(NodeConfig.NODE_PROTOCOL_PORT));
@@ -95,21 +105,20 @@ public class Node implements NodeMasterProtocol{
         while(!isStopped && !Thread.currentThread().isInterrupted()){
             try {
                 Properties newConfig = appConfigs.take();
+
                 ChildRunModel runModel = ChildRunModel.getByName(newConfig.getProperty(AppConfig.APP_CHILD_RUN_MODEL));
+
                 ContainerMasterProtocol containerMasterProtocol = null;
-                //不一定使用,jvm模式会使用默认的containerId
-                long tmp = getContainerId();
-                ContainerContext containerContext = new ContainerContext(
-                        tmp,
-                        getContainerProtocolPort(containerInitProtocolPort, tmp),
-                        containerIdleTimeout,
-                        containerHealthReportInternal);
+                ContainerContext containerContext = null;
+
                 switch (runModel){
                     case JVM:
                         if(id2Container.containsKey(NODE_JVM_CONTAINER)){
+                            log.info("got jvm app and jvm Container has runned, just to setup app");
                             containerMasterProtocol = id2Container.get(NODE_JVM_CONTAINER);
                         }
                         else{
+                            log.info("got jvm app but jvm Container has not runned, so to run jvm Container and then run app");
                             //不使用默认的构造
                             containerContext = new ContainerContext(
                                     nodeId * CONTAINER_NUM_LIMIT,
@@ -121,6 +130,16 @@ public class Node implements NodeMasterProtocol{
                         }
                         break;
                     case NODE:
+                        log.info("got node app");
+                        //获取一个可用containerId
+                        long tmp = getContainerId();
+                        containerContext = new ContainerContext(
+                                tmp,
+                                getContainerProtocolPort(containerInitProtocolPort, tmp),
+                                containerIdleTimeout,
+                                containerHealthReportInternal);
+                        //如果能再现有container中运行app,则返回现有container的containerMasterProtocol接口
+                        //否则,利用containerContext参数创建新的container,并返回该container的containerMasterProtocol接口
                         containerMasterProtocol = containerAllocator.containerAllocate(containerContext, nodeContext);
                         if(containerMasterProtocol == null){
                             configFetcher.configFail(Collections.singletonList(newConfig));
@@ -136,9 +155,11 @@ public class Node implements NodeMasterProtocol{
                 e.printStackTrace();
             }
         }
+        log.info("node closed");
     }
 
     public void close(){
+        log.info("node closing...");
         this.isStopped = false;
         this.configFetcher.close();
         this.containerAllocator.close();
@@ -146,6 +167,7 @@ public class Node implements NodeMasterProtocol{
 
     @Override
     public Boolean closeContainer(long containerId) {
+        log.info("node remove container(id=" + containerId + ") info and close container");
         return id2Container.remove(containerId) == null;
     }
 

@@ -9,6 +9,8 @@ import org.kin.kafka.multithread.domain.HealthReport;
 import org.kin.kafka.multithread.protocol.distributed.ContainerMasterProtocol;
 import org.kin.kafka.multithread.rpc.factory.RPCFactories;
 import org.kin.kafka.multithread.utils.HostUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -23,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * 选择启动新的Container
  */
 public class LocalContainerAllocator implements ContainerAllocator {
+    private static final Logger log = LoggerFactory.getLogger(LocalContainerAllocator.class);
+
     private Map<Long, ContainerMasterProtocol> id2Container;
     private Map<Long, HealthReport> id2HealthReport;
     private Map<Long, Long> id2SelectTimes;
@@ -43,11 +47,18 @@ public class LocalContainerAllocator implements ContainerAllocator {
         //利用CPU,空闲内存和APP运行数权重计算出分值,再跟阈值比较进行分配或构造新container
         long selectedContainerId = getBestContainer();
         if(selectedContainerId != -1){
+            log.info("depoly app on Container(id=" + selectedContainerId + ")");
             selectedContainerClient =  id2Container.get(selectedContainerId);
         }
         else{
             //不超过单节点可启动container数
             if(id2Container.size() < Node.CONTAINER_NUM_LIMIT){
+                log.info("setup and run a new Container(id=" +
+                        containerContext.getContainerId() + ", nodeId=" +
+                        nodeContext.getNodeId() + ") container_idle_timeout=" +
+                        containerContext.getIdleTimeout() + ", container_healthreport_internal=" +
+                        containerContext.getReportInternal() + ", protocol_port=" +
+                        containerContext.getProtocolPort());
                 //或者
                 //选择启动新的Container
                 StringBuilder args = new StringBuilder();
@@ -68,6 +79,9 @@ public class LocalContainerAllocator implements ContainerAllocator {
                 id2Container.put(containerContext.getContainerId(), containerClient);
 
                 selectedContainerClient = containerClient;
+            }
+            else{
+                log.warn("need to start a new Container,but doesn't enough resource to setup and run a Container, refuse to run app");
             }
         }
         if(selectedContainerId != -1){

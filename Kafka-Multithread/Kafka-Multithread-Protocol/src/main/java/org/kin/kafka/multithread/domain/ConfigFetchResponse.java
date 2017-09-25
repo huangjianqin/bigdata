@@ -6,14 +6,14 @@ import java.util.Properties;
 /**
  * Created by huangjianqin on 2017/9/19.
  */
-public class ConfigFetchResult {
+public class ConfigFetchResponse {
     private List<Properties> newConfigs;
     private long fetchTime;
 
-    public ConfigFetchResult() {
+    public ConfigFetchResponse() {
     }
 
-    public ConfigFetchResult(List<Properties> newConfigs, long fetchTime) {
+    public ConfigFetchResponse(List<Properties> newConfigs, long fetchTime) {
         this.newConfigs = newConfigs;
         this.fetchTime = fetchTime;
     }

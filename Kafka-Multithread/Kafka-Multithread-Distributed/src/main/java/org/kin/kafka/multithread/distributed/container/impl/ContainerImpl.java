@@ -58,13 +58,12 @@ public class ContainerImpl extends Container {
         NodeContext nodeContext = new NodeContext(nodeId, nodeProtocolPort);
 
         Container container = new ContainerImpl(containerContext, nodeContext);
-        container.start();
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
             public void run() {
                 container.close();
             }
         }));
-
+        container.start();
     }
 }

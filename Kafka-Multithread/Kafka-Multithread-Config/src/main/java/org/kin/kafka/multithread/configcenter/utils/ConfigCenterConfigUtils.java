@@ -97,4 +97,11 @@ public class ConfigCenterConfigUtils {
         }
         return true;
     }
+    public static String toString(Properties config){
+        StringBuilder sb = new StringBuilder();
+        for(Map.Entry<Object, Object> entry: config.entrySet()){
+            sb.append(entry.getKey() + "  =  " + entry.getValue() + System.lineSeparator());
+        }
+        return sb.toString();
+    }
 }

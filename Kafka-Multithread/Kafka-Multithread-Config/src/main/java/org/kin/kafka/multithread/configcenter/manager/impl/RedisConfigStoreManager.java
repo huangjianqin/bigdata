@@ -2,6 +2,7 @@ package org.kin.kafka.multithread.configcenter.manager.impl;
 
 import org.kin.kafka.multithread.configcenter.common.StoreCodec;
 import org.kin.kafka.multithread.configcenter.common.StoreCodecs;
+import org.kin.kafka.multithread.configcenter.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.config.ConfigCenterConfig;
 import org.kin.kafka.multithread.configcenter.manager.ConfigStoreManager;
 import org.kin.kafka.multithread.protocol.app.ApplicationConfig;
@@ -20,54 +21,53 @@ import java.util.*;
  */
 public class RedisConfigStoreManager  implements ConfigStoreManager{
     private static final Logger log = LoggerFactory.getLogger(ConfigStoreManager.class);
+
     private JedisPool pool;
 
     @Override
     public void setup(Properties config) {
+        log.info("redis store manager setting up...");
         String host = (String) config.get(ConfigCenterConfig.CONFIG_STOREMANAGER_SERVER_HOST);
         String port = (String) config.get(ConfigCenterConfig.CONFIG_STOREMANAGER_SERVER_PORT);
 
         pool = new JedisPool(host, Integer.valueOf(port));
+        log.info("redis store manager setted up");
     }
 
     @Override
     public void clearup() {
+        log.info("redis store manager clearing up...");
         pool.close();
+        log.info("redis store manager clear up finished");
     }
 
     @Override
-    public boolean storeConfig(ApplicationHost appHost, ApplicationConfig appConfig) {
+    public boolean storeConfig(Properties appConfig) {
         try(Jedis client = pool.getResource()){
-            //校验格式
-            //.....
+            String host = appConfig.getProperty(AppConfig.APPHOST);
+            String appName = appConfig.getProperty(AppConfig.APPNAME);
+            String key = String.format(KEY_FORMAT, host, appName);
 
-            StoreCodec storeCodec = StoreCodecs.getCodecByName(appConfig.getType());
-            if(storeCodec.vertify(appConfig.getConfig())){
-                String key = String.format(KEY_FORMAT, appHost.getHost(), appHost.getAppName());
-                Map<String, String> values = storeCodec.merge(appConfig.getConfig(), appHost.getAppName(), appHost.getHost());
-
-                client.multi();
-                Pipeline pipeline = client.pipelined();
-                pipeline.multi();
-                for(Map.Entry<String, String> entry: values.entrySet()){
-                    pipeline.hset(key, entry.getKey(), entry.getValue());
-                }
-                Response<List<Object>> responses = pipeline.exec();
-                pipeline.sync();
-
-                boolean result = true;
-                int i = 0;
-                for(Map.Entry<String, String> entry: values.entrySet()){
-                    if(!entry.getValue().equals(responses.get().get(i++))){
-                        result = false;
-                        break;
-                    }
-                }
-
-                return result;
+            client.multi();
+            Pipeline pipeline = client.pipelined();
+            pipeline.multi();
+            for(Map.Entry<Object, Object> entry:appConfig.entrySet()){
+                pipeline.hset(key, entry.getKey().toString(), entry.getValue().toString());
             }
+            Response<List<Object>> responses = pipeline.exec();
+            pipeline.sync();
+
+            boolean result = true;
+            int i = 0;
+            for(Map.Entry<Object, Object> entry: appConfig.entrySet()){
+                if(!entry.getValue().equals(responses.get().get(i++))){
+                    result = false;
+                    break;
+                }
+            }
+
+            return result;
         }
-        return false;
     }
 
     @Override

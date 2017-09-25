@@ -199,6 +199,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
 
     @Override
     public void reConfig(Properties newConfig) {
+        log.info("OPMT message handler manager reconfiging...");
         int minThreadSizePerPartition = this.minThreadSizePerPartition;
         int maxThreadSizePerPartition = this.maxThreadSizePerPartition;
         int threadQueueSizePerPartition = this.threadQueueSizePerPartition;
@@ -224,26 +225,36 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
                 minThreadSizePerPartition <= Integer.MAX_VALUE &&
                 maxThreadSizePerPartition <= Integer.MAX_VALUE &&
                 threadQueueSizePerPartition <= Integer.MAX_VALUE){
-            if(minThreadSizePerPartition <= maxThreadSizePerPartition){
-                //因为更新配置时,不会接受消息,所以可以重新分配线程池,原线程池等待消息处理完自动销毁
-                //shutdown,不再从队列取task并且任务完成时会更新
-                for(TopicPartition topicPartition: topicPartition2Pools.keySet()){
-                    ThreadPoolExecutor nowPool = topicPartition2Pools.get(topicPartition);
-                    //转换到pool的 STOP的状态,该状态时仅仅会处理完pool的线程就转到TERMINAL
-                    List<Runnable> originTask = nowPool.shutdownNow();
-                    ThreadPoolExecutor newPool = new ThreadPoolExecutor(minThreadSizePerPartition, maxThreadSizePerPartition, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>(threadQueueSizePerPartition));
-                    for(Runnable runnable: originTask){
-                        newPool.execute(runnable);
+            if(this.minThreadSizePerPartition != minThreadSizePerPartition ||
+                    this.maxThreadSizePerPartition != maxThreadSizePerPartition ||
+                    this.threadQueueSizePerPartition != threadQueueSizePerPartition){
+                if(minThreadSizePerPartition <= maxThreadSizePerPartition){
+                    log.info("handler thread pool changed(minThreadSizePerPartition=" + minThreadSizePerPartition + ", " +
+                            "maxThreadSizePerPartition=" + maxThreadSizePerPartition + ", " +
+                            "threadQueueSizePerPartition=" + threadQueueSizePerPartition + ")");
+                    //因为更新配置时,不会接受消息,所以可以重新分配线程池,原线程池等待消息处理完自动销毁
+                    //shutdown,不再从队列取task并且任务完成时会更新
+                    for(TopicPartition topicPartition: topicPartition2Pools.keySet()){
+                        ThreadPoolExecutor nowPool = topicPartition2Pools.get(topicPartition);
+                        //转换到pool的 STOP的状态,该状态时仅仅会处理完pool的线程就转到TERMINAL
+                        List<Runnable> originTask = nowPool.shutdownNow();
+                        ThreadPoolExecutor newPool = new ThreadPoolExecutor(minThreadSizePerPartition, maxThreadSizePerPartition, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>(threadQueueSizePerPartition));
+                        for(Runnable runnable: originTask){
+                            newPool.execute(runnable);
+                        }
+                        topicPartition2Pools.put(topicPartition, newPool);
                     }
-                    topicPartition2Pools.put(topicPartition, newPool);
-                }
 
-                this.minThreadSizePerPartition = minThreadSizePerPartition;
-                this.maxThreadSizePerPartition = maxThreadSizePerPartition;
-                this.threadQueueSizePerPartition = threadQueueSizePerPartition;
+                    this.minThreadSizePerPartition = minThreadSizePerPartition;
+                    this.maxThreadSizePerPartition = maxThreadSizePerPartition;
+                    this.threadQueueSizePerPartition = threadQueueSizePerPartition;
+                }
+                else{
+                    throw new IllegalStateException("config args 'minThreadSizePerPartition' and 'maxThreadSizePerPartition' state wrong");
+                }
             }
             else{
-                throw new IllegalStateException("config args 'minThreadSizePerPartition' and 'maxThreadSizePerPartition' state wrong");
+                log.info("handler thread pool doesn't change)");
             }
         }
         else{
@@ -264,7 +275,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
                         e.printStackTrace();
                     }
 
-                    //round-bin地将余下message handler替代移除的message handler
+                    //round-robin地将余下message handler替代移除的message handler
                     int round = 0;
                     for(Runnable task: topicPartition2Pools.get(key).getQueue()){
                         MessageHandlerTask wrapperTask = (MessageHandlerTask) task;
@@ -281,6 +292,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
             pendingWindow.reConfig(newConfig);
         }
+        log.info("OPMT message handler manager reconfiged");
     }
 
     private final class MessageHandlerTask implements Runnable{

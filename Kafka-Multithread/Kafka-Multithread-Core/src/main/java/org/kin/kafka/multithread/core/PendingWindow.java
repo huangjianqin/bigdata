@@ -138,6 +138,7 @@ public class PendingWindow implements ReConfigable{
 
     @Override
     public void reConfig(Properties newConfig) {
+        log.info("pending window reconfiging...");
         int slidingWindow = this.slidingWindow;
 
         if(AppConfigUtils.isConfigItemChange(slidingWindow, newConfig, AppConfig.PENDINGWINDOW_SLIDINGWINDOW)){
@@ -145,5 +146,6 @@ public class PendingWindow implements ReConfigable{
             //不需要同步,因为stop the world(处理线程停止处理消息)
             this.slidingWindow = slidingWindow;
         }
+        log.info("pending window reconfiged");
     }
 }

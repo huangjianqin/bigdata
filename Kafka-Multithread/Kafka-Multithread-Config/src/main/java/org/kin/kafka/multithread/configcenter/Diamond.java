@@ -2,14 +2,17 @@ package org.kin.kafka.multithread.configcenter;
 
 import org.kin.kafka.multithread.configcenter.common.StoreCodec;
 import org.kin.kafka.multithread.configcenter.common.StoreCodecs;
+import org.kin.kafka.multithread.configcenter.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.config.ConfigCenterConfig;
 import org.kin.kafka.multithread.configcenter.config.DefaultConfigCenterConfig;
 import org.kin.kafka.multithread.configcenter.manager.ConfigStoreManager;
 import org.kin.kafka.multithread.configcenter.utils.ConfigCenterConfigUtils;
 import org.kin.kafka.multithread.configcenter.utils.PropertiesUtils;
 import org.kin.kafka.multithread.configcenter.utils.YAMLUtils;
-import org.kin.kafka.multithread.domain.ConfigFetchResult;
+import org.kin.kafka.multithread.domain.ConfigFetchResponse;
+import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeat;
 import org.kin.kafka.multithread.domain.ConfigSetupResult;
+import org.kin.kafka.multithread.protocol.app.ApplicationConfig;
 import org.kin.kafka.multithread.protocol.app.ApplicationHost;
 import org.kin.kafka.multithread.protocol.configcenter.AdminProtocol;
 import org.kin.kafka.multithread.protocol.configcenter.DiamondMasterProtocol;
@@ -35,6 +38,7 @@ import java.util.Properties;
  */
 public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     private static final Logger log = LoggerFactory.getLogger(Diamond.class);
+
     private ConfigStoreManager configStoreManager;
     private Properties config = new Properties();
     private Map<String, Map<String, Properties>> host2AppName2Config = new HashMap<>();
@@ -46,12 +50,15 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     public Diamond(String configPath) {
         config = YAMLUtils.loadYML2Properties(configPath);
         ConfigCenterConfigUtils.oneNecessaryCheckAndFill(config);
+        log.info("diamond loaded config " + System.lineSeparator() + ConfigCenterConfigUtils.toString(config));
     }
 
     public void init(){
+        log.info("diamond initing...");
         String storeManagerClass = (String) config.getOrDefault(ConfigCenterConfig.CONFIG_STOREMANAGER_CLASS, DefaultConfigCenterConfig.DEFAULT_CONFIG_STOREMANAGER_CLASS);
         configStoreManager = (ConfigStoreManager) ClassUtils.instance(storeManagerClass);
         configStoreManager.setup(config);
+        log.info("diamond inited");
     }
 
     @Override
@@ -64,9 +71,7 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
             String host,
             String type,
             String config) {
-//        ApplicationHost appHost = new ApplicationHost(appName, host);
-//        ApplicationConfig appConfig = new ApplicationConfig(config, type);
-//        boolean result = configStoreManager.storeConfig(appHost, appConfig);
+        log.info("store app config from app '" + appName + "' on host '" + host + "'" + System.lineSeparator() + config);
         //先缓存,等待判断是否配置成功后才持久化
         Map<String, Properties> appName2Config = new HashMap<>();
 
@@ -74,7 +79,12 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
             appName2Config = host2AppName2Config.get(host);
         }
         StoreCodec storeCodec = StoreCodecs.getCodecByName(type);
-        appName2Config.put(appName, PropertiesUtils.map2Properties(storeCodec.deSerialize(config)));
+        //保证host与appName一致性
+        Properties configProperties = PropertiesUtils.map2Properties(storeCodec.deSerialize(config));
+        configProperties.put(AppConfig.APPHOST, host);
+        configProperties.put(AppConfig.APPNAME, appName);
+
+        appName2Config.put(appName, configProperties);
         host2AppName2Config.put(host, appName2Config);
 
         return Collections.singletonMap("result", 1);
@@ -93,6 +103,7 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/kafkamultithread/{host}/{appName}/{tpye}")
     public Map<String, Object> getAppConfigStr(String appName, String host, String type) {
+        log.info("get app config string from app '" + appName + "' on host '" + host + "' tansfer to '" + type + "' string from rest call");
         ApplicationHost appHost = new ApplicationHost(appName, host);
 
         Map<String, String> config = configStoreManager.getAppConfigMap(appHost);
@@ -110,18 +121,31 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     }
 
     @Override
-    public ConfigFetchResult getAppConfig(ApplicationHost appHost) {
-        ConfigFetchResult result = new ConfigFetchResult(configStoreManager.getAllAppConfig(appHost), System.currentTimeMillis());
+    public ConfigFetchResponse getAppConfig(ApplicationHost appHost) {
+        log.info("get app config from app '" + appHost.getAppName() + "' on host '" + appHost.getHost() + "' from rpc call");
+        ConfigFetchResponse result = new ConfigFetchResponse(configStoreManager.getAllAppConfig(appHost), System.currentTimeMillis());
         return result;
     }
 
     @Override
-    public void configFail(ConfigSetupResult result) {
+    public void heartbeat(ConfigFetcherHeartbeat heartbeat) {
+        String host = heartbeat.getAppHost().getHost();
+        for(String succeedAppName: heartbeat.getSucceedAppNames()){
+            Properties config = host2AppName2Config.get(host).remove(succeedAppName);
+            //持久化
+            configStoreManager.storeConfig(config);
+        }
 
+        for(String succeedAppName: heartbeat.getFailAppNames()){
+            host2AppName2Config.get(host).remove(succeedAppName);
+            //通知Admin
+        }
     }
 
     public void close(){
+        log.info("diamond closing...");
         configStoreManager.clearup();
+        log.info("diamond closed");
     }
 
     public Properties getConfig() {

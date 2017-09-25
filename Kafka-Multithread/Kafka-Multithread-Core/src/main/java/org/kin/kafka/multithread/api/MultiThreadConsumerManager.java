@@ -27,6 +27,7 @@ import java.util.*;
  */
 public class MultiThreadConsumerManager implements ReConfigable{
     private static final Logger log = LoggerFactory.getLogger(MultiThreadConsumerManager.class);
+
     private static final MultiThreadConsumerManager manager = new MultiThreadConsumerManager();
     private static final Map<String, ApplicationContext> appName2ApplicationContext = new HashMap();
 
@@ -56,6 +57,7 @@ public class MultiThreadConsumerManager implements ReConfigable{
     }
 
     public <K, V> ApplicationContext newApplication(Properties config){
+        log.info("deploying app..." + System.lineSeparator() + AppConfigUtils.toString(config));
         AppConfigUtils.oneNecessaryCheckAndFill(config);
 
         String appName = config.getProperty(AppConfig.APPNAME);
@@ -92,11 +94,13 @@ public class MultiThreadConsumerManager implements ReConfigable{
                     childRunModel
             );
             appName2ApplicationContext.put(appName, applicationContext);
+            log.info("deploy app '" + appName + "' finished");
             return applicationContext;
         }
         else{
             throw new IllegalStateException("init application error");
         }
+
     }
 
     public ApplicationContext getApplicationContext(String appName){
