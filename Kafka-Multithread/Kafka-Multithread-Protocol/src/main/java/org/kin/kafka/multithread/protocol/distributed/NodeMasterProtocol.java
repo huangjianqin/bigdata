@@ -1,5 +1,6 @@
 package org.kin.kafka.multithread.protocol.distributed;
 
+import org.kin.kafka.multithread.domain.ConfigResultRequest;
 import org.kin.kafka.multithread.domain.HealthReport;
 
 /**
@@ -10,4 +11,5 @@ import org.kin.kafka.multithread.domain.HealthReport;
 public interface NodeMasterProtocol {
     Boolean closeContainer(long containerId);
     void report(HealthReport report);
+    void commitConfigResultRequest(ConfigResultRequest configResultRequest);
 }

@@ -6,6 +6,7 @@ import org.kin.kafka.multithread.core.Application;
 import org.kin.kafka.multithread.distributed.AppStatus;
 import org.kin.kafka.multithread.distributed.node.ContainerContext;
 import org.kin.kafka.multithread.distributed.node.NodeContext;
+import org.kin.kafka.multithread.domain.ConfigResultRequest;
 import org.kin.kafka.multithread.domain.HealthReport;
 import org.kin.kafka.multithread.protocol.distributed.ContainerMasterProtocol;
 import org.kin.kafka.multithread.protocol.distributed.NodeMasterProtocol;
@@ -117,16 +118,7 @@ public abstract class Container implements ContainerMasterProtocol {
             switch (appStatus){
                 case RUN:
                     if(!appManager.containsAppName(appName)){
-                        callable = new Callable() {
-                            @Override
-                            public Object call() throws Exception {
-                                log.info("runing app '" + appName + "'...");
-                                Application application = MultiThreadConsumerManager.instance().newApplication(config);
-                                application.start();
-                                log.info("app '" + appName + "' runned");
-                                return null;
-                            }
-                        };
+                        callable = new RunConfigCallable(config);
                     }
                     else{
                         throw new IllegalStateException("app '" + appName + "' already runned");
@@ -134,15 +126,7 @@ public abstract class Container implements ContainerMasterProtocol {
                     break;
                 case UPDATE:
                     if(appManager.containsAppName(appName)){
-                        callable = new Callable() {
-                            @Override
-                            public Object call() throws Exception {
-                                log.info("reconfig app '" + appName + "'...");
-                                appManager.reConfig(config);
-                                log.info("app '" + appName + "' reconfiged");
-                                return null;
-                            }
-                        };
+                        callable = new UpdateConfigCallable(config);
                     }
                     else{
                         throw new IllegalStateException("app '" + appName + "' doesn't runned");
@@ -150,15 +134,7 @@ public abstract class Container implements ContainerMasterProtocol {
                     break;
                 case CLOSE:
                     if(!appManager.containsAppName(appName)){
-                        callable = new Callable() {
-                            @Override
-                            public Object call() throws Exception {
-                                log.info("app '" + appName + "' closing...");
-                                appManager.shutdownApp(appName);
-                                log.info("app '" + appName + "' closed");
-                                return null;
-                            }
-                        };
+                        callable = new CloseConfigCallable(config);
                     }
                     else{
                         throw new IllegalStateException("app '" + appName + "' already runned");
@@ -166,17 +142,7 @@ public abstract class Container implements ContainerMasterProtocol {
                     break;
                 case RESTART:
                     if(appManager.containsAppName(appName)){
-                        callable = new Callable() {
-                            @Override
-                            public Object call() throws Exception {
-                                log.info("restart app '" + appName + "'...");
-                                appManager.shutdownApp(appName);
-                                Application newApplication = MultiThreadConsumerManager.instance().newApplication(config);
-                                newApplication.start();
-                                log.info("app '" + appName + "' restarted");
-                                return null;
-                            }
-                        };
+                        callable = new RestartConfigCallable(config);
                     }
                     else{
                         throw new IllegalStateException("app '" + appName + "' doesn't runned");
@@ -207,5 +173,95 @@ public abstract class Container implements ContainerMasterProtocol {
 
     public long getBelong2() {
         return belong2;
+    }
+
+    private abstract class DeployConfigCallable<V> implements Callable<V>{
+        protected Properties config;
+        protected String appName;
+
+        public DeployConfigCallable(Properties config) {
+            this.config = config;
+            this.appName = config.getProperty(AppConfig.APPNAME);
+        }
+
+        @Override
+        public V call() throws Exception {
+            try{
+                V result =  action();
+                nodeMasterProtocol.commitConfigResultRequest(new ConfigResultRequest(appName, true, System.currentTimeMillis(), null));
+                return result;
+            }catch (Exception e){
+                e.printStackTrace();
+
+                nodeMasterProtocol.commitConfigResultRequest(new ConfigResultRequest(appName, false, System.currentTimeMillis(), e));
+            }
+
+            return null;
+        }
+
+        public abstract V action();
+    }
+
+    private class RunConfigCallable<V> extends DeployConfigCallable<V>{
+
+        public RunConfigCallable(Properties config) {
+            super(config);
+        }
+
+        @Override
+        public V action() {
+            log.info("runing app '" + appName + "'...");
+            Application application = MultiThreadConsumerManager.instance().newApplication(config);
+            application.start();
+            log.info("app '" + appName + "' runned");
+            return null;
+        }
+    }
+
+    private class UpdateConfigCallable<V> extends DeployConfigCallable<V>{
+
+        public UpdateConfigCallable(Properties config) {
+            super(config);
+        }
+
+        @Override
+        public V action() {
+            log.info("reconfig app '" + appName + "'...");
+            appManager.reConfig(config);
+            log.info("app '" + appName + "' reconfiged");
+            return null;
+        }
+    }
+
+    private class CloseConfigCallable<V> extends DeployConfigCallable<V>{
+
+        public CloseConfigCallable(Properties config) {
+            super(config);
+        }
+
+        @Override
+        public V action() {
+            log.info("app '" + appName + "' closing...");
+            appManager.shutdownApp(appName);
+            log.info("app '" + appName + "' closed");
+            return null;
+        }
+    }
+
+    private class RestartConfigCallable<V> extends DeployConfigCallable<V>{
+
+        public RestartConfigCallable(Properties config) {
+            super(config);
+        }
+
+        @Override
+        public V action() {
+            log.info("restart app '" + appName + "'...");
+            appManager.shutdownApp(appName);
+            Application newApplication = MultiThreadConsumerManager.instance().newApplication(config);
+            newApplication.start();
+            log.info("app '" + appName + "' restarted");
+            return null;
+        }
     }
 }

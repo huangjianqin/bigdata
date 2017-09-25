@@ -219,15 +219,15 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
             handlerSize = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT_HANDLERSIZE));
         }
 
-        if(minThreadSizePerPartition > 0 &&
-                maxThreadSizePerPartition > 0 &&
-                threadQueueSizePerPartition > 0 &&
-                minThreadSizePerPartition <= Integer.MAX_VALUE &&
-                maxThreadSizePerPartition <= Integer.MAX_VALUE &&
-                threadQueueSizePerPartition <= Integer.MAX_VALUE){
-            if(this.minThreadSizePerPartition != minThreadSizePerPartition ||
-                    this.maxThreadSizePerPartition != maxThreadSizePerPartition ||
-                    this.threadQueueSizePerPartition != threadQueueSizePerPartition){
+        if(this.minThreadSizePerPartition != minThreadSizePerPartition ||
+                this.maxThreadSizePerPartition != maxThreadSizePerPartition ||
+                this.threadQueueSizePerPartition != threadQueueSizePerPartition){
+            if(minThreadSizePerPartition > 0 &&
+                    maxThreadSizePerPartition > 0 &&
+                    threadQueueSizePerPartition > 0 &&
+                    minThreadSizePerPartition <= Integer.MAX_VALUE &&
+                    maxThreadSizePerPartition <= Integer.MAX_VALUE &&
+                    threadQueueSizePerPartition <= Integer.MAX_VALUE){
                 if(minThreadSizePerPartition <= maxThreadSizePerPartition){
                     log.info("handler thread pool changed(minThreadSizePerPartition=" + minThreadSizePerPartition + ", " +
                             "maxThreadSizePerPartition=" + maxThreadSizePerPartition + ", " +
@@ -254,13 +254,12 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
                 }
             }
             else{
-                log.info("handler thread pool doesn't change)");
+                throw new IllegalStateException("config args 'minThreadSizePerPartition' or 'maxThreadSizePerPartition' or 'threadQueueSizePerPartition' state wrong");
             }
         }
         else{
-            throw new IllegalStateException("config args 'minThreadSizePerPartition' or 'maxThreadSizePerPartition' or 'threadQueueSizePerPartition' state wrong");
+            log.info("handler thread pool doesn't change)");
         }
-
 
         if(this.handlerSize > handlerSize){
             log.info("reduce message handlers(size = " + (this.handlerSize - handlerSize) + ")");

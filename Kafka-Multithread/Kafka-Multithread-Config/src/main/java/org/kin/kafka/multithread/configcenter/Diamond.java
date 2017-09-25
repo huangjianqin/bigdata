@@ -11,8 +11,6 @@ import org.kin.kafka.multithread.configcenter.utils.PropertiesUtils;
 import org.kin.kafka.multithread.configcenter.utils.YAMLUtils;
 import org.kin.kafka.multithread.domain.ConfigFetchResponse;
 import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeat;
-import org.kin.kafka.multithread.domain.ConfigSetupResult;
-import org.kin.kafka.multithread.protocol.app.ApplicationConfig;
 import org.kin.kafka.multithread.protocol.app.ApplicationHost;
 import org.kin.kafka.multithread.protocol.configcenter.AdminProtocol;
 import org.kin.kafka.multithread.protocol.configcenter.DiamondMasterProtocol;

@@ -4,7 +4,6 @@ import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.config.DefaultAppConfig;
 import org.kin.kafka.multithread.domain.ConfigFetchResponse;
 import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeat;
-import org.kin.kafka.multithread.domain.ConfigSetupResult;
 import org.kin.kafka.multithread.protocol.app.ApplicationHost;
 import org.kin.kafka.multithread.protocol.configcenter.DiamondMasterProtocol;
 import org.kin.kafka.multithread.rpc.factory.RPCFactories;
@@ -157,7 +156,15 @@ public class ConfigFetcher extends Thread{
         isStopped = true;
     }
 
-    public void configFail(List<Properties> failConfigs){
+    public void configFailAppNames(List<String> failAppNames){
+        for(String failAppName: failAppNames){
+            log.info(failAppName + " config set up fail");
+        }
+        this.failAppNames.addAll(failAppNames);
+        log.info(failAppNames.size() + " configs set up fail");
+    }
+
+    public void configFailConfigs(List<Properties> failConfigs){
         List<String> failAppNames = new ArrayList<>();
         for(Properties config: failConfigs){
             String failAppName = config.getProperty(AppConfig.APPNAME);
@@ -168,7 +175,15 @@ public class ConfigFetcher extends Thread{
         log.info(failAppNames.size() + " configs set up fail");
     }
 
-    public void configSucceed(List<Properties> succeedConfigs){
+    public void configSucceedAppNames(List<String> succeedAppNames){
+        for(String succeedAppName: succeedAppNames){
+            log.info(succeedAppName + " config set up succeed");
+        }
+        this.succeedAppNames.addAll(succeedAppNames);
+        log.info(succeedAppNames.size() + " configs set up succeed");
+    }
+
+    public void configSucceedConfigs(List<Properties> succeedConfigs){
         List<String> succeedAppNames = new ArrayList<>();
         for(Properties config: succeedConfigs){
             String succeedAppName = config.getProperty(AppConfig.APPNAME);

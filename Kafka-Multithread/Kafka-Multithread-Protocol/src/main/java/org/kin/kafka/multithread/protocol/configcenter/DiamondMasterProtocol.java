@@ -2,7 +2,6 @@ package org.kin.kafka.multithread.protocol.configcenter;
 
 import org.kin.kafka.multithread.domain.ConfigFetchResponse;
 import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeat;
-import org.kin.kafka.multithread.domain.ConfigSetupResult;
 import org.kin.kafka.multithread.protocol.app.ApplicationHost;
 
 /**

@@ -8,6 +8,7 @@ import org.kin.kafka.multithread.distributed.container.allocator.ContainerAlloca
 import org.kin.kafka.multithread.distributed.container.allocator.impl.LocalContainerAllocator;
 import org.kin.kafka.multithread.distributed.node.config.NodeConfig;
 import org.kin.kafka.multithread.distributed.utils.NodeConfigUtils;
+import org.kin.kafka.multithread.domain.ConfigResultRequest;
 import org.kin.kafka.multithread.domain.HealthReport;
 import org.kin.kafka.multithread.protocol.distributed.ContainerMasterProtocol;
 import org.kin.kafka.multithread.protocol.distributed.NodeMasterProtocol;
@@ -142,7 +143,7 @@ public class Node implements NodeMasterProtocol{
                         //否则,利用containerContext参数创建新的container,并返回该container的containerMasterProtocol接口
                         containerMasterProtocol = containerAllocator.containerAllocate(containerContext, nodeContext);
                         if(containerMasterProtocol == null){
-                            configFetcher.configFail(Collections.singletonList(newConfig));
+                            configFetcher.configFailConfigs(Collections.singletonList(newConfig));
                         }
                         break;
                     default:
@@ -174,6 +175,18 @@ public class Node implements NodeMasterProtocol{
     @Override
     public void report(HealthReport report) {
         containerAllocator.updateContainerStatus(report);
+    }
+
+    @Override
+    public void commitConfigResultRequest(ConfigResultRequest configResultRequest) {
+        String appName = configResultRequest.getAppName();
+        boolean isSucceed = configResultRequest.isSucceed();
+        if(isSucceed){
+            configFetcher.configSucceedAppNames(Collections.singletonList(appName));
+        }
+        else{
+            configFetcher.configFailAppNames(Collections.singletonList(appName));
+        }
     }
 
     private long getContainerId(){
