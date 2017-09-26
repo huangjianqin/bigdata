@@ -1,4 +1,4 @@
-package org.kin.bigdata.dubbox.rest;
+package org.kin.dubbox.rest;
 
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;

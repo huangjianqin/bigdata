@@ -1,4 +1,4 @@
-package org.kin.bigdata.dubbox.rest;
+package org.kin.dubbox.rest;
 
 import java.util.Map;
 

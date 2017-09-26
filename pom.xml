@@ -7,10 +7,6 @@
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
-        <module>DistributedLock</module>
-        <module>KinCrawler</module>
-        <module>Dubbox</module>
-        <!--<module>MicroService</module>-->
         <module>BigData-Project</module>
     </modules>
 

@@ -1,4 +1,4 @@
-package org.kin.bigdata.dubbox.rest;
+package org.kin.dubbox.rest;
 
 /**
  * Created by 健勤 on 2017/5/18.
