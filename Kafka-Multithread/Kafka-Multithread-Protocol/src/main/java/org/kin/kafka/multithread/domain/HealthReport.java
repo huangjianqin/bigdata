@@ -9,12 +9,15 @@ public class HealthReport{
     private long freeMemory;
     private long maxMemory;
     private int availableProcessors;
-    private int appNums;
 
-    public HealthReport(int appNums, long containerId) {
+    private int appNums;
+    private long containerIdleTimeout;
+
+    public HealthReport(long containerId, int appNums, long containerIdleTimeout) {
         getSystemEnv();
         this.appNums = appNums;
         this.containerId = containerId;
+        this.containerIdleTimeout = containerIdleTimeout;
     }
 
     private void getSystemEnv(){
@@ -73,9 +76,17 @@ public class HealthReport{
         this.appNums = appNums;
     }
 
+    public long getContainerIdleTimeout() {
+        return containerIdleTimeout;
+    }
+
+    public void setContainerIdleTimeout(long containerIdleTimeout) {
+        this.containerIdleTimeout = containerIdleTimeout;
+    }
+
     @Override
     public Object clone() throws CloneNotSupportedException {
-        HealthReport healthReport = new HealthReport(appNums, containerId);
+        HealthReport healthReport = new HealthReport(containerId, appNums, containerIdleTimeout);
         healthReport.setAvailableProcessors(availableProcessors);
         healthReport.setTotalMemory(totalMemory);
         healthReport.setFreeMemory(freeMemory);

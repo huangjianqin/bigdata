@@ -32,7 +32,7 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * 每个节点限制启动10个Container
  *
- * 暂时没有解决当app决定分发到某container后,container还没有接受就自动关闭了导致app启动失败的场景
+ * 充当Container资源的分配与关闭
  */
 public class Node implements NodeMasterProtocol{
     private static final Logger log = LoggerFactory.getLogger(Node.class);
@@ -45,9 +45,8 @@ public class Node implements NodeMasterProtocol{
     private ContainerAllocator containerAllocator;
     //nodeId + 000 是与Node同一jvm的container
     private Map<Long, ContainerMasterProtocol> id2Container = new HashMap<>();
-    private final ReentrantLock lock = new ReentrantLock();
 
-    private Properties nodeConfig;
+    private final Properties nodeConfig;
     private boolean isStopped = false;
 
     private LinkedBlockingQueue<Properties> appConfigs;
@@ -78,7 +77,7 @@ public class Node implements NodeMasterProtocol{
         log.info("node initing...");
 
         this.appConfigs =  new LinkedBlockingQueue<>();
-        this.containerAllocator = new LocalContainerAllocator(id2Container);
+        this.containerAllocator = new LocalContainerAllocator(id2Container, nodeConfig);
         this.containerAllocator.init();
         log.info("container allocator(" + containerAllocator.getClass().getName() + ") inited");
 
@@ -117,7 +116,6 @@ public class Node implements NodeMasterProtocol{
                 ContainerMasterProtocol containerMasterProtocol = null;
                 ContainerContext containerContext = null;
 
-                lock.lock();
                 switch (runModel){
                     case JVM:
                         if(id2Container.containsKey(NODE_JVM_CONTAINER)){
@@ -155,7 +153,6 @@ public class Node implements NodeMasterProtocol{
                     default:
                         throw new IllegalStateException("unknown AppChildRunModel '" + newConfig.getProperty(AppConfig.APP_CHILD_RUN_MODEL) + "'");
                 }
-                lock.unlock();
                 //更新配置或运行新实例
                 containerMasterProtocol.updateConfig(Collections.singletonList(newConfig));
 
@@ -171,15 +168,6 @@ public class Node implements NodeMasterProtocol{
         this.isStopped = false;
         this.configFetcher.close();
         this.containerAllocator.close();
-    }
-
-    @Override
-    public Boolean closeContainer(long containerId) {
-        lock.lock();
-        log.info("node remove container(id=" + containerId + ") info and close container");
-        boolean result = id2Container.remove(containerId) == null;
-        lock.unlock();
-        return result;
     }
 
     @Override

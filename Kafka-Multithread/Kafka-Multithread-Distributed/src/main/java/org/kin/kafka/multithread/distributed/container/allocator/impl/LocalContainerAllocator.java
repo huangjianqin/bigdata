@@ -27,22 +27,37 @@ import java.util.concurrent.locks.ReentrantLock;
 public class LocalContainerAllocator implements ContainerAllocator {
     private static final Logger log = LoggerFactory.getLogger(LocalContainerAllocator.class);
 
-    private Map<Long, ContainerMasterProtocol> id2Container;
+    private final Map<Long, ContainerMasterProtocol> id2Container;
+    private final Properties nodeConfig;
+
     private Map<Long, HealthReport> id2HealthReport;
     private Map<Long, Long> id2SelectTimes;
+    private Map<Long, Integer> id2IdleTimes;
 
-    public LocalContainerAllocator(Map<Long, ContainerMasterProtocol> id2Container) {
+    public LocalContainerAllocator(Map<Long, ContainerMasterProtocol> id2Container, Properties nodeConfig) {
         this.id2Container = id2Container;
+        this.nodeConfig = nodeConfig;
     }
 
     @Override
     public void init() {
         this.id2HealthReport = new HashMap<>();
         this.id2SelectTimes = new HashMap<>();
+        this.id2IdleTimes = new HashMap<>();
     }
 
     @Override
     public ContainerMasterProtocol containerAllocate(ContainerContext containerContext, NodeContext nodeContext) {
+        //获取空闲超时的Container列表
+        Set<Long> idleContainers = new HashSet<>();
+        for(Long containerId: id2IdleTimes.keySet()){
+            long idleTime = id2IdleTimes.get(containerId) * Long.valueOf(nodeConfig.getProperty(NodeConfig.CONTAINER_HEALTHREPORT_INTERNAL));
+            long containerIdleTimeout = id2HealthReport.get(containerId).getContainerIdleTimeout();
+            if(idleTime > containerIdleTimeout){
+                idleContainers.add(containerId);
+            }
+        }
+
         ContainerMasterProtocol selectedContainerClient = null;
         //根据container的状态进行container的选择
         //利用CPU,空闲内存和APP运行数权重计算出分值,再跟阈值比较进行分配或构造新container
@@ -50,6 +65,14 @@ public class LocalContainerAllocator implements ContainerAllocator {
         if(selectedContainerId != -1){
             log.info("depoly app on Container(id=" + selectedContainerId + ")");
             selectedContainerClient =  id2Container.get(selectedContainerId);
+
+            //关闭空闲的container资源
+            //移除被选中container
+            idleContainers.remove(selectedContainerId);
+            //重置选中container的空闲time
+            id2IdleTimes.put(selectedContainerId, 0);
+            //RPC通知空闲container关闭
+            askIdleContainer2Close(idleContainers);
         }
         else{
             //不超过单节点可启动container数
@@ -91,6 +114,21 @@ public class LocalContainerAllocator implements ContainerAllocator {
         }
 
         return selectedContainerClient;
+    }
+
+    /**
+     * RPC通知空闲container关闭
+     * @param idleContainers
+     */
+    private void askIdleContainer2Close(Set<Long> idleContainers) {
+        if(idleContainers == null){
+            return;
+        }
+
+        for(Long idleContainerId: idleContainers){
+            log.info("container(id=" + idleContainerId + ") is idle timeout, ask it to close");
+            id2Container.get(idleContainerId).close();
+        }
     }
 
     /**
@@ -185,7 +223,21 @@ public class LocalContainerAllocator implements ContainerAllocator {
 
     @Override
     public void updateContainerStatus(HealthReport healthReport) {
-        id2HealthReport.put(healthReport.getContainerId(), healthReport);
+        Long containerId = healthReport.getContainerId();
+
+        id2HealthReport.put(containerId, healthReport);
+
+        if(healthReport.getAppNums() == 0){
+            if(id2IdleTimes.containsKey(containerId)){
+                id2IdleTimes.put(containerId, id2IdleTimes.get(containerId) + 1);
+            }
+            else{
+                id2IdleTimes.put(containerId, 1);
+            }
+        }
+        else{
+            id2IdleTimes.put(containerId, 0);
+        }
     }
 
     @Override

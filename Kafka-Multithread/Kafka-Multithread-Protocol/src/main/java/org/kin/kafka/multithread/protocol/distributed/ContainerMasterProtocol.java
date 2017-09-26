@@ -15,4 +15,5 @@ import java.util.Properties;
  */
 public interface ContainerMasterProtocol {
     Boolean updateConfig(List<Properties> configs);
+    void close();
 }

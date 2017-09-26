@@ -14,6 +14,7 @@ public class NodeConfig {
 
     public static final String NODE_PROTOCOL_PORT = "node.protocol.port";
     public static final String CONTAINER_PROTOCOL_INITPORT = "container.protocol.initport";
+    //最好是container.healthreport.internal的倍数
     public static final String CONTAINER_IDLETIMEOUT = "container.idletiemout";
     public static final String CONTAINER_HEALTHREPORT_INTERNAL = "container.healthreport.internal";
 

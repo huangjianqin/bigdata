@@ -32,8 +32,7 @@ public abstract class Container implements ContainerMasterProtocol {
     protected long belong2;
     protected NodeMasterProtocol nodeMasterProtocol;
 
-    private long lastCommunicateTime = System.currentTimeMillis();
-    private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2, new ThreadFactory() {
+    private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1, new ThreadFactory() {
         @Override
         public Thread newThread(Runnable r) {
             Thread thread = new Thread(r);
@@ -73,18 +72,6 @@ public abstract class Container implements ContainerMasterProtocol {
             }
         }, 0, reportInternal, TimeUnit.MILLISECONDS);
 
-        //定时检查是否空闲超时
-        scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-            @Override
-            public void run() {
-                if(appManager.getAppSize() == 0){
-                    if(System.currentTimeMillis() - lastCommunicateTime >= idleTimeout){
-                        close();
-                    }
-                }
-            }
-        }, 0, idleTimeout, TimeUnit.MILLISECONDS);
-
         this.appDeployPool = new ThreadPoolExecutor(5, 5, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
         this.appDeployPool.allowCoreThreadTimeOut(true);
         this.nQueue = new HashMap<>();
@@ -95,10 +82,12 @@ public abstract class Container implements ContainerMasterProtocol {
 
     }
 
+    /**
+     * 由Node负责关闭
+     */
+    @Override
     public void close(){
         log.info("container(id=" + containerId + ", nodeId=" + belong2 + ") closing");
-        //先通知Node,但不关闭通信,为了避免再次分配Application到当前的Container,再自行关闭
-        nodeMasterProtocol.closeContainer(containerId);
         scheduledExecutorService.shutdownNow();
         appDeployPool.shutdownNow();
         doClose();
@@ -107,14 +96,12 @@ public abstract class Container implements ContainerMasterProtocol {
 
     private void healthReport(){
         log.info("container(id=" + containerId + ", nodeId=" + belong2 + ") do health report");
-        HealthReport healthReport = new HealthReport(appManager.getAppSize(), containerId);
+        HealthReport healthReport = new HealthReport(containerId, appManager.getAppSize(), idleTimeout);
         nodeMasterProtocol.report(healthReport);
     }
 
     @Override
     public Boolean updateConfig(List<Properties> configs) {
-        lastCommunicateTime = System.currentTimeMillis();
-
         log.info("got " + configs.size() + " configs");
         log.info("deploy or close app...");
         //可考虑添加黑名单!!!!
