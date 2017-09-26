@@ -274,7 +274,7 @@ public abstract class Container implements ContainerMasterProtocol {
                 return result;
             }catch (Exception e){
                 e.printStackTrace();
-
+                log.warn(appName + "deploy has something wrong, throw " + e.getCause() + " exception and mark '" + e.getMessage() + "' message");
                 nodeMasterProtocol.commitConfigResultRequest(new ConfigResultRequest(appName, false, System.currentTimeMillis(), e));
             }
             finally {
