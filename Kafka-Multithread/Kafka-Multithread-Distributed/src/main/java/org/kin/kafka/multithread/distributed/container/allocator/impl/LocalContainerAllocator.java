@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by huangjianqin on 2017/9/19.
@@ -37,7 +37,8 @@ public class LocalContainerAllocator implements ContainerAllocator {
 
     @Override
     public void init() {
-        id2Container = new ConcurrentHashMap<>();
+        this.id2HealthReport = new HashMap<>();
+        this.id2SelectTimes = new HashMap<>();
     }
 
     @Override
@@ -100,7 +101,7 @@ public class LocalContainerAllocator implements ContainerAllocator {
     private long getBestContainer(){
         //复制视图
         List<HealthReport> healthReportView = new ArrayList<>();
-        for(HealthReport healthReport: id2HealthReport.values()){
+        for(HealthReport healthReport: id2HealthReport.values().toArray(new HealthReport[1])){
             if(healthReport.getContainerId() == Node.NODE_JVM_CONTAINER){
                 //移除与Node同一JVM的Container
                 continue;
@@ -113,6 +114,20 @@ public class LocalContainerAllocator implements ContainerAllocator {
             }
         }
 
+        Map<Long, Double> rates = compuateRate(healthReportView);
+
+        //选择平均评分达到平均每项排名前80%
+        double bestRate = healthReportView.size() * 0.8 * 4;
+        for(Map.Entry<Long, Double> entry: rates.entrySet()){
+            if(entry.getValue() >= bestRate){
+                return entry.getKey();
+            }
+        }
+        
+        return -1;
+    }
+
+    private Map<Long, Double> compuateRate(List<HealthReport> healthReportView){
         Map<Long, Double> rates = new HashMap<>();
 
         //统计可用CPU排名
@@ -152,15 +167,7 @@ public class LocalContainerAllocator implements ContainerAllocator {
         });
         addRate(rates, healthReportView);
 
-        //选择平均评分达到平均每项排名前80%
-        double bestRate = healthReportView.size() * 0.8 * 4;
-        for(Map.Entry<Long, Double> entry: rates.entrySet()){
-            if(entry.getValue() >= bestRate){
-                return entry.getKey();
-            }
-        }
-
-        return -1;
+        return rates;
     }
 
     private void addRate(Map<Long, Double> rates, List<HealthReport> rank){

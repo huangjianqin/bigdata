@@ -52,7 +52,7 @@ public class MessageFetcher<K, V> extends Thread implements Application {
     Properties newConfig;
 
     public MessageFetcher(Properties config) {
-        super("consumer fetcher thread");
+        super(config.getProperty(AppConfig.APPNAME) + "'s consumer fetcher thread");
 
         this.config = config;
         pollTimeout = Long.valueOf(config.getProperty(AppConfig.MESSAGEFETCHER_POLL_TIMEOUT));

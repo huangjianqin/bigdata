@@ -4,6 +4,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
+import org.kin.kafka.multithread.common.DefaultThreadFactory;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
@@ -35,7 +36,14 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
     private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new HashMap<>();
     private Map<TopicPartition, List<OPMT2MessageQueueHandlerThread>> topicPartition2Threads = new HashMap<>();
     //所有消息处理线程在同一线程池维护
-    private final ThreadPoolExecutor threads = new ThreadPoolExecutor(2, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+    private final ThreadPoolExecutor threads = new ThreadPoolExecutor(
+            2,
+            Integer.MAX_VALUE,
+            60,
+            TimeUnit.SECONDS,
+            new SynchronousQueue<Runnable>(),
+            new DefaultThreadFactory(config.getProperty(AppConfig.APPNAME), "OPMT2MessageQueueHandlerThread")
+    );
     private int threadSizePerPartition;
 
     public OPMT2MessageHandlersManager() {

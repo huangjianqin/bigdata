@@ -119,6 +119,10 @@ public class MultiThreadConsumerManager implements ReConfigable{
     }
 
     public void shutdownApp(String appName){
+        if(!appName2ApplicationContext.containsKey(appName)){
+            throw new IllegalStateException("app '" + appName + "' doesn't not start");
+        }
+
         appName2ApplicationContext.get(appName).close();
         appName2ApplicationContext.remove(appName);
     }

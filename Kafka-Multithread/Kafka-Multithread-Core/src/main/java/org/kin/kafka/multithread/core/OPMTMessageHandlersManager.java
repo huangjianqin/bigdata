@@ -3,6 +3,7 @@ package org.kin.kafka.multithread.core;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.MessageHandler;
+import org.kin.kafka.multithread.common.DefaultThreadFactory;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
@@ -72,7 +73,14 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         if(pool == null){
             //消息处理线程池还没启动,则启动并绑定
             log.info("no thread pool cache, new one(MaxPoolSize = " + maxThreadSizePerPartition + ", QueueSize = "  + threadQueueSizePerPartition + ")");
-            pool = new ThreadPoolExecutor(minThreadSizePerPartition, maxThreadSizePerPartition, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(this.threadQueueSizePerPartition));
+            pool = new ThreadPoolExecutor(
+                    minThreadSizePerPartition,
+                    maxThreadSizePerPartition,
+                    60,
+                    TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<Runnable>(this.threadQueueSizePerPartition),
+                    new DefaultThreadFactory(config.getProperty(AppConfig.APPNAME), "MessageHandler")
+            );
             topicPartition2Pools.put(topicPartition, pool);
         }
 
@@ -238,7 +246,14 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
                         ThreadPoolExecutor nowPool = topicPartition2Pools.get(topicPartition);
                         //转换到pool的 STOP的状态,该状态时仅仅会处理完pool的线程就转到TERMINAL
                         List<Runnable> originTask = nowPool.shutdownNow();
-                        ThreadPoolExecutor newPool = new ThreadPoolExecutor(minThreadSizePerPartition, maxThreadSizePerPartition, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<>(threadQueueSizePerPartition));
+                        ThreadPoolExecutor newPool = new ThreadPoolExecutor(
+                                minThreadSizePerPartition,
+                                maxThreadSizePerPartition,
+                                60,
+                                TimeUnit.SECONDS,
+                                new LinkedBlockingQueue<>(threadQueueSizePerPartition),
+                                new DefaultThreadFactory(config.getProperty(AppConfig.APPNAME), "MessageHandler")
+                                );
                         for(Runnable runnable: originTask){
                             newPool.execute(runnable);
                         }

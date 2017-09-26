@@ -4,6 +4,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
+import org.kin.kafka.multithread.common.DefaultThreadFactory;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.StrUtils;
@@ -12,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by hjq on 2017/6/19.
@@ -20,7 +22,14 @@ import java.util.concurrent.*;
 public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
     private static final Logger log = LoggerFactory.getLogger(OPOTMessageHandlersManager.class);
     private Map<TopicPartition, OPOTMessageQueueHandlerThread> topicPartition2Thread = new ConcurrentHashMap<>();
-    private final ThreadPoolExecutor threads = new ThreadPoolExecutor(2, Integer.MAX_VALUE, 60, TimeUnit.SECONDS, new SynchronousQueue<Runnable>());
+    private final ThreadPoolExecutor threads = new ThreadPoolExecutor(
+            2,
+            Integer.MAX_VALUE,
+            60,
+            TimeUnit.SECONDS,
+            new SynchronousQueue<Runnable>(),
+            new DefaultThreadFactory(config.getProperty(AppConfig.APPNAME), "OPOTMessageQueueHandler")
+    );
 
     public OPOTMessageHandlersManager() {
         super(AppConfig.DEFAULT_APPCONFIG);

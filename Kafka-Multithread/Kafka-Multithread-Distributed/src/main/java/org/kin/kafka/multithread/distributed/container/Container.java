@@ -13,10 +13,7 @@ import org.kin.kafka.multithread.protocol.distributed.NodeMasterProtocol;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -44,8 +41,15 @@ public abstract class Container implements ContainerMasterProtocol {
             return thread;
         }
     });
+
     //在另外的线程执行配置更新
-    private ExecutorService appStartPool = Executors.newFixedThreadPool(1);
+    //多线程部署app,保证,同一appName按顺序执行部署命令
+    //最多5条线程
+    private ThreadPoolExecutor appDeployPool;
+    //app配置队列
+    private Map<String, Queue<Callable>> nQueue;
+    //在线程池中执行或等待执行部署的appName
+    private Set<String> deployingAppNames;
 
     protected MultiThreadConsumerManager appManager = MultiThreadConsumerManager.instance();
 
@@ -81,6 +85,11 @@ public abstract class Container implements ContainerMasterProtocol {
             }
         }, 0, idleTimeout, TimeUnit.MILLISECONDS);
 
+        this.appDeployPool = new ThreadPoolExecutor(5, 5, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        this.appDeployPool.allowCoreThreadTimeOut(true);
+        this.nQueue = new HashMap<>();
+        this.deployingAppNames = Collections.synchronizedSet(new HashSet<>());
+
         doStart();
         log.info("container(id=" + containerId + ", nodeId=" + belong2 + ") started");
 
@@ -91,7 +100,7 @@ public abstract class Container implements ContainerMasterProtocol {
         //先通知Node,但不关闭通信,为了避免再次分配Application到当前的Container,再自行关闭
         nodeMasterProtocol.closeContainer(containerId);
         scheduledExecutorService.shutdownNow();
-        appStartPool.shutdownNow();
+        appDeployPool.shutdownNow();
         doClose();
         log.info("container(id=" + containerId + ", nodeId=" + belong2 + ") closed");
     }
@@ -149,10 +158,83 @@ public abstract class Container implements ContainerMasterProtocol {
                     }
                     break;
             }
-            appStartPool.submit(callable);
+            deployApp(callable, appName);
         }
         log.info("deploy or close app finished");
         return true;
+    }
+
+    /**
+     *
+     * @param callable
+     * @param appName
+     */
+    private void deployApp(Callable callable, String appName){
+        if(deployingAppNames.contains(appName)){
+            offerQueue(callable, appName);
+        }
+        else{
+            if(nQueue.containsKey(appName)){
+                if(nQueue.get(appName).size() == 0 && !deployingAppNames.contains(appName)){
+                    //先抢占,再启动
+                    if(deployingAppNames.add(appName)){
+                        appDeployPool.submit(callable);
+                    }
+                    else{
+                        offerQueue(callable, appName);
+                    }
+                }
+                else {
+                    offerQueue(callable, appName);
+                }
+            }
+            else{
+                //先抢占,再启动
+                if(deployingAppNames.add(appName)){
+                    appDeployPool.submit(callable);
+                }
+                else{
+                    offerQueue(callable, appName);
+                }
+            }
+        }
+    }
+
+    /**
+     *
+     * @param callable
+     * @param appName
+     */
+    private void offerQueue(Callable callable, String appName){
+        if(nQueue.containsKey(appName)){
+            nQueue.get(appName).offer(callable);
+        }
+        else {
+            synchronized (nQueue){
+                if(nQueue.containsKey(appName)){
+                    nQueue.get(appName).offer(callable);
+                }
+                else{
+                    Queue<Callable> queue = new LinkedList<>();
+                    queue.offer(callable);
+                    nQueue.put(appName, queue);
+                }
+            }
+        }
+    }
+
+    /**
+     *
+     * @param appName
+     */
+    private void updateQueue(String appName){
+        if(nQueue.containsKey(appName) && nQueue.get(appName) != null && nQueue.get(appName).size() > 1){
+            //已抢占,不用再次抢占
+            appDeployPool.submit(nQueue.get(appName).poll());
+        }
+        else{
+            deployingAppNames.remove(appName);
+        }
     }
 
     public long getContainerId() {
@@ -194,6 +276,9 @@ public abstract class Container implements ContainerMasterProtocol {
                 e.printStackTrace();
 
                 nodeMasterProtocol.commitConfigResultRequest(new ConfigResultRequest(appName, false, System.currentTimeMillis(), e));
+            }
+            finally {
+                updateQueue(appName);
             }
 
             return null;

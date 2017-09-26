@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by huangjianqin on 2017/9/11.
@@ -39,7 +40,7 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
 
     private ConfigStoreManager configStoreManager;
     private Properties config = new Properties();
-    private Map<String, Map<String, Properties>> host2AppName2Config = new HashMap<>();
+    private Map<String, Map<String, Properties>> host2AppName2Config = new ConcurrentHashMap<>();
 
     public Diamond() {
         this(DefaultConfigCenterConfig.DEFALUT_CONFIGPATH);

@@ -3,6 +3,7 @@ package org.kin.kafka.multithread.core;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.*;
+import org.kin.kafka.multithread.common.DefaultThreadFactory;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.ReConfigable;
 import org.kin.kafka.multithread.statistics.Statistics;
@@ -16,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -50,7 +52,9 @@ public class OCOTMultiProcessor<K, V>  implements Application{
         this.commitStrategyClass = AppConfigUtils.getCommitStrategyClass(config);
         this.consumerRebalanceListenerClass = AppConfigUtils.getConsumerRebalanceListenerClass(config);
         updataConfig(config);
-        this.threads = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+        this.threads = (ThreadPoolExecutor) Executors.newCachedThreadPool(
+                new DefaultThreadFactory(config.getProperty(AppConfig.APPNAME), "OCOTProcessor")
+        );
     }
 
     private void updataConfig(Properties config){
@@ -93,7 +97,7 @@ public class OCOTMultiProcessor<K, V>  implements Application{
 
     private OCOTProcessor<K, V> newProcessor(int processorId){
             return new OCOTProcessor<>(processorId,
-                    config,
+                            config,
                             topics,
                             ClassUtils.instance(messageHandlerClass),
                             ClassUtils.instance(commitStrategyClass),
