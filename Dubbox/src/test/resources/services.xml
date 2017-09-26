@@ -8,7 +8,7 @@
        <!--<dubbo:protocol name="dubbo" serialization="kryo"/>-->
        <dubbo:registry address="zookeeper://139.199.185.84:2181"/>
        <dubbo:monitor protocol="registry"/>
-       <dubbo:service id="sayS" interface="org.kin.bigdata.dubbox.rest.Say" ref="sayImpl"/>
-       <bean id="sayImpl" class="org.kin.bigdata.dubbox.rest.SayImpl"/>
+       <dubbo:service id="sayS" interface="org.kin.dubbox.rest.Say" ref="sayImpl"/>
+       <bean id="sayImpl" class="org.kin.dubbox.rest.SayImpl"/>
 
 </beans>

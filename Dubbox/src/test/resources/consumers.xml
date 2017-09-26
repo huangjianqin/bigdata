@@ -5,5 +5,5 @@
 
        <dubbo:application name="restConsumer"/>
        <dubbo:registry address="zookeeper://139.199.185.84:8121"/>
-       <dubbo:reference id="sayConsumer" interface="org.kin.bigdata.dubbox.rest.Say"/>
+       <dubbo:reference id="sayConsumer" interface="org.kin.dubbox.rest.Say"/>
 </beans>
