@@ -127,7 +127,7 @@ public class LocalContainerAllocator implements ContainerAllocator {
 
         for(Long idleContainerId: idleContainers){
             log.info("container(id=" + idleContainerId + ") is idle timeout, ask it to close");
-            id2Container.get(idleContainerId).close();
+            id2Container.remove(idleContainerId).close();
         }
     }
 
