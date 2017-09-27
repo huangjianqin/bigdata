@@ -14,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -43,7 +44,7 @@ public class LocalContainerAllocator implements ContainerAllocator {
     public void init() {
         this.id2HealthReport = new HashMap<>();
         this.id2SelectTimes = new HashMap<>();
-        this.id2IdleTimes = new HashMap<>();
+        this.id2IdleTimes = new ConcurrentHashMap<>();
     }
 
     @Override
