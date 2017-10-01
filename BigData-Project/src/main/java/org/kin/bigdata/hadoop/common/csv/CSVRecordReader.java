@@ -102,7 +102,7 @@ public class CSVRecordReader extends RecordReader<LongWritable, List<Text>> {
         cKey.set(pos);
 
         if(cValue == null){
-            cValue = new ArrayList<Text>((Collection<? extends Text>) new TextCollectionWritable());
+            cValue = new ArrayList<Text>((Collection) new TextCollectionWritable());
         }
 
         while (true) {
