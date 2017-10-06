@@ -151,7 +151,7 @@ public class AppConfigUtils {
     public static Class<? extends MessageHandler> getMessageHandlerClass(Properties config){
         try {
             Class claxx = Class.forName(config.getOrDefault(AppConfig.MESSAGEHANDLER, DefaultAppConfig.DEFAULT_MESSAGEHANDLER).toString());
-            if(claxx.isAssignableFrom(MessageHandler.class)){
+            if(MessageHandler.class.isAssignableFrom(claxx)){
                 return claxx;
             }
         } catch (ClassNotFoundException e) {
@@ -163,7 +163,7 @@ public class AppConfigUtils {
     public static Class<? extends CommitStrategy> getCommitStrategyClass(Properties config){
         try {
             Class claxx = Class.forName(config.getOrDefault(AppConfig.COMMITSTRATEGY, DefaultAppConfig.DEFAULT_COMMITSTRATEGY).toString());
-            if(claxx.isAssignableFrom(CommitStrategy.class)){
+            if(CommitStrategy.class.isAssignableFrom(claxx)){
                 return claxx;
             }
         } catch (ClassNotFoundException e) {
@@ -175,7 +175,7 @@ public class AppConfigUtils {
     public static Class<? extends AbstractConsumerRebalanceListener> getConsumerRebalanceListenerClass(Properties config){
         try {
             Class claxx = Class.forName(config.getOrDefault(AppConfig.CONSUMERREBALANCELISTENER, DefaultAppConfig.DEFAULT_CONSUMERREBALANCELISTENER).toString());
-            if(claxx.isAssignableFrom(AbstractConsumerRebalanceListener.class)){
+            if(AbstractConsumerRebalanceListener.class.isAssignableFrom(claxx)){
                 return claxx;
             }
         } catch (ClassNotFoundException e) {
@@ -187,7 +187,7 @@ public class AppConfigUtils {
     public static Class<? extends CallBack> getCallbackClass(Properties config){
         try {
             Class claxx = Class.forName(config.getOrDefault(AppConfig.MESSAGEFETCHER_CONSUME_CALLBACK, DefaultAppConfig.DEFAULT_MESSAGEFETCHER_CONSUME_CALLBACK).toString());
-            if(claxx.isAssignableFrom(Callback.class)){
+            if(Callback.class.isAssignableFrom(claxx)){
                 return claxx;
             }
         } catch (ClassNotFoundException e) {
@@ -216,19 +216,22 @@ public class AppConfigUtils {
     }
 
     public static void oneNecessaryCheckAndFill(Properties newConfig){
+        //填充默认值
+        AppConfigUtils.fillDefaultConfig(newConfig);
         //检查必要配置
         AppConfigUtils.checkRequireConfig(newConfig);
         //检查配置格式
         if(!checkConfigValueFormat(newConfig)){
             return;
         }
-        //填充默认值
-        AppConfigUtils.fillDefaultConfig(newConfig);
     }
 
     public static boolean checkConfigValueFormat(Properties config){
         for(Map.Entry<String, String> entry: AppConfig.CONFIG2FORMATOR.entrySet()){
-            if(!config.getProperty(entry.getKey()).matches(entry.getValue())){
+            //如果=默认值,则不管格式问题
+            String value = config.getProperty(entry.getKey());
+            if(!value.equals(AppConfig.DEFAULT_APPCONFIG.get(entry.getKey()))
+                    && !config.getProperty(entry.getKey()).matches(value)){
                 throw new IllegalStateException("config \"" +  entry.getKey() + "\" 's value \"" + entry.getValue() + "\" format is not correct");
             }
         }

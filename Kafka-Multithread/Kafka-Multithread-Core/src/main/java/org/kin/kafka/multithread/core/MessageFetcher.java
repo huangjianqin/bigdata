@@ -71,7 +71,7 @@ public class MessageFetcher<K, V> extends Thread implements Application {
                 this.handlersManager = new OPMTMessageHandlersManager(config);
                 break;
             case OPMT2:
-                this.handlersManager = new OPMT2MessageHandlersManager();
+                this.handlersManager = new OPMT2MessageHandlersManager(config);
                 break;
             default:
                 this.handlersManager = null;
@@ -88,6 +88,7 @@ public class MessageFetcher<K, V> extends Thread implements Application {
     public void close(){
         log.info("consumer fetcher thread closing...");
         this.isStopped = true;
+        this.interrupt();
     }
 
     @Override

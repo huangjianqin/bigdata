@@ -36,6 +36,9 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
     AbstractMessageHandlersManager(Properties config){
         this.config = config;
 
+        topic2HandlerClass = new HashMap<>();
+        topic2CommitStrategyClass = new HashMap<>();
+
         for(String topic: AppConfigUtils.getSubscribeTopic(config)){
             topic2HandlerClass.put(topic, AppConfigUtils.getMessageHandlerClass(config));
             topic2CommitStrategyClass.put(topic, AppConfigUtils.getCommitStrategyClass(config));

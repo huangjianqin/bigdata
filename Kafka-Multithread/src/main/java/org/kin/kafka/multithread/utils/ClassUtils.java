@@ -29,7 +29,7 @@ public class ClassUtils {
     }
 
     public static Object instance(String classStr){
-        if(classStr == null){
+        if(classStr == null || classStr.equals("")){
             return null;
         }
         try {
@@ -85,6 +85,9 @@ public class ClassUtils {
     }
 
     public static Class getClass(String className){
+        if(className == null || className.equals("")){
+            return null;
+        }
         try {
             return Class.forName(className);
         } catch (ClassNotFoundException e) {

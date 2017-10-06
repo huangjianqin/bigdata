@@ -46,6 +46,7 @@ public class AppConfig {
     public static final String MESSAGEHANDLER = "messagehandler";
     public static final String COMMITSTRATEGY = "commitstrategy";
     //end
+    //对OPOT,OPMT,OPMT2无效
     public static final String CONSUMERREBALANCELISTENER = "consumerrebalancelistener";
 
     //opot

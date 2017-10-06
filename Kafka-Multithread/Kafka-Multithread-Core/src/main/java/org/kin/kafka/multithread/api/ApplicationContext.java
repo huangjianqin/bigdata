@@ -14,26 +14,31 @@ public class ApplicationContext implements Application {
     private String appName;
     private String appHost;
     private ChildRunModel childRunModel;
+    private MultiThreadConsumerManager manager;
+    private boolean isClosed = false;
 
-    public ApplicationContext(Application application) {
+    public ApplicationContext(Application application, MultiThreadConsumerManager manager) {
         this.application = application;
         this.appName = this.application.getConfig().getProperty(AppConfig.APPNAME);
         this.appHost = this.application.getConfig().getProperty(AppConfig.APPHOST);
         this.childRunModel = ChildRunModel.getByName(this.application.getConfig().getProperty(AppConfig.APP_CHILD_RUN_MODEL));
+        this.manager = manager;
     }
 
-    public ApplicationContext(Application application, String appName, String appHost, ChildRunModel childRunModel) {
+    public ApplicationContext(Application application, String appName, String appHost, ChildRunModel childRunModel, MultiThreadConsumerManager manager) {
         this.application = application;
         this.appName = appName;
         this.appHost = appHost;
         this.childRunModel = childRunModel;
+        this.manager = manager;
     }
 
-    public ApplicationContext(Application application, String appName, String appHost, String childRunModel) {
+    public ApplicationContext(Application application, String appName, String appHost, String childRunModel, MultiThreadConsumerManager manager) {
         this.application = application;
         this.appName = appName;
         this.appHost = appHost;
         this.childRunModel = ChildRunModel.getByName(childRunModel);
+        this.manager = manager;
     }
 
     @Override
@@ -43,7 +48,12 @@ public class ApplicationContext implements Application {
 
     @Override
     public void close() {
+        if(isClosed){
+            return;
+        }
+        isClosed = true;
         application.close();
+        manager.shutdownApp(appName);
     }
 
     @Override

@@ -81,17 +81,20 @@ public class ConfigCenterConfigUtils {
     }
 
     public static void oneNecessaryCheckAndFill(Properties newConfig){
+        //填充默认值
+        ConfigCenterConfigUtils.fillDefaultConfig(newConfig);
         //检查配置格式
         if(!checkConfigValueFormat(newConfig)){
             return;
         }
-        //填充默认值
-        ConfigCenterConfigUtils.fillDefaultConfig(newConfig);
     }
 
     public static boolean checkConfigValueFormat(Properties config){
         for(Map.Entry<String, String> entry: ConfigCenterConfig.CONFIG2FORMATOR.entrySet()){
-            if(!config.getProperty(entry.getKey()).matches(entry.getValue())){
+            //如果=默认值,则不管格式问题
+            String value = config.getProperty(entry.getKey());
+            if(!value.equals(ConfigCenterConfig.DEFAULT_CONFIG.get(entry.getKey())) &&
+                    !config.getProperty(entry.getKey()).matches(value)){
                 throw new IllegalStateException("config \"" +  entry.getKey() + "\" 's value \"" + entry.getValue() + "\" format is not correct");
             }
         }

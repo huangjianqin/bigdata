@@ -27,13 +27,13 @@ public class KafkaProducerThreadGroup {
         KafkaProducer<String, String> producer = new KafkaProducer<String, String>(config);
 
         int threadSize = 2;
-        int runTime = 10 * 1000;
+        int runTime = 1 * 1000;
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadSize);
         List<KafkaProducerThread> threads = new ArrayList<>();
         startTime = System.currentTimeMillis();
         for(int i = 1; i <= threadSize; i++){
-            KafkaProducerThread thread = new KafkaProducerThread(producer, "msg1", i);
+            KafkaProducerThread thread = new KafkaProducerThread(producer, "msg", i);
             threads.add(thread);
             executorService.submit(thread);
         }

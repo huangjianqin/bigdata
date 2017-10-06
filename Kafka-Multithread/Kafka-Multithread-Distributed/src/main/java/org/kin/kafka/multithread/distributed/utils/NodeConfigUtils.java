@@ -85,17 +85,20 @@ public class NodeConfigUtils {
     }
 
     public static void oneNecessaryCheckAndFill(Properties newConfig){
+        //填充默认值
+        NodeConfigUtils.fillDefaultConfig(newConfig);
         //检查配置格式
         if(!checkConfigValueFormat(newConfig)){
             return;
         }
-        //填充默认值
-       NodeConfigUtils.fillDefaultConfig(newConfig);
     }
 
     public static boolean checkConfigValueFormat(Properties config){
         for(Map.Entry<String, String> entry: NodeConfig.CONFIG2FORMATOR.entrySet()){
-            if(!config.getProperty(entry.getKey()).matches(entry.getValue())){
+            //如果=默认值,则不管格式问题
+            String value = config.getProperty(entry.getKey());
+            if(!value.equals(NodeConfig.DEFAULT_NODECONFIG.get(entry.getKey())) &&
+                    !config.getProperty(entry.getKey()).matches(value)){
                 throw new IllegalStateException("config \"" +  entry.getKey() + "\" 's value \"" + entry.getValue() + "\" format is not correct");
             }
         }
