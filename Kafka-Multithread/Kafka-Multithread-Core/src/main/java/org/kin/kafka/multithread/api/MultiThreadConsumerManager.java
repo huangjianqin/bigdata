@@ -91,6 +91,7 @@ public class MultiThreadConsumerManager implements ReConfigable{
                     application,
                     appName,
                     appHost,
+                    msgHandlerModel,
                     childRunModel,
                     this
             );
