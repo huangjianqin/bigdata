@@ -1,8 +1,7 @@
-package org.kin.kafka.multithread.distributed;
+package org.kin.kafka.multithread.configcenter.distributed;
 
 /**
  * Created by huangjianqin on 2017/9/18.
- * 与配置中心ChildRunModel枚举一致
  */
 public enum ChildRunModel {
     JVM("JVM"), NODE("NODE");

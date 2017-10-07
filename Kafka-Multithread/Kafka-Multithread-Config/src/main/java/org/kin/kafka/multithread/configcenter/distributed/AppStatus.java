@@ -1,8 +1,7 @@
-package org.kin.kafka.multithread.distributed;
+package org.kin.kafka.multithread.configcenter.distributed;
 
 /**
  * Created by huangjianqin on 2017/9/19.
- * 与配置中心AppStatus枚举一致
  */
 public enum AppStatus {
     RUN("RUN"), UPDATE("UPDATE"), CLOSE("CLOSE"), RESTART("RESTART");

@@ -5,6 +5,7 @@ import org.kin.kafka.multithread.configcenter.common.StoreCodecs;
 import org.kin.kafka.multithread.configcenter.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.config.ConfigCenterConfig;
 import org.kin.kafka.multithread.configcenter.config.DefaultConfigCenterConfig;
+import org.kin.kafka.multithread.configcenter.distributed.AppStatus;
 import org.kin.kafka.multithread.configcenter.manager.ConfigStoreManager;
 import org.kin.kafka.multithread.configcenter.utils.ConfigCenterConfigUtils;
 import org.kin.kafka.multithread.configcenter.utils.PropertiesUtils;
@@ -138,6 +139,14 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
         for(String succeedAppName: heartbeat.getFailAppNames()){
             host2AppName2Config.get(host).remove(succeedAppName);
             //通知Admin
+        }
+    }
+
+    private void resetAppStatus(Properties config){
+        AppStatus appStatus = AppStatus.getByStatusDesc(config.getProperty(AppConfig.APPSTATUS));
+        if(appStatus.equals(AppStatus.RESTART) || appStatus.equals(AppStatus.UPDATE)){
+            //restart和update的最终状态是run
+            config.setProperty(AppConfig.APPSTATUS, AppStatus.RUN.getStatusDesc());
         }
     }
 

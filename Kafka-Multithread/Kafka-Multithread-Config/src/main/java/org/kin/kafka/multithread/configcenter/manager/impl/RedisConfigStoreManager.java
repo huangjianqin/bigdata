@@ -48,6 +48,9 @@ public class RedisConfigStoreManager  implements ConfigStoreManager{
             String appName = appConfig.getProperty(AppConfig.APPNAME);
             String key = String.format(KEY_FORMAT, host, appName);
 
+            //先删除key
+            client.del(key);
+
             client.multi();
             Pipeline pipeline = client.pipelined();
             pipeline.multi();

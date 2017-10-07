@@ -108,7 +108,7 @@ public abstract class Container implements ContainerMasterProtocol {
         for(Properties config: configs){
             String appName = config.getProperty(AppConfig.APPNAME);
 
-            AppStatus appStatus = AppStatus.getByStatusDesc(config.getProperty(AppConfig.APPSTATUS));
+            AppStatus appStatus = AppStatus.getByStatusDesc(config.remove(AppConfig.APPSTATUS).toString());
             //以后可能会根据返回值判断是否需要回滚配置更新
             Callable callable = null;
             switch (appStatus){
