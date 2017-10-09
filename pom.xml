@@ -8,6 +8,7 @@
     <version>1.0-SNAPSHOT</version>
     <modules>
         <module>BigData-Project</module>
+        <module>Kin-Framework</module>
     </modules>
 
     <properties>
