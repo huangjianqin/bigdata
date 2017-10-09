@@ -129,6 +129,10 @@ public class MultiThreadConsumerManager implements ReConfigable{
         appName2ApplicationContext.remove(appName);
     }
 
+    /**
+     * 非线程安全
+     * @param newConfig
+     */
     @Override
     public void reConfig(Properties newConfig) {
         AppConfigUtils.oneNecessaryCheckAndFill(newConfig);

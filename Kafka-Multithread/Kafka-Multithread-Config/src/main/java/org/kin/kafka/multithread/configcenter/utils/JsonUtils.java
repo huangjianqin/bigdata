@@ -17,11 +17,11 @@ public class JsonUtils {
         return result;
     }
 
-    public static JSONObject map2Json(Map<String, String> map){
+    public static String map2Json(Map<String, String> map){
         JSONObject json = new JSONObject();
         for(Map.Entry<String, String> entry: map.entrySet()){
             json.put(entry.getKey(), entry.getValue());
         }
-        return json;
+        return json.toJSONString();
     }
 }

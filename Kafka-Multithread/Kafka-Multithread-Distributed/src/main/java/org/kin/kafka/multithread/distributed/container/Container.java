@@ -100,6 +100,11 @@ public abstract class Container implements ContainerMasterProtocol {
         nodeMasterProtocol.report(healthReport);
     }
 
+    /**
+     * 保证配置应用按接受顺序进行,也就是说不会存在同一app同时配置不同的配置
+     * @param configs
+     * @return
+     */
     @Override
     public Boolean updateConfig(List<Properties> configs) {
         log.info("got " + configs.size() + " configs");

@@ -65,12 +65,13 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/kafkamultithread/{host}/{appName}/{tpye}/{config}")
+    @Path("/kafkamultithread/{host}/{appName}/{type}/{config}")
     public Map<String, Object> storeConfig(
-            String appName,
-            String host,
-            String type,
-            String config) {
+            @PathParam("appName") String appName,
+            @PathParam("host") String host,
+            @PathParam("type") String type,
+            @PathParam("config") String config
+    ) {
         log.info("store app config from app '" + appName + "' on host '" + host + "'" + System.lineSeparator() + config);
         //先缓存,等待判断是否配置成功后才持久化
         Map<String, Properties> appName2Config = new HashMap<>();
@@ -101,8 +102,12 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/kafkamultithread/{host}/{appName}/{tpye}")
-    public Map<String, Object> getAppConfigStr(String appName, String host, String type) {
+    @Path("/kafkamultithread/{host}/{appName}/{type}")
+    public Map<String, Object> getAppConfigStr(
+            @PathParam("appName") String appName,
+            @PathParam("host") String host,
+            @PathParam("type") String type
+    ) {
         log.info("get app config string from app '" + appName + "' on host '" + host + "' tansfer to '" + type + "' string from rest call");
         ApplicationHost appHost = new ApplicationHost(appName, host);
 

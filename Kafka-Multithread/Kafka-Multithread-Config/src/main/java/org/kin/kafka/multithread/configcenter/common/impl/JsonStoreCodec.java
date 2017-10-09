@@ -28,7 +28,7 @@ public class JsonStoreCodec implements StoreCodec {
 
     @Override
     public String serialize(Map<String, String> serialized) {
-        return JsonUtils.map2Json(serialized).toJSONString();
+        return JsonUtils.map2Json(serialized);
     }
 
     @Override

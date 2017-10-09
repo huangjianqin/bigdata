@@ -1,5 +1,8 @@
-package org.kin.kafka.multithread.config;
+package org.kin.kafka.multithread.utils;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
 import java.util.Map;
 import java.util.Properties;
 
@@ -46,6 +49,38 @@ public class PropertiesWrapper {
         return new PropertiesWrapper(key, value);
     }
 
+    public static PropertiesWrapper load(InputStream inputStream){
+        Properties properties = new Properties();
+        try {
+            properties.load(inputStream);
+            return new PropertiesWrapper(properties);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static PropertiesWrapper load(Reader reader){
+        Properties properties = new Properties();
+        try {
+            properties.load(reader);
+            return new PropertiesWrapper(properties);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static PropertiesWrapper loadFromXML(InputStream inputStream){
+        Properties properties = new Properties();
+        try {
+            properties.loadFromXML(inputStream);
+            return new PropertiesWrapper(properties);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
 
     public PropertiesWrapper set(Properties properties){
         return new PropertiesWrapper(newPropertys(properties));

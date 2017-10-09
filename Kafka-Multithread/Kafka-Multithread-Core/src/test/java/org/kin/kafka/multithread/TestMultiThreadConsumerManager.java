@@ -4,13 +4,12 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.kin.kafka.multithread.api.ApplicationContext;
 import org.kin.kafka.multithread.api.MultiThreadConsumerManager;
 import org.kin.kafka.multithread.api.impl.DefaultCommitStrategy;
-import org.kin.kafka.multithread.config.PropertiesWrapper;
+import org.kin.kafka.multithread.utils.PropertiesWrapper;
 import org.kin.kafka.multithread.statistics.Counters;
 import org.kin.kafka.multithread.api.impl.RealEnvironmentMessageHandler;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.config.DefaultAppConfig;
 import org.kin.kafka.multithread.statistics.Statistics;
-import org.kin.kafka.multithread.utils.HostUtils;
 
 import java.util.*;
 
@@ -45,6 +44,10 @@ public class TestMultiThreadConsumerManager {
         //重复多少次相同消费记录则退出
         int sameCounter = 5;
         while(System.currentTimeMillis() - startTime < runTime){
+            long sum = Counters.getCounters().get("consumer-counter");
+            if(sum == 500){
+                context.reConfig(config);
+            }
             //下面逻辑会出现sameCounter+1个相同的消费记录
             if(lastConsumerCounter < Counters.getCounters().get("consumer-counter")){
                 lastConsumerCounter = Counters.getCounters().get("consumer-counter");
