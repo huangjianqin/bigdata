@@ -1,4 +1,4 @@
-package org.kin.kafka.multithread.utils;
+package org.kin.kafka.multithread.common;
 
 import java.io.IOException;
 import java.io.InputStream;

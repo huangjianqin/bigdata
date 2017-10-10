@@ -7,8 +7,8 @@ import org.kin.kafka.multithread.api.CommitStrategy;
 import org.kin.kafka.multithread.common.DefaultThreadFactory;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
-import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
-import org.kin.kafka.multithread.utils.StrUtils;
+import org.kin.kafka.multithread.common.ConsumerRecordInfo;
+import org.kin.kafka.multithread.utils.TPStrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +44,16 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
             new SynchronousQueue<Runnable>(),
             new DefaultThreadFactory(config.getProperty(AppConfig.APPNAME), "OPMT2MessageQueueHandlerThread")
     );
+    //定期更新pendingwindow的窗口,以防过长的有效连续的Offset队列
+    /**
+     * 因为PendingWindow的Offset commit更新操作是MessageHandlerThread处理,如果当前没有MessageHandlerThread非阻塞运行,且PendingWindow缓存着大量待提交的Offset
+     * 如果此时出现系统故障,大量完成的record因为没有提交Offset而需要重新处理
+     * 所以通过定时抢占来完成PendingWindow的Offset commit更新操作以减少不必要的record重复处理
+     */
+    private Timer updatePengdingWindowAtFixRate;
+
     private int threadSizePerPartition;
+    private int slidingWindow;
 
     public OPMT2MessageHandlersManager() {
         super(AppConfig.DEFAULT_APPCONFIG);
@@ -52,12 +61,29 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
 
     public OPMT2MessageHandlersManager(Properties config) {
         super(config);
-        this.threadSizePerPartition = Integer.valueOf(config.get(AppConfig.OPMT2_THREADSIZEPERPARTITION).toString());
+        this.threadSizePerPartition = Integer.valueOf(config.getProperty(AppConfig.OPMT2_THREADSIZEPERPARTITION));
+        this.slidingWindow = Integer.valueOf(config.getProperty(AppConfig.PENDINGWINDOW_SLIDINGWINDOW));
     }
 
     @Override
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartition, OffsetAndMetadata> pendingOffsets){
-        log.debug("dispatching message: " + StrUtils.consumerRecordDetail(consumerRecordInfo.record()));
+        log.debug("dispatching message: " + TPStrUtils.consumerRecordDetail(consumerRecordInfo.record()));
+
+        if(updatePengdingWindowAtFixRate == null){
+            updatePengdingWindowAtFixRate = new Timer("updatePengdingWindowAtFixRate");
+            //每5秒更新pendingwindow的有效连续的Offset队列,也就是提交
+            updatePengdingWindowAtFixRate.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    //不是更新配置或Rebalance的时候更新pendingwindow
+                    if(!isRebalance.get() && !isReconfig.get()){
+                        for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
+                            pendingWindow.commitFinished(null);
+                        }
+                    }
+                }
+            }, 0, 5000);
+        }
 
         if(isRebalance.get()){
             log.debug("dispatch failure ~~~ rebalancing...");
@@ -89,7 +115,7 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
             //先启动线程池,再添加至队列
             if(pendingWindow == null){
                 log.info("new pending window");
-                pendingWindow = new PendingWindow(1000, pendingOffsets);
+                pendingWindow = new PendingWindow(slidingWindow, pendingOffsets);
                 topicPartition2PendingWindow.put(topicPartition, pendingWindow);
             }
             threads = new ArrayList<>();
@@ -105,7 +131,7 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
 
         if(selectedThread != null){
             selectedThread.queue().add(consumerRecordInfo);
-            log.debug("message: " + StrUtils.consumerRecordDetail(consumerRecordInfo.record()) + "queued(" + selectedThread.queue().size() + " rest)");
+            log.debug("message: " + TPStrUtils.consumerRecordDetail(consumerRecordInfo.record()) + "queued(" + selectedThread.queue().size() + " rest)");
         }
 
         return true;
@@ -126,6 +152,11 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
     @Override
     public void consumerCloseNotify(){
         log.info("shutdown all handlers...");
+
+        if(updatePengdingWindowAtFixRate != null){
+            updatePengdingWindowAtFixRate.cancel();
+        }
+
         List<OPMT2MessageQueueHandlerThread> allThreads = new ArrayList<>();
         //停止所有handler
         for(List<OPMT2MessageQueueHandlerThread> threads: topicPartition2Threads.values()){
@@ -217,7 +248,7 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
         log.info("OPMT2 message handler manager reconfiging...");
         int threadSizePerPartition = this.threadSizePerPartition;
 
-        if(AppConfigUtils.isConfigItemChange(threadSizePerPartition, newConfig, AppConfig.OPMT2_THREADSIZEPERPARTITION)){
+        if(AppConfigUtils.isConfigItemChange(String.valueOf(threadSizePerPartition), newConfig, AppConfig.OPMT2_THREADSIZEPERPARTITION)){
             threadSizePerPartition = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT2_THREADSIZEPERPARTITION));
             if(threadSizePerPartition > 0){
                 //仅仅是处理资源减少的情况,资源动态增加在dispatch中处理
@@ -229,7 +260,7 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
                         //被移除处理线程所拥有的待处理消息
                         List<ConsumerRecordInfo> unhandleConsumerRecordInfos = new ArrayList<>();
                         for(int i = 0; i < this.threadSizePerPartition - threadSizePerPartition; i++){
-                            OPMT2MessageQueueHandlerThread thread = threads.remove(i);
+                            OPMT2MessageQueueHandlerThread thread = threads.remove(0);
                             thread.stop();
                             //缓存待处理消息
                             unhandleConsumerRecordInfos.addAll(thread.queue);
@@ -239,18 +270,35 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
                         for(int i = 0; i < unhandleConsumerRecordInfos.size(); i++){
                             threads.get(i % threads.size()).queue.add(unhandleConsumerRecordInfos.get(i));
                         }
+
                     }
                 }
+
+                log.info("config '" + AppConfig.OPMT_MINTHREADSIZEPERPARTITION + "' change from '" + this.threadSizePerPartition + "' to '" + threadSizePerPartition + "'");
+
                 this.threadSizePerPartition = threadSizePerPartition;
             }
             else {
-                throw new IllegalStateException("config args 'threadSizePerPartition' state wrong");
+                throw new IllegalStateException("config '" + AppConfig.OPMT_MINTHREADSIZEPERPARTITION + "' state wrong");
             }
         }
 
         //更新pendingwindow的配置
-        for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
-            pendingWindow.reConfig(newConfig);
+        if(AppConfigUtils.isConfigItemChange(String.valueOf(slidingWindow), newConfig, AppConfig.PENDINGWINDOW_SLIDINGWINDOW)){
+            int slidingWindow = this.slidingWindow;
+
+            //不需要同步,因为stop the world(处理线程停止处理消息)
+            this.slidingWindow = Integer.valueOf(newConfig.get(AppConfig.PENDINGWINDOW_SLIDINGWINDOW).toString());
+
+            if(this.slidingWindow <= 0){
+                throw new IllegalStateException("config '" + AppConfig.PENDINGWINDOW_SLIDINGWINDOW + "' state wrong");
+            }
+
+            log.info("config '" + AppConfig.PENDINGWINDOW_SLIDINGWINDOW + "' change from '" + slidingWindow + "' to '" + this.slidingWindow + "'");
+
+            for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
+                pendingWindow.reConfig(newConfig);
+            }
         }
 
         //更新每一条处理线程的配置
@@ -278,8 +326,8 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
         @Override
         public void reConfig(Properties newConfig) {
             //不需要实现
-            log.info("OPMT2 message handler thread reconfiging...");
-            log.info("OPMT2 message handler thread reconfiged");
+            log.info("OPMT2 message handler thread(name=" + super.LOG_HEAD() + ") reconfiging...");
+            log.info("OPMT2 message handler thread(name=" + super.LOG_HEAD() + ") reconfiged");
         }
     }
 }

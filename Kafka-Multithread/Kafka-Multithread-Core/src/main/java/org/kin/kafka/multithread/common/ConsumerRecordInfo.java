@@ -1,4 +1,4 @@
-package org.kin.kafka.multithread.utils;
+package org.kin.kafka.multithread.common;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;

@@ -1,6 +1,6 @@
 package org.kin.kafka.multithread.configcenter.utils;
 
-import org.kin.kafka.multithread.configcenter.config.ConfigCenterConfig;
+import org.kin.kafka.multithread.configcenter.ConfigCenterConfig;
 import java.util.*;
 
 /**

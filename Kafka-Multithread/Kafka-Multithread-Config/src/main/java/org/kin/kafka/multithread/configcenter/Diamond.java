@@ -1,11 +1,9 @@
 package org.kin.kafka.multithread.configcenter;
 
-import org.kin.kafka.multithread.configcenter.common.StoreCodec;
-import org.kin.kafka.multithread.configcenter.common.StoreCodecs;
-import org.kin.kafka.multithread.configcenter.config.AppConfig;
-import org.kin.kafka.multithread.configcenter.config.ConfigCenterConfig;
-import org.kin.kafka.multithread.configcenter.config.DefaultConfigCenterConfig;
-import org.kin.kafka.multithread.configcenter.distributed.AppStatus;
+import org.kin.kafka.multithread.configcenter.codec.StoreCodec;
+import org.kin.kafka.multithread.configcenter.codec.StoreCodecs;
+import org.kin.kafka.multithread.config.AppConfig;
+import org.kin.kafka.multithread.distributed.AppStatus;
 import org.kin.kafka.multithread.configcenter.manager.ConfigStoreManager;
 import org.kin.kafka.multithread.configcenter.utils.ConfigCenterConfigUtils;
 import org.kin.kafka.multithread.configcenter.utils.PropertiesUtils;

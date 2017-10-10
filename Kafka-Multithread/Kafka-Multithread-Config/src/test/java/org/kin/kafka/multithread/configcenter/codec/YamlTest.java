@@ -1,4 +1,4 @@
-package org.kin.kafka.multithread.configcenter.common;
+package org.kin.kafka.multithread.configcenter.codec;
 
 import org.kin.kafka.multithread.configcenter.utils.YAMLUtils;
 import java.util.Properties;

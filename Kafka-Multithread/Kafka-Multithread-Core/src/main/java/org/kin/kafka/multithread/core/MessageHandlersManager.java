@@ -4,7 +4,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.CommitStrategy;
 import org.kin.kafka.multithread.configcenter.ReConfigable;
-import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
+import org.kin.kafka.multithread.common.ConsumerRecordInfo;
 import org.kin.kafka.multithread.api.MessageHandler;
 
 import java.util.Map;
@@ -31,8 +31,4 @@ public interface MessageHandlersManager extends ReConfigable {
      * @param topicPartitions 之前分配到但此次又没有分配到的TopicPartitions
      */
     void doOnConsumerReAssigned(Set<TopicPartition> topicPartitions);
-
-    /**
-     * 更新配置,如果callback发生变化,需要更新所有未处理消息的callback实例
-     */
 }

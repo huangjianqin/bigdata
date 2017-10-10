@@ -38,6 +38,7 @@ public class AppConfig {
     public static final String KAFKA_CONSUMER_SUBSCRIBE = "kafka.consumer.subscribe";
 
     //message fetcher
+    //定义KafkaConsumer poll(), ocot也会用到
     public static final String MESSAGEFETCHER_POLL_TIMEOUT = "messagefetcher.poll.timeout";
     public static final String MESSAGEFETCHER_COMMIT_ENABLERETRY = "messagefetcher.commit.enableretry";
     public static final String MESSAGEFETCHER_COMMIT_MAXRETRY = "messagefetcher.commit.maxretry";

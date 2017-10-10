@@ -4,10 +4,11 @@ import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.CallBack;
 import org.kin.kafka.multithread.config.AppConfig;
+import org.kin.kafka.multithread.statistics.Statistics;
 import org.kin.kafka.multithread.utils.ClassUtils;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
-import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
-import org.kin.kafka.multithread.utils.StrUtils;
+import org.kin.kafka.multithread.common.ConsumerRecordInfo;
+import org.kin.kafka.multithread.utils.TPStrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,6 +107,8 @@ public class MessageFetcher<K, V> extends Thread implements Application {
 
     @Override
     public void run() {
+        long dida = 0;
+        long maxDida = 10;
         long offset = -1;
         log.info("consumer fetcher thread started");
         try{
@@ -124,6 +127,9 @@ public class MessageFetcher<K, V> extends Thread implements Application {
                 //message handler会停止处理消息(OPMT除外),同时只会清理资源减少(存在涉及同步问题,所以要停止消息处理),资源增加会在dispatcher时进行
                 if(isReconfig.get()){
                     log.info("kafka consumer pause receive all records");
+                    //提交队列中待提交的Offsets
+                    Map<TopicPartition, OffsetAndMetadata> topicPartition2Offset = allPendingOffsets();
+                    commitOffsetsSync(topicPartition2Offset);
                     //停止消费消息
                     consumer.pause(subscribed);
                     consumer.poll(0);
@@ -132,6 +138,18 @@ public class MessageFetcher<K, V> extends Thread implements Application {
                 }
 
                 ConsumerRecords<K, V> records = consumer.poll(pollTimeout);
+
+                //空闲n久就开始输出.....
+                if(records == null || records.count() < 0){
+                    dida ++;
+                    if(dida > maxDida){
+                        System.out.println(".");
+                    }
+                }
+                else {
+                    dida = 0;
+                }
+
                 if(subscribed == null || subscribed.size() < 0){
                     subscribed = new ArrayList<>(consumer.assignment());
                 }
@@ -189,8 +207,8 @@ public class MessageFetcher<K, V> extends Thread implements Application {
 
         log.info("consumer commit offsets Sync...");
         consumer.commitSync(offsets);
-//        Statistics.instance().append("offset", StrUtils.topicPartitionOffsetsStr(offsets) + System.lineSeparator());
-        log.info("consumer offsets [" + StrUtils.topicPartitionOffsetsStr(offsets) + "] committed");
+        Statistics.instance().append("offset", TPStrUtils.topicPartitionOffsetsStr(offsets) + System.lineSeparator());
+        log.info("consumer offsets [" + TPStrUtils.topicPartitionOffsetsStr(offsets) + "] committed");
     }
 
     private void commitOffsetsAsync(final Map<TopicPartition, OffsetAndMetadata> offsets){
@@ -224,7 +242,7 @@ public class MessageFetcher<K, V> extends Thread implements Application {
                 } else {
                     //成功,打日志
                     nowRetry = 0;
-                    log.info("consumer offsets [" + StrUtils.topicPartitionOffsetsStr(offsets) + "] committed");
+                    log.info("consumer offsets [" + TPStrUtils.topicPartitionOffsetsStr(offsets) + "] committed");
                 }
             }
         });
@@ -266,7 +284,7 @@ public class MessageFetcher<K, V> extends Thread implements Application {
             }
         }
 
-        while(!((AbstractMessageHandlersManager)handlersManager).updateReConfigStatus(true, false)){
+        while(!((AbstractMessageHandlersManager)handlersManager).updateReConfigStatus(false, true)){
             log.warn("message handlers manager last reconfig still running!!!");
             try {
                 Thread.sleep(1000);
@@ -280,11 +298,28 @@ public class MessageFetcher<K, V> extends Thread implements Application {
 
     private void doUpdateConfig(Properties newConfig){
         if(AppConfigUtils.isConfigItemChange(config, newConfig, AppConfig.MESSAGEFETCHER_POLL_TIMEOUT)){
-            pollTimeout = Long.valueOf(newConfig.getProperty(AppConfig.MESSAGEFETCHER_POLL_TIMEOUT));
+            long pollTimeout = this.pollTimeout;
+            this.pollTimeout = Long.valueOf(newConfig.getProperty(AppConfig.MESSAGEFETCHER_POLL_TIMEOUT));
+
+            if(this.pollTimeout < 0){
+                throw new IllegalStateException("config '" + AppConfig.MESSAGEFETCHER_POLL_TIMEOUT + "' state wrong");
+            }
+
+            log.info("config '" + AppConfig.MESSAGEFETCHER_POLL_TIMEOUT + "' change from '" + pollTimeout + "' to '" + this.pollTimeout + "'");
         }
 
         if(AppConfigUtils.isConfigItemChange(config, newConfig, AppConfig.MESSAGEFETCHER_COMMIT_MAXRETRY)){
-            maxRetry = Integer.valueOf(newConfig.getProperty(AppConfig.MESSAGEFETCHER_COMMIT_MAXRETRY));
+            int maxRetry = this.maxRetry;
+            this.maxRetry = Integer.valueOf(newConfig.getProperty(AppConfig.MESSAGEFETCHER_COMMIT_MAXRETRY));
+
+            if(this.maxRetry < 0){
+                throw new IllegalStateException("config '" + AppConfig.MESSAGEFETCHER_COMMIT_MAXRETRY + "' state wrong");
+            }
+
+            //重置当前retry次数
+            nowRetry = 0;
+            log.info("config '" + AppConfig.MESSAGEFETCHER_COMMIT_MAXRETRY + "' change from '" + maxRetry + "' to '" + this.maxRetry + "'");
+
         }
 
         //同步更新message handler manager
@@ -295,12 +330,30 @@ public class MessageFetcher<K, V> extends Thread implements Application {
 
         config = newConfig;
         this.newConfig = null;
-        this.isReconfig.compareAndSet(true, false);
-        ((AbstractMessageHandlersManager)handlersManager).updateReConfigStatus(true, false);
+        reConfigCompleted();
 
         log.info("message fetcher reconfiged");
     }
 
+    private void reConfigCompleted(){
+        while(!((AbstractMessageHandlersManager)handlersManager).updateReConfigStatus(true, false)){
+            log.warn("something wrong! message handlers manager reconfig completed but still reconfiging!!!");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        while(!this.isReconfig.compareAndSet(true, false)){
+            log.warn("something wrong! message fetcher reconfig completed but still reconfiging!!!");
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
 
     /**
      * Created by 健勤 on 2017/7/25.
@@ -339,7 +392,7 @@ public class MessageFetcher<K, V> extends Thread implements Application {
 
             //缓存当前Consumer poll到的Offset
             if(collection != null && collection.size() > 0){
-                log.info("consumer origin assignment: " + StrUtils.topicPartitionsStr(collection));
+                log.info("consumer origin assignment: " + TPStrUtils.topicPartitionsStr(collection));
                 log.info("consumer rebalancing...");
                 //保存在jvm内存中
                 for(TopicPartition topicPartition: (Collection<TopicPartition>)collection){
@@ -371,11 +424,11 @@ public class MessageFetcher<K, V> extends Thread implements Application {
                     }
                 }
                 log.info("consumer reassigned");
-                log.info("consumer new assignment: " + StrUtils.topicPartitionsStr(collection));
+                log.info("consumer new assignment: " + TPStrUtils.topicPartitionsStr(collection));
                 //清理offset缓存
                 topicPartition2Offset.clear();
             }
-//            Statistics.instance().append("offset", System.lineSeparator());
+            Statistics.instance().append("offset", System.lineSeparator());
         }
 
     }

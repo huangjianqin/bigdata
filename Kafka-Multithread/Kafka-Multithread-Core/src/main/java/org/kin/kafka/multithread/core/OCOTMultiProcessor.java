@@ -10,14 +10,13 @@ import org.kin.kafka.multithread.statistics.Statistics;
 import org.kin.kafka.multithread.api.AbstractConsumerRebalanceListener;
 import org.kin.kafka.multithread.utils.ClassUtils;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
-import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
-import org.kin.kafka.multithread.utils.StrUtils;
+import org.kin.kafka.multithread.common.ConsumerRecordInfo;
+import org.kin.kafka.multithread.utils.TPStrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -108,7 +107,8 @@ public class OCOTMultiProcessor<K, V>  implements Application{
     @Override
     public void reConfig(Properties newConfig) {
         log.info("OCOTMultiProcessor reconfiging...");
-        while(isReConfig.compareAndSet(false, true)){
+        //等待上次更新配置完成
+        while(!isReConfig.compareAndSet(false, true)){
             log.warn("kafka consumer last reconfig still running!!!");
             try {
                 Thread.sleep(1000);
@@ -117,7 +117,6 @@ public class OCOTMultiProcessor<K, V>  implements Application{
             }
         }
 
-        updataConfig(newConfig);
         int consumerNum = this.consumerNum;
         if(AppConfigUtils.isConfigItemChange(consumerNum, newConfig, AppConfig.OCOT_CONSUMERNUM)){
             consumerNum = Integer.valueOf(newConfig.getProperty(AppConfig.OCOT_CONSUMERNUM));
@@ -128,9 +127,11 @@ public class OCOTMultiProcessor<K, V>  implements Application{
                     for(int i = 0; i < this.consumerNum; i++){
                         processors.get(i).reConfig(newConfig);
                     }
+
                     //添加新的消费者线程
-                    for(int i = processors.get(processors.size() - 1).getProcessorId();
-                        i < processors.get(processors.size() - 1).getProcessorId() + (consumerNum - this.consumerNum);
+                    int nowProcessorId = processors.get(processors.size() - 1).getProcessorId() + 1;
+                    for(int i = nowProcessorId;
+                        i < nowProcessorId + (consumerNum - this.consumerNum);
                         i++){
                         OCOTProcessor<K, V> processor = newProcessor(i);
                         processors.add(processor);
@@ -141,7 +142,7 @@ public class OCOTMultiProcessor<K, V>  implements Application{
                     log.info("remove " + (this.consumerNum - consumerNum) + " consumer processor");
                     //移除多余的Processor
                     for(int i = 0; i < this.consumerNum - consumerNum; i++){
-                        OCOTProcessor processor = processors.remove(i);
+                        OCOTProcessor processor = processors.remove(0);
                         processor.close();
                     }
                     //更新余下的Processor配置
@@ -149,11 +150,11 @@ public class OCOTMultiProcessor<K, V>  implements Application{
                         processor.reConfig(newConfig);
                     }
                 }
-
+                log.info("config '" + AppConfig.OCOT_CONSUMERNUM + "' change from '" + this.consumerNum + "' to '" + consumerNum + "'");
                 this.consumerNum = consumerNum;
             }
             else {
-                throw new IllegalStateException("config args 'consumerNum' state wrong");
+                throw new IllegalStateException("config '" + AppConfig.OCOT_CONSUMERNUM + "' state wrong");
             }
         }
 
@@ -202,7 +203,7 @@ public class OCOTMultiProcessor<K, V>  implements Application{
             }
             else {
                 this.consumerRebalanceListener = null;
-                throw new IllegalStateException("topics must be setted!!!");
+                throw new IllegalStateException("topics must not be null!!!");
             }
         }
 
@@ -236,8 +237,6 @@ public class OCOTMultiProcessor<K, V>  implements Application{
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-            subscribed = new ArrayList<>(consumer.assignment());
 
             log.info("message processor-" + processorId + " inited");
         }
@@ -277,8 +276,8 @@ public class OCOTMultiProcessor<K, V>  implements Application{
         private void commitSync(Map<TopicPartition, OffsetAndMetadata> offsets){
             log.info("message processor-" + processorId + " commit latest Offsets Sync...");
             consumer.commitSync(offsets);
-            log.info("message processor-" + processorId + " consumer offsets [" + StrUtils.topicPartitionOffsetsStr(offsets) + "] committed");
-            Statistics.instance().append("offset", StrUtils.topicPartitionOffsetsStr(offsets) + System.lineSeparator());
+            log.info("message processor-" + processorId + " consumer offsets [" + TPStrUtils.topicPartitionOffsetsStr(offsets) + "] committed");
+            Statistics.instance().append("offset", TPStrUtils.topicPartitionOffsetsStr(offsets) + System.lineSeparator());
         }
 
         private Map<TopicPartition, OffsetAndMetadata> getOffsets(){
@@ -308,15 +307,19 @@ public class OCOTMultiProcessor<K, V>  implements Application{
                     //message handler会停止处理消息
                     if(isReConfig.get()){
                         log.info("kafka consumer pause receive all records");
+                        //提交队列中待提交的Offsets
+                        Map<TopicPartition, OffsetAndMetadata> topicPartition2Offset = getOffsets();
+                        commitSync(topicPartition2Offset);
                         //停止消费消息
                         consumer.pause(subscribed);
                         consumer.poll(0);
                     }
-                    while(isReConfig.get()){
-                        Thread.sleep(1000);
-                    }
 
                     ConsumerRecords<K, V> records = consumer.poll(pollTimeout);
+                    //缓存订阅的topic-partition
+                    if(subscribed == null){
+                        subscribed = new ArrayList<>(consumer.assignment());
+                    }
                     log.debug("message processor-" + processorId + " receive [" + records.count() + "] messages");
                     for(ConsumerRecord<K, V> record: records){
                         ConsumerRecordInfo<K, V> consumerRecordInfo = new ConsumerRecordInfo<K, V>(record, callBack);
@@ -339,16 +342,13 @@ public class OCOTMultiProcessor<K, V>  implements Application{
                         commit(consumerRecordInfo);
                     }
 
-                    //缓存订阅的topic-partition
-                    if(subscribed == null){
-                        subscribed = new ArrayList<>(consumer.assignment());
-                    }
-
                 }
                 log.info("message processor-" + processorId + " message processor-" + processorId + "closed");
-            } catch (InterruptedException e) {
+            }
+            catch (Exception e){
                 e.printStackTrace();
-            } finally {
+            }
+            finally {
                 log.info("message processor-" + processorId + " clean up message handler and commit strategy");
                 try {
                     if(messageHandler != null){

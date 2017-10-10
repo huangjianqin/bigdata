@@ -1,4 +1,4 @@
-package org.kin.kafka.multithread.configcenter.common;
+package org.kin.kafka.multithread.configcenter.codec;
 
 import org.kin.kafka.multithread.utils.ClassUtils;
 import org.slf4j.Logger;

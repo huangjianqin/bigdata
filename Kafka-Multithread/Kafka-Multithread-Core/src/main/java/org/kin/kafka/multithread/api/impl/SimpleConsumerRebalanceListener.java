@@ -29,8 +29,6 @@ public class SimpleConsumerRebalanceListener extends AbstractConsumerRebalanceLi
 
     @Override
     public void doOnPartitionsRevoked(Collection<TopicPartition> topicPartitions) throws Exception {
-        //提交最新处理的Offset
-        processor.commitLatest();
         //保存已处理过的Offset
         for(TopicPartition topicPartition: topicPartitions){
             nowOffsets.put(topicPartition, processor.position(topicPartition));
@@ -45,6 +43,7 @@ public class SimpleConsumerRebalanceListener extends AbstractConsumerRebalanceLi
                 processor.seekTo(topicPartition, nowOffsets.get(topicPartition));
             }
         }
+        nowOffsets.clear();
     }
 
     @Override

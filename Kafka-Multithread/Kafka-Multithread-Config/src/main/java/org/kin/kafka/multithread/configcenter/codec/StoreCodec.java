@@ -1,6 +1,4 @@
-package org.kin.kafka.multithread.configcenter.common;
-
-import org.kin.kafka.multithread.protocol.app.ApplicationConfig;
+package org.kin.kafka.multithread.configcenter.codec;
 
 import java.util.Map;
 

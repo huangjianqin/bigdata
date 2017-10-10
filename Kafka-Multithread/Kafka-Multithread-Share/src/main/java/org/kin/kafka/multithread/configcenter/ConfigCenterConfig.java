@@ -1,4 +1,4 @@
-package org.kin.kafka.multithread.configcenter.config;
+package org.kin.kafka.multithread.configcenter;
 
 import java.util.HashMap;
 import java.util.Map;

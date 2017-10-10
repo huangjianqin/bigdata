@@ -1,6 +1,6 @@
 package org.kin.kafka.multithread.configcenter;
 
-import org.kin.kafka.multithread.configcenter.config.AppConfig;
+import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.utils.JsonUtils;
 import org.kin.kafka.multithread.configcenter.utils.PropertiesUtils;
 

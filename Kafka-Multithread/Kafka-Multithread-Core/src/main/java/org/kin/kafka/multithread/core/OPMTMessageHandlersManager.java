@@ -6,8 +6,8 @@ import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.common.DefaultThreadFactory;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
-import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
-import org.kin.kafka.multithread.utils.StrUtils;
+import org.kin.kafka.multithread.common.ConsumerRecordInfo;
+import org.kin.kafka.multithread.utils.TPStrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,9 +26,9 @@ import java.util.concurrent.*;
  * 创建多个message handler实例,负载均衡地处理所有dispatch的信息
  *
  * 潜在问题:
- *  1.当高负载的时候,会存在poll()时间执行过长而导致session timeout的可能
- *  这可能是机器CPU资源不够以无法在给定时间内执行相关操作,也有可能就是封装得不够好
- *  可以延长session超时时间或者调整CommitStrategy,提高提交Offset的频率
+ *  1.存在位置问题,poll()偶然长时间阻塞而导致session timeout的可能超时
+ *  后面加一个log.info就OK(有时候还不行),有点不明觉厉
+ *  解决:怀疑是和本地系统磁盘长时间100%有关
  *
  *  还是使用OPOT版本,可承受高负载,多开几个实例就好了.
  *
@@ -38,13 +38,26 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     private Map<TopicPartition, ThreadPoolExecutor> topicPartition2Pools = new HashMap<>();
     private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new HashMap<>();
     private Map<TopicPartition, List<MessageHandler>> topicPartition2MessageHandlers = new HashMap<>();
+
     //用于负载均衡,负载线程池每一个线程
     private Map<TopicPartition, Long> topicPartition2Counter = new HashMap<>();
+    //有需要关闭线程池时,缓存当前的所有任务,后续再次启动线程池时再添加至任务队列
+    //包括被线程池中断的正在执行的message
+    private Map<TopicPartition, List<Runnable>> topicPartition2UnHandledRunnableCache = new ConcurrentHashMap<>();
+
+    //定期更新pendingwindow的窗口,以防过长的有效连续的Offset队列
+    /**
+     * 因为PendingWindow的Offset commit更新操作是MessageHandlerThread处理,如果当前没有MessageHandlerThread非阻塞运行,且PendingWindow缓存着大量待提交的Offset
+     * 如果此时出现系统故障,大量完成的record因为没有提交Offset而需要重新处理
+     * 所以通过定时抢占来完成PendingWindow的Offset commit更新操作以减少不必要的record重复处理
+     */
+    private Timer updatePengdingWindowAtFixRate;
 
     private int handlerSize;
     private int maxThreadSizePerPartition;
     private int minThreadSizePerPartition;
     private int threadQueueSizePerPartition;
+    private int slidingWindow;
 
     public OPMTMessageHandlersManager() {
         super(AppConfig.DEFAULT_APPCONFIG);
@@ -53,14 +66,31 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     public OPMTMessageHandlersManager(Properties config){
         super(config);
         this.handlerSize = Integer.valueOf(config.get(AppConfig.OPMT_HANDLERSIZE).toString());
-        this.minThreadSizePerPartition = Integer.valueOf(config.get(AppConfig.OPMT_MINTHREADSIZEPERPARTITION).toString());
-        this.maxThreadSizePerPartition = Integer.valueOf(config.get(AppConfig.OPMT_MAXTHREADSIZEPERPARTITION).toString());
-        this.threadQueueSizePerPartition = Integer.valueOf(config.get(AppConfig.OPMT_THREADQUEUESIZEPERPARTITION).toString());
+        this.minThreadSizePerPartition = Integer.valueOf(config.getProperty(AppConfig.OPMT_MINTHREADSIZEPERPARTITION));
+        this.maxThreadSizePerPartition = Integer.valueOf(config.getProperty(AppConfig.OPMT_MAXTHREADSIZEPERPARTITION));
+        this.threadQueueSizePerPartition = Integer.valueOf(config.getProperty(AppConfig.OPMT_THREADQUEUESIZEPERPARTITION));
+        this.slidingWindow = Integer.valueOf(config.getProperty(AppConfig.PENDINGWINDOW_SLIDINGWINDOW));
     }
 
     @Override
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartition, OffsetAndMetadata> pendingOffsets) {
-        log.debug("dispatching message: " + StrUtils.consumerRecordDetail(consumerRecordInfo.record()));
+        log.debug("dispatching message: " + TPStrUtils.consumerRecordDetail(consumerRecordInfo.record()));
+
+        if(updatePengdingWindowAtFixRate == null){
+            updatePengdingWindowAtFixRate = new Timer("updatePengdingWindowAtFixRate");
+            //每5秒更新pendingwindow的有效连续的Offset队列,也就是提交
+            updatePengdingWindowAtFixRate.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    //不是更新配置或Rebalance的时候更新pendingwindow
+                    if(!isRebalance.get() && !isReconfig.get()){
+                        for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
+                            pendingWindow.commitFinished(null);
+                        }
+                    }
+                }
+            }, 0, 5000);
+        }
 
         if(isRebalance.get()){
             log.debug("dispatch failure due to rebalancing...");
@@ -88,7 +118,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         if(pendingWindow == null){
             log.info("new pending window");
             //等待offset连续完整窗口还没创建,则新创建
-            pendingWindow = new PendingWindow(1000, pendingOffsets);
+            pendingWindow = new PendingWindow(slidingWindow, pendingOffsets);
             topicPartition2PendingWindow.put(topicPartition, pendingWindow);
         }
 
@@ -115,28 +145,29 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         MessageHandler handler = messageHandlers.get((int)(topicPartition2Counter.get(topicPartition) % messageHandlers.size()));
         topicPartition2Counter.put(topicPartition, topicPartition2Counter.get(topicPartition) + 1);
 
-        log.debug("message: " + StrUtils.consumerRecordDetail(consumerRecordInfo.record()) + " wrappered as task has submit");
-        pool.submit(new MessageHandlerTask(handler, pendingWindow, consumerRecordInfo));
+        log.debug("message: " + TPStrUtils.consumerRecordDetail(consumerRecordInfo.record()) + " wrappered as task has submit");
+        pool.execute(new MessageHandlerTask(handler, pendingWindow, consumerRecordInfo));
 
         return true;
     }
 
     @Override
     public void consumerCloseNotify() {
+        if(updatePengdingWindowAtFixRate != null){
+            updatePengdingWindowAtFixRate.cancel();
+        }
+
         //提交已完成处理的消息的最大offset
         for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
             pendingWindow.commitLatest(false);
         }
 
-        log.info("shutdown thread pools...");
+        log.info("shutdown task thread pools...");
         //关闭线程池
         for(ThreadPoolExecutor pool: topicPartition2Pools.values()){
-            //先清空队列
-            pool.getQueue().clear();
             //再关闭
-            pool.shutdown();
+            pool.shutdownNow();
         }
-
     }
 
     @Override
@@ -168,7 +199,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
                 boolean isActive = false;
 
                 for(ThreadPoolExecutor pool: pools){
-                    if(pool.getActiveCount() > 0){
+                    if(!pool.isTerminated()){
                         isActive = true;
                     }
                 }
@@ -208,25 +239,94 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     @Override
     public void reConfig(Properties newConfig) {
         log.info("OPMT message handler manager reconfiging...");
-        int minThreadSizePerPartition = this.minThreadSizePerPartition;
-        int maxThreadSizePerPartition = this.maxThreadSizePerPartition;
-        int threadQueueSizePerPartition = this.threadQueueSizePerPartition;
-        int handlerSize = this.handlerSize;
+        Integer minThreadSizePerPartition = this.minThreadSizePerPartition;
+        Integer maxThreadSizePerPartition = this.maxThreadSizePerPartition;
+        Integer threadQueueSizePerPartition = this.threadQueueSizePerPartition;
+        Integer handlerSize = this.handlerSize;
 
-        if(AppConfigUtils.isConfigItemChange(minThreadSizePerPartition, newConfig, AppConfig.OPMT_MINTHREADSIZEPERPARTITION)){
+        if(AppConfigUtils.isConfigItemChange(String.valueOf(minThreadSizePerPartition), newConfig, AppConfig.OPMT_MINTHREADSIZEPERPARTITION)){
             minThreadSizePerPartition = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT_MINTHREADSIZEPERPARTITION));
+
+            if(minThreadSizePerPartition <= 0){
+                throw new IllegalStateException("config '" + AppConfig.OPMT_MINTHREADSIZEPERPARTITION + "' state wrong");
+            }
         }
 
-        if(AppConfigUtils.isConfigItemChange(maxThreadSizePerPartition, newConfig, AppConfig.OPMT_MAXTHREADSIZEPERPARTITION)){
+        if(AppConfigUtils.isConfigItemChange(String.valueOf(maxThreadSizePerPartition), newConfig, AppConfig.OPMT_MAXTHREADSIZEPERPARTITION)){
             maxThreadSizePerPartition = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT_MAXTHREADSIZEPERPARTITION));
+
+            if(maxThreadSizePerPartition <= 0){
+                throw new IllegalStateException("config '" + AppConfig.OPMT_MAXTHREADSIZEPERPARTITION + "' state wrong");
+            }
         }
-        if(AppConfigUtils.isConfigItemChange(threadQueueSizePerPartition, newConfig, AppConfig.OPMT_THREADQUEUESIZEPERPARTITION)){
+        if(AppConfigUtils.isConfigItemChange(String.valueOf(threadQueueSizePerPartition), newConfig, AppConfig.OPMT_THREADQUEUESIZEPERPARTITION)){
             threadQueueSizePerPartition = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT_THREADQUEUESIZEPERPARTITION));
+
+            if(threadQueueSizePerPartition < 0){
+                throw new IllegalStateException("config '" + AppConfig.OPMT_THREADQUEUESIZEPERPARTITION + "' state wrong");
+            }
         }
-        if(AppConfigUtils.isConfigItemChange(handlerSize, newConfig, AppConfig.OPMT_HANDLERSIZE)){
+        if(AppConfigUtils.isConfigItemChange(String.valueOf(handlerSize), newConfig, AppConfig.OPMT_HANDLERSIZE)){
             handlerSize = Integer.valueOf(newConfig.getProperty(AppConfig.OPMT_HANDLERSIZE));
+
+            if(handlerSize < 0){
+                throw new IllegalStateException("config '" + AppConfig.OPMT_HANDLERSIZE + "' state wrong");
+            }
+
+            log.info("config '" + AppConfig.OPMT_HANDLERSIZE + "' change from '" + this.handlerSize + "' to '" + handlerSize + "'");
         }
 
+        boolean isThreadPoolClosed = false;
+
+
+        //更新message handler的数量
+        //需要关闭线程池
+        boolean isHandlerSizeReduced = false;
+        if(this.handlerSize > handlerSize){
+            isThreadPoolClosed = true;
+            isHandlerSizeReduced = true;
+            log.info("reduce message handlers(size = " + (this.handlerSize - handlerSize) + ")");
+            //收集不需要使用的messagehandler的hashcode
+            //移除前n个
+            HashSet<MessageHandler> discardedHandlers = new HashSet<>();
+            for(int i = 0; i < this.handlerSize - handlerSize; i++){
+                for(TopicPartition key: topicPartition2MessageHandlers.keySet()){
+                    List<MessageHandler> messageHandlers = topicPartition2MessageHandlers.get(key);
+                    MessageHandler oldMessageHandler = messageHandlers.remove(0);
+                    discardedHandlers.add(oldMessageHandler);
+                }
+            }
+
+            //round-robin地将余下message handler替代被移除的message handler
+            for(TopicPartition key: topicPartition2MessageHandlers.keySet()){
+                List<MessageHandler> messageHandlers = topicPartition2MessageHandlers.get(key);
+
+                int round = 0;
+
+                for(Runnable task: topicPartition2Pools.get(key).shutdownNow()){
+                    MessageHandlerTask wrapperTask = (MessageHandlerTask) task;
+                    if(discardedHandlers.contains(wrapperTask.handler)){
+                        wrapperTask.handler = messageHandlers.get((round++) % messageHandlers.size());
+                    }
+                    if(!topicPartition2UnHandledRunnableCache.containsKey(key)){
+                        topicPartition2UnHandledRunnableCache.put(key, new ArrayList<>());
+                    }
+                    topicPartition2UnHandledRunnableCache.get(key).add(wrapperTask);
+                }
+            }
+
+            //释放被丢弃的message handler占用的资源
+            for(MessageHandler discardedMessageHandler: discardedHandlers){
+                try {
+                    discardedMessageHandler.cleanup();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        this.handlerSize = handlerSize;
+
+        //需要关闭线程池
         if(this.minThreadSizePerPartition != minThreadSizePerPartition ||
                 this.maxThreadSizePerPartition != maxThreadSizePerPartition ||
                 this.threadQueueSizePerPartition != threadQueueSizePerPartition){
@@ -237,74 +337,91 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
                     maxThreadSizePerPartition <= Integer.MAX_VALUE &&
                     threadQueueSizePerPartition <= Integer.MAX_VALUE){
                 if(minThreadSizePerPartition <= maxThreadSizePerPartition){
-                    log.info("handler thread pool changed(minThreadSizePerPartition=" + minThreadSizePerPartition + ", " +
-                            "maxThreadSizePerPartition=" + maxThreadSizePerPartition + ", " +
-                            "threadQueueSizePerPartition=" + threadQueueSizePerPartition + ")");
-                    //因为更新配置时,不会接受消息,所以可以重新分配线程池,原线程池等待消息处理完自动销毁
-                    //shutdown,不再从队列取task并且任务完成时会更新
-                    for(TopicPartition topicPartition: topicPartition2Pools.keySet()){
-                        ThreadPoolExecutor nowPool = topicPartition2Pools.get(topicPartition);
-                        //转换到pool的 STOP的状态,该状态时仅仅会处理完pool的线程就转到TERMINAL
-                        List<Runnable> originTask = nowPool.shutdownNow();
-                        ThreadPoolExecutor newPool = new ThreadPoolExecutor(
-                                minThreadSizePerPartition,
-                                maxThreadSizePerPartition,
-                                60,
-                                TimeUnit.SECONDS,
-                                new LinkedBlockingQueue<>(threadQueueSizePerPartition),
-                                new DefaultThreadFactory(config.getProperty(AppConfig.APPNAME), "MessageHandler")
-                                );
-                        for(Runnable runnable: originTask){
-                            newPool.execute(runnable);
+                    //如果handler size没有减少,那么意味着不会关闭线程,此处要缓存所有待执行任务,后续重新启动线程池再提交
+                    if(!isHandlerSizeReduced){
+                        isThreadPoolClosed = true;
+                        for(TopicPartition topicPartition: topicPartition2Pools.keySet()){
+                            ThreadPoolExecutor nowPool = topicPartition2Pools.get(topicPartition);
+                            //转换到pool的STOP的状态,该状态时仅仅会处理完pool的线程就转到TERMINAL
+                            List<Runnable> originTasks = nowPool.shutdownNow();
+                            if(topicPartition2UnHandledRunnableCache.containsKey(topicPartition)){
+                                topicPartition2UnHandledRunnableCache.get(topicPartition).addAll(originTasks);
+                            }
+                            else{
+                                topicPartition2UnHandledRunnableCache.put(topicPartition, originTasks);
+                            }
                         }
-                        topicPartition2Pools.put(topicPartition, newPool);
                     }
+
+                    log.info("config '" + AppConfig.OPMT_MINTHREADSIZEPERPARTITION + "' change from '" + this.minThreadSizePerPartition + "' to '" + minThreadSizePerPartition + "'");
+                    log.info("config '" + AppConfig.OPMT_MAXTHREADSIZEPERPARTITION + "' change from '" + this.maxThreadSizePerPartition + "' to '" + maxThreadSizePerPartition + "'");
+                    log.info("config '" + AppConfig.OPMT_THREADQUEUESIZEPERPARTITION + "' change from '" + this.threadQueueSizePerPartition + "' to '" + threadQueueSizePerPartition + "'");
 
                     this.minThreadSizePerPartition = minThreadSizePerPartition;
                     this.maxThreadSizePerPartition = maxThreadSizePerPartition;
                     this.threadQueueSizePerPartition = threadQueueSizePerPartition;
                 }
                 else{
-                    throw new IllegalStateException("config args 'minThreadSizePerPartition' and 'maxThreadSizePerPartition' state wrong");
+                    throw new IllegalStateException("config '" + AppConfig.OPMT_MINTHREADSIZEPERPARTITION + "' and '" + AppConfig.OPMT_MAXTHREADSIZEPERPARTITION + "' state wrong");
                 }
             }
             else{
-                throw new IllegalStateException("config args 'minThreadSizePerPartition' or 'maxThreadSizePerPartition' or 'threadQueueSizePerPartition' state wrong");
+                throw new IllegalStateException("config args '" + AppConfig.OPMT_MINTHREADSIZEPERPARTITION + "' or '" + AppConfig.OPMT_MAXTHREADSIZEPERPARTITION + "' or '" + AppConfig.OPMT_THREADQUEUESIZEPERPARTITION + "' state wrong");
             }
         }
         else{
-            log.info("handler thread pool doesn't change)");
+            log.info("handler thread pool doesn't change");
         }
 
-        if(this.handlerSize > handlerSize){
-            log.info("reduce message handlers(size = " + (this.handlerSize - handlerSize) + ")");
-            for(int i = 0; i < this.handlerSize - handlerSize; i++){
-                for(TopicPartition key: topicPartition2MessageHandlers.keySet()){
-                    List<MessageHandler> messageHandlers = topicPartition2MessageHandlers.get(key);
-                    MessageHandler oldMessageHandler = messageHandlers.remove(i);
-                    //释放message handler占用的资源
-                    try {
-                        oldMessageHandler.cleanup();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+        //如果线程池关闭,则重新启动
+        if(isThreadPoolClosed){
+            log.info("thread pool closed per topic partition, so restart now");
+            for(TopicPartition topicPartition: topicPartition2Pools.keySet()){
+                ThreadPoolExecutor newPool = new ThreadPoolExecutor(
+                        minThreadSizePerPartition,
+                        maxThreadSizePerPartition,
+                        60,
+                        TimeUnit.SECONDS,
+                        new LinkedBlockingQueue<>(threadQueueSizePerPartition),
+                        new DefaultThreadFactory(config.getProperty(AppConfig.APPNAME), "MessageHandler")
+                );
+                //根据Offset排序,以免不连续Offset提交
+                topicPartition2UnHandledRunnableCache.get(topicPartition).sort(new Comparator<Runnable>() {
+                    @Override
+                    public int compare(Runnable o1, Runnable o2) {
+                        if(o1 instanceof MessageHandlerTask && o2 instanceof MessageHandlerTask){
+                            MessageHandlerTask task1 = (MessageHandlerTask) o1;
+                            MessageHandlerTask task2 = (MessageHandlerTask) o2;
 
-                    //round-robin地将余下message handler替代移除的message handler
-                    int round = 0;
-                    for(Runnable task: topicPartition2Pools.get(key).getQueue()){
-                        MessageHandlerTask wrapperTask = (MessageHandlerTask) task;
-                        if(oldMessageHandler == wrapperTask.handler){
-                            wrapperTask.handler = messageHandlers.get((round++) % messageHandlers.size());
+                            long offset1 = task1.target.record().offset();
+                            long offset2 = task2.target.record().offset();
+
+                            return offset1 > offset2 ? 1 : offset1 == offset2 ? 0 : -1;
                         }
+                        return -1;
                     }
+                });
+
+                for(Runnable runnable: topicPartition2UnHandledRunnableCache.get(topicPartition)){
+                    newPool.execute(runnable);
                 }
+                topicPartition2Pools.put(topicPartition, newPool);
             }
+            topicPartition2UnHandledRunnableCache.clear();
         }
-        this.handlerSize = handlerSize;
 
         //更新pendingwindow的配置
-        for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
-            pendingWindow.reConfig(newConfig);
+        if(AppConfigUtils.isConfigItemChange(String.valueOf(slidingWindow), newConfig, AppConfig.PENDINGWINDOW_SLIDINGWINDOW)){
+            int slidingWindow = this.slidingWindow;
+
+            //不需要同步,因为stop the world(处理线程停止处理消息)
+            this.slidingWindow = Integer.valueOf(newConfig.get(AppConfig.PENDINGWINDOW_SLIDINGWINDOW).toString());
+
+            log.info("config '" + AppConfig.PENDINGWINDOW_SLIDINGWINDOW + "' change from '" + slidingWindow + "' to '" + this.slidingWindow + "'");
+
+            for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
+                pendingWindow.reConfig(newConfig);
+            }
         }
         log.info("OPMT message handler manager reconfiged");
     }
@@ -329,7 +446,20 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
                 pendingWindow.commitFinished(target);
                 log.debug(Thread.currentThread().getName() + " has finished handling task ");
             } catch (Exception e) {
-                e.printStackTrace();
+                if(e instanceof InterruptedException){
+                    log.info("unfinished task(" + target.topicPartition().topic() + "-" + target.topicPartition().partition() + ", offset=" + target.record().offset() + ") interrupted, ready to restart");
+                    if(topicPartition2UnHandledRunnableCache.containsKey(target.topicPartition())){
+                        topicPartition2UnHandledRunnableCache.get(target.topicPartition()).add(this);
+                    }
+                    else{
+                        List<Runnable> runnables = new ArrayList<>();
+                        runnables.add(this);
+                        topicPartition2UnHandledRunnableCache.put(target.topicPartition(), runnables);
+                    }
+                }
+                else {
+                    e.printStackTrace();
+                }
             }
         }
     }

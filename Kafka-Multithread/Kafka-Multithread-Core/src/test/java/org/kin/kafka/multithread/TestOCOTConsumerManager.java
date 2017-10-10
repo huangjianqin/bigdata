@@ -5,7 +5,7 @@ import org.kin.kafka.multithread.api.ApplicationContext;
 import org.kin.kafka.multithread.api.MultiThreadConsumerManager;
 import org.kin.kafka.multithread.api.impl.RealEnvironmentMessageHandler;
 import org.kin.kafka.multithread.config.AppConfig;
-import org.kin.kafka.multithread.utils.PropertiesWrapper;
+import org.kin.kafka.multithread.common.PropertiesWrapper;
 import org.kin.kafka.multithread.statistics.Counters;
 import org.kin.kafka.multithread.statistics.Statistics;
 

@@ -1,8 +1,8 @@
 package org.kin.kafka.multithread.config;
 
-import org.kin.kafka.multithread.core.AbstractMessageHandlersManager;
 import org.kin.kafka.multithread.distributed.AppStatus;
 import org.kin.kafka.multithread.utils.HostUtils;
+
 
 /**
  * Created by 健勤 on 2017/7/21.
@@ -14,10 +14,10 @@ public class DefaultAppConfig {
     public static final String DEFAULT_APPHOST = HostUtils.localhost() + "";
     public static final String DEFAULT_APPSTATUS = AppStatus.RUN.getStatusDesc();
 
-    public static final String OPOT = AbstractMessageHandlersManager.MsgHandlerManagerModel.OPOT.getDesc();
-    public static final String OPMT = AbstractMessageHandlersManager.MsgHandlerManagerModel.OPMT.getDesc();
-    public static final String OPMT2 = AbstractMessageHandlersManager.MsgHandlerManagerModel.OPMT2.getDesc();
-    public static final String OCOT = AbstractMessageHandlersManager.MsgHandlerManagerModel.OCOT.getDesc();;
+    public static final String OPOT = "OPOT";
+    public static final String OPMT = "OPMT";
+    public static final String OPMT2 = "OPMT2";
+    public static final String OCOT = "OCOT";;
 
     //message fetcher
     public static final String DEFAULT_MESSAGEFETCHER_POLL_TIMEOUT = "1000";

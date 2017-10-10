@@ -19,6 +19,7 @@
         <module>Kafka-Multithread-Core</module>
         <module>Kafka-Multithread-Protocol</module>
         <module>Kafka-Multithread-Distributed</module>
+        <module>Kafka-Multithread-Share</module>
     </modules>
 
     <build>

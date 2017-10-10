@@ -6,20 +6,17 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
-import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.ReConfigable;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
-import org.kin.kafka.multithread.utils.ConsumerRecordInfo;
+import org.kin.kafka.multithread.common.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by hjq on 2017/7/4.
@@ -141,7 +138,8 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
             try {
                 Thread.sleep(2000);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                System.out.println(Thread.currentThread().getName());
+                log.error("now operation interrupted by thread '" + Thread.currentThread().getName() + "'");
             }
         }
 
@@ -312,7 +310,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
 
             while(!this.isStooped && !Thread.currentThread().isInterrupted()){
                 try {
-                    ConsumerRecordInfo record = queue.poll(100, TimeUnit.MILLISECONDS);
+                    ConsumerRecordInfo record = queue.poll();
                     //队列中有消息需要处理
                     if(record != null){
                         //对Kafka消息的处理
@@ -332,11 +330,6 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
                         //并不是真正让consumer提交Offset,视具体实现而定
                         commit(record);
                     }
-                    else{
-                        //队列poll超时
-//                        log.info(LOG_HEAD + " thread idle --> sleep 200ms");
-                        Thread.sleep(200);
-                    }
 
                     /**
                      * 配置更新中,停止处理消息
@@ -345,7 +338,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
                         Thread.sleep(1000);
                     }
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    log.info(Thread.currentThread().getName() + " interrupted");
                 }
             }
             //线程结束前的资源释放或其他操作

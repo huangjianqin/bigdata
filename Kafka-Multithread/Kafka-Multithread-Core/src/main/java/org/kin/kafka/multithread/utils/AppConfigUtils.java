@@ -63,7 +63,7 @@ public class AppConfigUtils {
         }
 
         if(lastConfig != null && newConfig == null){
-            return false;
+            return true;
         }
 
         if(lastConfig.containsKey(key) && newConfig.containsKey(key)){
@@ -80,6 +80,10 @@ public class AppConfigUtils {
     }
 
     public static boolean isConfigItemChange(Object lastValue, Properties newConfig, Object key){
+        if(newConfig == null){
+            throw new IllegalStateException("new properties state wrong");
+        }
+
         if(newConfig.containsKey(key)){
             if(!lastValue.equals(newConfig.get(key))){
                 return true;
@@ -150,7 +154,11 @@ public class AppConfigUtils {
 
     public static Class<? extends MessageHandler> getMessageHandlerClass(Properties config){
         try {
-            Class claxx = Class.forName(config.getOrDefault(AppConfig.MESSAGEHANDLER, DefaultAppConfig.DEFAULT_MESSAGEHANDLER).toString());
+            String className = config.getOrDefault(AppConfig.MESSAGEHANDLER, DefaultAppConfig.DEFAULT_MESSAGEHANDLER).toString();
+            if(className.equals("")){
+                return null;
+            }
+            Class claxx = Class.forName(className);
             if(MessageHandler.class.isAssignableFrom(claxx)){
                 return claxx;
             }
@@ -162,7 +170,11 @@ public class AppConfigUtils {
 
     public static Class<? extends CommitStrategy> getCommitStrategyClass(Properties config){
         try {
-            Class claxx = Class.forName(config.getOrDefault(AppConfig.COMMITSTRATEGY, DefaultAppConfig.DEFAULT_COMMITSTRATEGY).toString());
+            String className = config.getOrDefault(AppConfig.COMMITSTRATEGY, DefaultAppConfig.DEFAULT_COMMITSTRATEGY).toString();
+            if(className.equals("")){
+                return null;
+            }
+            Class claxx = Class.forName(className);
             if(CommitStrategy.class.isAssignableFrom(claxx)){
                 return claxx;
             }
@@ -174,7 +186,11 @@ public class AppConfigUtils {
 
     public static Class<? extends AbstractConsumerRebalanceListener> getConsumerRebalanceListenerClass(Properties config){
         try {
-            Class claxx = Class.forName(config.getOrDefault(AppConfig.CONSUMERREBALANCELISTENER, DefaultAppConfig.DEFAULT_CONSUMERREBALANCELISTENER).toString());
+            String className = config.getOrDefault(AppConfig.CONSUMERREBALANCELISTENER, DefaultAppConfig.DEFAULT_CONSUMERREBALANCELISTENER).toString();
+            if(className.equals("")){
+                return null;
+            }
+            Class claxx = Class.forName(className);
             if(AbstractConsumerRebalanceListener.class.isAssignableFrom(claxx)){
                 return claxx;
             }
@@ -186,7 +202,11 @@ public class AppConfigUtils {
 
     public static Class<? extends CallBack> getCallbackClass(Properties config){
         try {
-            Class claxx = Class.forName(config.getOrDefault(AppConfig.MESSAGEFETCHER_CONSUME_CALLBACK, DefaultAppConfig.DEFAULT_MESSAGEFETCHER_CONSUME_CALLBACK).toString());
+            String className = config.getOrDefault(AppConfig.MESSAGEFETCHER_CONSUME_CALLBACK, DefaultAppConfig.DEFAULT_MESSAGEFETCHER_CONSUME_CALLBACK).toString();
+            if(className.equals("")){
+                return null;
+            }
+            Class claxx = Class.forName(className);
             if(Callback.class.isAssignableFrom(claxx)){
                 return claxx;
             }

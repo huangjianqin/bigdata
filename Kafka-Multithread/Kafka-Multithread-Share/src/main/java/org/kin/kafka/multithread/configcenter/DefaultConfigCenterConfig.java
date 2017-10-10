@@ -1,4 +1,4 @@
-package org.kin.kafka.multithread.configcenter.config;
+package org.kin.kafka.multithread.configcenter;
 
 /**
  * Created by huangjianqin on 2017/9/11.

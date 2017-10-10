@@ -1,6 +1,5 @@
 package org.kin.kafka.multithread.configcenter;
 
-import org.kin.kafka.multithread.configcenter.config.ConfigCenterConfig;
 import org.kin.kafka.multithread.protocol.configcenter.AdminProtocol;
 import org.kin.kafka.multithread.protocol.configcenter.DiamondMasterProtocol;
 import org.kin.kafka.multithread.rpc.factory.RPCFactories;
