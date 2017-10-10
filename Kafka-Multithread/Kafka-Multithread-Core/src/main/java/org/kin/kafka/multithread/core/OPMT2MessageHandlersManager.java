@@ -36,10 +36,14 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
     private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new HashMap<>();
     private Map<TopicPartition, List<OPMT2MessageQueueHandlerThread>> topicPartition2Threads = new HashMap<>();
     //所有消息处理线程在同一线程池维护
+    /**
+     * keepalive改为5s,目的是减少多余线程对系统性能的影响,因为在OPMT2模式下,处理线程是固定的
+     * 更新配置和Rebalance有可能导致多余线程在线程池
+     */
     private final ThreadPoolExecutor threads = new ThreadPoolExecutor(
             2,
             Integer.MAX_VALUE,
-            60,
+            5,
             TimeUnit.SECONDS,
             new SynchronousQueue<Runnable>(),
             new DefaultThreadFactory(config.getProperty(AppConfig.APPNAME), "OPMT2MessageQueueHandlerThread")

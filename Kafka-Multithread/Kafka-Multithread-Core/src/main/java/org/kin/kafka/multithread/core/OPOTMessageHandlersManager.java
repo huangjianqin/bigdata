@@ -21,10 +21,14 @@ import java.util.concurrent.*;
 public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
     private static final Logger log = LoggerFactory.getLogger(OPOTMessageHandlersManager.class);
     private Map<TopicPartition, OPOTMessageQueueHandlerThread> topicPartition2Thread = new ConcurrentHashMap<>();
+    /**
+     * keepalive改为5s,目的是减少多余线程对系统性能的影响,因为在OPOT模式下,处理线程是固定的
+     * 更新配置和Rebalance有可能导致多余线程在线程池
+     */
     private final ThreadPoolExecutor threads = new ThreadPoolExecutor(
             2,
             Integer.MAX_VALUE,
-            60,
+            5,
             TimeUnit.SECONDS,
             new SynchronousQueue<Runnable>(),
             new DefaultThreadFactory(config.getProperty(AppConfig.APPNAME), "OPOTMessageQueueHandler")

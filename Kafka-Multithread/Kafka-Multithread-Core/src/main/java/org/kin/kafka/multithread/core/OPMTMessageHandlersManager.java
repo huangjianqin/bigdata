@@ -35,6 +35,9 @@ import java.util.concurrent.*;
  */
 public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     private static final Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);
+    /**
+     * keepalive为60s,目的是尽可能充分利用系统资源,因为在OPMT模式下,处理线程是动态的,在高负载且系统能够撑住的情况下,充分利用线程资源处理消息
+     */
     private Map<TopicPartition, ThreadPoolExecutor> topicPartition2Pools = new HashMap<>();
     private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new HashMap<>();
     private Map<TopicPartition, List<MessageHandler>> topicPartition2MessageHandlers = new HashMap<>();

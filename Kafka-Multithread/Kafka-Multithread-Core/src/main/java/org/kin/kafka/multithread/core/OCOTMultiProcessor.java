@@ -17,7 +17,9 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.Executors;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -39,6 +41,10 @@ public class OCOTMultiProcessor<K, V>  implements Application{
     private final Class<? extends CommitStrategy> commitStrategyClass;
     private final Class<? extends ConsumerRebalanceListener> consumerRebalanceListenerClass;
     private Class<? extends CallBack> callBackClass;
+    /**
+     * keepalive改为5s,目的是减少多余线程对系统性能的影响,因为在OCOT模式下,处理线程是固定的
+     * 更新配置和Rebalance有可能导致多余线程在线程池
+     */
     private ThreadPoolExecutor threads;
     private List<OCOTProcessor<K, V>> processors = new ArrayList<>();
 
@@ -51,7 +57,12 @@ public class OCOTMultiProcessor<K, V>  implements Application{
         this.commitStrategyClass = AppConfigUtils.getCommitStrategyClass(config);
         this.consumerRebalanceListenerClass = AppConfigUtils.getConsumerRebalanceListenerClass(config);
         updataConfig(config);
-        this.threads = (ThreadPoolExecutor) Executors.newCachedThreadPool(
+        this.threads = new ThreadPoolExecutor(
+                2,
+                Integer.MAX_VALUE,
+                5,
+                TimeUnit.SECONDS,
+                new SynchronousQueue<Runnable>(),
                 new DefaultThreadFactory(config.getProperty(AppConfig.APPNAME), "OCOTProcessor")
         );
     }
