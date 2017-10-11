@@ -73,7 +73,8 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartition, OffsetAndMetadata> pendingOffsets){
         log.debug("dispatching message: " + TPStrUtils.consumerRecordDetail(consumerRecordInfo.record()));
 
-        if(updatePengdingWindowAtFixRate == null){
+        //自动提交的情况下,不会使用pendingwindow,进而没必要启动一条定时线程来检索空的map实例
+        if(!isAutoCommit && updatePengdingWindowAtFixRate == null){
             updatePengdingWindowAtFixRate = new Timer("updatePengdingWindowAtFixRate");
             //每5秒更新pendingwindow的有效连续的Offset队列,也就是提交
             updatePengdingWindowAtFixRate.scheduleAtFixedRate(new TimerTask() {
@@ -117,7 +118,7 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
         else{
             //没有该topic分区对应的线程池
             //先启动线程池,再添加至队列
-            if(pendingWindow == null){
+            if(!isAutoCommit && pendingWindow == null){
                 log.info("new pending window");
                 pendingWindow = new PendingWindow(slidingWindow, pendingOffsets);
                 topicPartition2PendingWindow.put(topicPartition, pendingWindow);
@@ -214,7 +215,6 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
     @Override
     public void doOnConsumerReAssigned(Set<TopicPartition> topicPartitions) {
         List<OPMT2MessageQueueHandlerThread> allThreads = new ArrayList<>();
-        List<PendingWindow> allPendingWindow = new ArrayList<>();
         //关闭Handler执行,但不关闭线程,达到线程复用的效果
         for(TopicPartition topicPartition: topicPartitions){
             //不清除队列好像也可以
@@ -224,7 +224,7 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
                 }
             }
             //移除滑动窗口
-            allPendingWindow.add(topicPartition2PendingWindow.remove(topicPartition));
+            topicPartition2PendingWindow.remove(topicPartition).commitLatest(false);
             //移除属于该分区的线程
             allThreads.addAll(topicPartition2Threads.remove(topicPartition));
         }

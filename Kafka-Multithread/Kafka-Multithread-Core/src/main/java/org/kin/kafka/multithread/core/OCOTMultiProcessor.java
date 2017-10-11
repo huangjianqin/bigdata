@@ -49,6 +49,7 @@ public class OCOTMultiProcessor<K, V>  implements Application{
     private List<OCOTProcessor<K, V>> processors = new ArrayList<>();
 
     private AtomicBoolean isReConfig = new AtomicBoolean(false);
+    private boolean isAutoCommit = false;
 
     public OCOTMultiProcessor(Properties config) {
         this.consumerNum = Integer.valueOf(config.getProperty(AppConfig.OCOT_CONSUMERNUM));
@@ -65,6 +66,7 @@ public class OCOTMultiProcessor<K, V>  implements Application{
                 new SynchronousQueue<Runnable>(),
                 new DefaultThreadFactory(config.getProperty(AppConfig.APPNAME), "OCOTProcessor")
         );
+        isAutoCommit = Boolean.valueOf(config.getProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG));
     }
 
     private void updataConfig(Properties config){
@@ -350,7 +352,9 @@ public class OCOTMultiProcessor<K, V>  implements Application{
                         //消息处理
                         doHandle(consumerRecordInfo);
                         //判断是否需要commit offset
-                        commit(consumerRecordInfo);
+                        if(!isAutoCommit){
+                            commit(consumerRecordInfo);
+                        }
                     }
 
                 }

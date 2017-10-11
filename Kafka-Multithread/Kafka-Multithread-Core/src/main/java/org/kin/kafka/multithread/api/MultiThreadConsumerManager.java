@@ -1,5 +1,6 @@
 package org.kin.kafka.multithread.api;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.ReConfigable;
 import org.kin.kafka.multithread.core.AbstractMessageHandlersManager;
@@ -58,6 +59,7 @@ public class MultiThreadConsumerManager implements ReConfigable{
 
     public <K, V> ApplicationContext newApplication(Properties config){
         AppConfigUtils.oneNecessaryCheckAndFill(config);
+
         log.info("deploying app..." + System.lineSeparator() + AppConfigUtils.toString(config));
 
         String appName = config.getProperty(AppConfig.APPNAME);

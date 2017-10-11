@@ -168,10 +168,11 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
         @Override
         protected void preTerminated() {
             //只有两种情况:
-            //1:
-            //  1.1rebalance consumerRebalanceNotify先手动提交最新Offset
-            //  1.2doOnConsumerReAssigned再一次提交之前分配到但此次又没有分配到的TopicPartition对应的最新Offset
-            //2:关闭consumer 抛弃这些待处理信息,提交最近处理的offset
+            //  1:
+            //   1.1rebalance consumerRebalanceNotify先手动提交最新Offset
+            //   1.2doOnConsumerReAssigned再一次提交之前分配到但此次又没有分配到的TopicPartition对应的最新Offset
+            //  2:
+            //      关闭consumer 抛弃这些待处理信息,提交最近处理的offset
             log.info(LOG_HEAD() + " closing/rebalancing consumer should commit last offsets sync now");
             if(lastRecord != null){
                 pendingOffsets.put(new TopicPartition(lastRecord.topic(), lastRecord.partition()), new OffsetAndMetadata(lastRecord.offset() + 1));

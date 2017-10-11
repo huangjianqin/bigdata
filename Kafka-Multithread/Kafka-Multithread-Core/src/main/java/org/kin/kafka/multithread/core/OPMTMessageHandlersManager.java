@@ -79,7 +79,8 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     public boolean dispatch(ConsumerRecordInfo consumerRecordInfo, Map<TopicPartition, OffsetAndMetadata> pendingOffsets) {
         log.debug("dispatching message: " + TPStrUtils.consumerRecordDetail(consumerRecordInfo.record()));
 
-        if(updatePengdingWindowAtFixRate == null){
+        //自动提交的情况下,不会使用pendingwindow,进而没必要启动一条定时线程来检索空的map实例
+        if(!isAutoCommit && updatePengdingWindowAtFixRate == null){
             updatePengdingWindowAtFixRate = new Timer("updatePengdingWindowAtFixRate");
             //每5秒更新pendingwindow的有效连续的Offset队列,也就是提交
             updatePengdingWindowAtFixRate.scheduleAtFixedRate(new TimerTask() {
@@ -118,7 +119,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
         }
 
         PendingWindow pendingWindow = topicPartition2PendingWindow.get(topicPartition);
-        if(pendingWindow == null){
+        if(!isAutoCommit && pendingWindow == null){
             log.info("new pending window");
             //等待offset连续完整窗口还没创建,则新创建
             pendingWindow = new PendingWindow(slidingWindow, pendingOffsets);
@@ -179,7 +180,7 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
 
         for(PendingWindow pendingWindow: topicPartition2PendingWindow.values()){
             //提交已完成处理的消息的最大offset
-            pendingWindow.commitLatest(true);
+            pendingWindow.commitLatest(false);
         }
     }
 
@@ -229,11 +230,13 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
             }
         }
 
-        log.info("clean up target used pending window");
-        for(TopicPartition topicPartition: topicPartitions){
-            //提交已完成处理的消息的最大offset
-            topicPartition2PendingWindow.get(topicPartition).commitLatest(true);
-            topicPartition2PendingWindow.remove(topicPartition);
+        if(!isAutoCommit){
+            log.info("clean up target used pending window");
+            for(TopicPartition topicPartition: topicPartitions){
+                //提交已完成处理的消息的最大offset
+                topicPartition2PendingWindow.get(topicPartition).commitLatest(false);
+                topicPartition2PendingWindow.remove(topicPartition);
+            }
         }
 
         isRebalance.set(false);
@@ -446,7 +449,9 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
             try {
                 log.debug(Thread.currentThread().getName() + " start to handle task... [" + target + "]");
                 handler.handle(target.record());
-                pendingWindow.commitFinished(target);
+                if(!isAutoCommit){
+                    pendingWindow.commitFinished(target);
+                }
                 log.debug(Thread.currentThread().getName() + " has finished handling task ");
             } catch (Exception e) {
                 if(e instanceof InterruptedException){

@@ -1,6 +1,7 @@
 package org.kin.kafka.multithread.core;
 
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
@@ -30,6 +31,8 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
     private Map<String, Class<? extends MessageHandler>> topic2HandlerClass;
     private Map<String, Class<? extends CommitStrategy>> topic2CommitStrategyClass;
 
+    protected boolean isAutoCommit = false;
+
     AbstractMessageHandlersManager(Properties config){
         this.config = config;
 
@@ -40,6 +43,8 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
             topic2HandlerClass.put(topic, AppConfigUtils.getMessageHandlerClass(config));
             topic2CommitStrategyClass.put(topic, AppConfigUtils.getCommitStrategyClass(config));
         }
+
+        isAutoCommit = Boolean.valueOf(config.getProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG));
     }
 
     /**
@@ -328,7 +333,9 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
 
                         //提交Offset
                         //并不是真正让consumer提交Offset,视具体实现而定
-                        commit(record);
+                        if(!isAutoCommit){
+                            commit(record);
+                        }
                     }
 
                     /**

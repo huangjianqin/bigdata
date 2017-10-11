@@ -11,6 +11,7 @@ import org.kin.kafka.multithread.common.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.TPStrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.App;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,7 +36,6 @@ public class MessageFetcher<K, V> extends Thread implements Application {
     //重试commit offset的相关属性
     private boolean enableRetry = false;
     private int maxRetry;
-    private int nowRetry = 0;
     //consumer poll timeout
     private long pollTimeout;
 
@@ -52,6 +52,9 @@ public class MessageFetcher<K, V> extends Thread implements Application {
     //新配置
     Properties newConfig;
 
+    private int nowRetry = 0;
+    private boolean isAutoCommit = false;
+
     public MessageFetcher(Properties config) {
         super(config.getProperty(AppConfig.APPNAME) + "'s consumer fetcher thread");
 
@@ -59,6 +62,7 @@ public class MessageFetcher<K, V> extends Thread implements Application {
         pollTimeout = Long.valueOf(config.getProperty(AppConfig.MESSAGEFETCHER_POLL_TIMEOUT));
         enableRetry = Boolean.valueOf(config.getProperty(AppConfig.MESSAGEFETCHER_COMMIT_ENABLERETRY));
         maxRetry = Integer.valueOf(config.getProperty(AppConfig.MESSAGEFETCHER_COMMIT_MAXRETRY));
+        isAutoCommit = Boolean.valueOf(config.getProperty(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG));
 
         //messagehandler.mode => OPOT/OPMT
         AbstractMessageHandlersManager.MsgHandlerManagerModel model = AbstractMessageHandlersManager.MsgHandlerManagerModel.getByDesc(
@@ -116,7 +120,7 @@ public class MessageFetcher<K, V> extends Thread implements Application {
                 //查看有没offset需要提交
                 Map<TopicPartition, OffsetAndMetadata> offsets = allPendingOffsets();
 
-                if(offsets != null){
+                if(!isAutoCommit && offsets != null){
                     //有offset需要提交
                     log.info("consumer commit [" + offsets.size() + "] topic partition offsets");
                     commitOffsetsSync(offsets);
