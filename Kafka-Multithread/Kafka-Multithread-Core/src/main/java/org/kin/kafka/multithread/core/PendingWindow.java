@@ -75,6 +75,7 @@ public class PendingWindow implements ReConfigable{
 
             queue.add(record);
 
+            //有点像是拿来主义,选举出leader进行处理(先到先得)
             //保证同一时间只有一条处理线程判断窗口满足
             //多线判断窗口满足有点难,需要加锁,感觉性能还不如控制一次只有一条线程判断窗口满足,无锁操作queue,其余处理线程直接进队
             //原子操作设置标识
