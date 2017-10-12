@@ -60,7 +60,7 @@ public class MultiThreadConsumerManager implements ReConfigable{
     public <K, V> ApplicationContext newApplication(Properties config){
         AppConfigUtils.oneNecessaryCheckAndFill(config);
 
-        log.info("deploying app..." + System.lineSeparator() + AppConfigUtils.toString(config));
+        log.debug("deploying app..." + System.lineSeparator() + AppConfigUtils.toString(config));
 
         String appName = config.getProperty(AppConfig.APPNAME);
 
