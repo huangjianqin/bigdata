@@ -6,8 +6,6 @@ import java.util.Map;
  * Created by huangjianqin on 2017/9/11.
  */
 public interface StoreCodec {
-    String classpath = "org.kin.kafka.multithread.configcenter.common.%sStoreCodec";
-
     /**
      * 序列化成key-value的properties形式
      * @param source

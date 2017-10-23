@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by huangjianqin on 2017/9/12.
@@ -55,7 +54,7 @@ public class Node implements NodeMasterProtocol{
         //加载配置
         this.nodeConfig = new Properties();
         try {
-            this.nodeConfig.load(getClass().getClassLoader().getResourceAsStream("application.properties"));
+            this.nodeConfig.load(getClass().getClassLoader().getResourceAsStream("application.properties.template"));
         } catch (IOException e) {
             e.printStackTrace();
         }

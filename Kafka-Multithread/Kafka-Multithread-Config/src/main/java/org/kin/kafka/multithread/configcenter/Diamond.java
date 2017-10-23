@@ -8,11 +8,12 @@ import org.kin.kafka.multithread.configcenter.manager.ConfigStoreManager;
 import org.kin.kafka.multithread.configcenter.utils.ConfigCenterConfigUtils;
 import org.kin.kafka.multithread.configcenter.utils.PropertiesUtils;
 import org.kin.kafka.multithread.configcenter.utils.YAMLUtils;
-import org.kin.kafka.multithread.domain.ConfigFetchResponse;
-import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeat;
-import org.kin.kafka.multithread.protocol.app.ApplicationHost;
+import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeatResponse;
+import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeatRequest;
+import org.kin.kafka.multithread.protocol.app.ApplicationContextInfo;
 import org.kin.kafka.multithread.protocol.configcenter.AdminProtocol;
 import org.kin.kafka.multithread.protocol.configcenter.DiamondMasterProtocol;
+import org.kin.kafka.multithread.rpc.factory.RPCFactories;
 import org.kin.kafka.multithread.utils.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * 可以完美切换底层RPC(自定义实现RPCFactory并注入到RPCFactories)和配置存储(自定义实现ConfigStoreManager并在配置文件中修改class)
  */
+@Path("kafkamultithread")
 public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     private static final Logger log = LoggerFactory.getLogger(Diamond.class);
 
@@ -56,20 +58,64 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
         String storeManagerClass = (String) config.getOrDefault(ConfigCenterConfig.CONFIG_STOREMANAGER_CLASS, DefaultConfigCenterConfig.DEFAULT_CONFIG_STOREMANAGER_CLASS);
         configStoreManager = (ConfigStoreManager) ClassUtils.instance(storeManagerClass);
         configStoreManager.setup(config);
+
+        //加载所有已写进StoreType的codec
+        try {
+            Class.forName(StoreCodecs.class.getName());
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
         log.info("diamond inited");
+    }
+
+    public void start(){
+        log.info("diamond starting...");
+        init();
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                close();
+            }
+        }));
+
+        RPCFactories.serviceWithoutRegistry(
+                DiamondMasterProtocol.class,
+                this,
+                Integer.valueOf(config.getProperty(ConfigCenterConfig.DIAMONDMASTERPROTOCOL_PORT))
+        );
+        log.info(String.format("Diamond RPC interface bind '%s' port", config.getProperty(ConfigCenterConfig.DIAMONDMASTERPROTOCOL_PORT)));
+        RPCFactories.restServiceWithoutRegistry(AdminProtocol.class,
+                this,
+                Integer.valueOf(config.getProperty(ConfigCenterConfig.ADMINPROTOCOL_PORT))
+        );
+        log.info(String.format("Admin RPC interface bind '%s' port", config.getProperty(ConfigCenterConfig.ADMINPROTOCOL_PORT)));
+
+
+        log.info("diamond started");
+
+        while (true){
+            try {
+                Thread.sleep(60 * 1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     @Override
     @POST
-    @Consumes(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_FORM_URLENCODED)
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/kafkamultithread/{host}/{appName}/{type}/{config}")
+    @Path("config/post/{appName}/{type}")
     public Map<String, Object> storeConfig(
             @PathParam("appName") String appName,
-            @PathParam("host") String host,
+            @FormParam("host") String host,
             @PathParam("type") String type,
-            @PathParam("config") String config
+            @FormParam("config") String config
     ) {
+        Map<String, Object> result = new HashMap<>();
+
         log.info("store app config from app '" + appName + "' on host '" + host + "'" + System.lineSeparator() + config);
         //先缓存,等待判断是否配置成功后才持久化
         Map<String, Properties> appName2Config = new HashMap<>();
@@ -84,9 +130,32 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
         configProperties.put(AppConfig.APPNAME, appName);
 
         appName2Config.put(appName, configProperties);
+
+        //如果是更新配置,则只能更新指定配置,其余配置只能固定
+        if(AppStatus.getByStatusDesc(configProperties.getProperty(AppConfig.APPSTATUS)).equals(AppStatus.UPDATE)){
+            Properties origin = PropertiesUtils.map2Properties(configStoreManager.getAppConfigMap(new ApplicationContextInfo(appName, host)));
+            for(Object key: origin.keySet()){
+                if(!AppConfig.CAN_RECONFIG_APPCONFIGS.contains(key)){
+                    if(origin.containsKey(key)){
+                        if(!origin.get(key).equals(configProperties.get(key))){
+                            result.put("result", -1);
+                            result.put("info", String.format("config '%s' can't not be change when app reconfiging", key));
+                            return result;
+                        }
+                    }
+                    else{
+                        result.put("result", -1);
+                        result.put("info", String.format("config '%s' can't not be change when app reconfiging", key));
+                        return result;
+                    }
+                }
+            }
+        }
+
         host2AppName2Config.put(host, appName2Config);
 
-        return Collections.singletonMap("result", 1);
+        result.put("result", 1);
+        return result;
     }
 
     /**
@@ -100,14 +169,14 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     @GET
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/kafkamultithread/{host}/{appName}/{type}")
+    @Path("config/get/{appName}/{type}")
     public Map<String, Object> getAppConfigStr(
             @PathParam("appName") String appName,
-            @PathParam("host") String host,
+            @QueryParam("host") String host,
             @PathParam("type") String type
     ) {
         log.info("get app config string from app '" + appName + "' on host '" + host + "' tansfer to '" + type + "' string from rest call");
-        ApplicationHost appHost = new ApplicationHost(appName, host);
+        ApplicationContextInfo appHost = new ApplicationContextInfo(appName, host);
 
         Map<String, String> config = configStoreManager.getAppConfigMap(appHost);
         if(config != null){
@@ -124,14 +193,7 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
     }
 
     @Override
-    public ConfigFetchResponse getAppConfig(ApplicationHost appHost) {
-        log.info("get app config from app '" + appHost.getAppName() + "' on host '" + appHost.getHost() + "' from rpc call");
-        ConfigFetchResponse result = new ConfigFetchResponse(configStoreManager.getAllAppConfig(appHost), System.currentTimeMillis());
-        return result;
-    }
-
-    @Override
-    public void heartbeat(ConfigFetcherHeartbeat heartbeat) {
+    public ConfigFetcherHeartbeatResponse heartbeat(ConfigFetcherHeartbeatRequest heartbeat) {
         String host = heartbeat.getAppHost().getHost();
         for(String succeedAppName: heartbeat.getSucceedAppNames()){
             Properties config = host2AppName2Config.get(host).remove(succeedAppName);
@@ -139,10 +201,17 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
             configStoreManager.storeConfig(config);
         }
 
-        for(String succeedAppName: heartbeat.getFailAppNames()){
-            host2AppName2Config.get(host).remove(succeedAppName);
+        for(String failAppName: heartbeat.getFailAppNames()){
+            host2AppName2Config.get(host).remove(failAppName);
             //通知Admin
         }
+
+        ApplicationContextInfo appHost = heartbeat.getAppHost();
+
+        log.info("get app config from app '" + appHost.getAppName() + "' on host '" + appHost.getHost() + "' from rpc call");
+        ConfigFetcherHeartbeatResponse result = new ConfigFetcherHeartbeatResponse(configStoreManager.getAllAppConfig(appHost), System.currentTimeMillis());
+
+        return result;
     }
 
     private void resetAppStatus(Properties config){

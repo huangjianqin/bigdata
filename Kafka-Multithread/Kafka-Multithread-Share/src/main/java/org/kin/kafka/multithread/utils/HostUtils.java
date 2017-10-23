@@ -13,7 +13,7 @@ public class HostUtils {
         } catch (UnknownHostException e) {
             e.printStackTrace();
         }
-        return "localhost";
+        return "127.0.0.1";
     }
 
     public static void main(String[] args) {

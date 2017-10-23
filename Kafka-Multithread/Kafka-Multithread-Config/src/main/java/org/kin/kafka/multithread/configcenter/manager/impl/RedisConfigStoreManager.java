@@ -3,7 +3,8 @@ package org.kin.kafka.multithread.configcenter.manager.impl;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.ConfigCenterConfig;
 import org.kin.kafka.multithread.configcenter.manager.ConfigStoreManager;
-import org.kin.kafka.multithread.protocol.app.ApplicationHost;
+import org.kin.kafka.multithread.configcenter.utils.PropertiesUtils;
+import org.kin.kafka.multithread.protocol.app.ApplicationContextInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -45,13 +46,11 @@ public class RedisConfigStoreManager  implements ConfigStoreManager{
             String appName = appConfig.getProperty(AppConfig.APPNAME);
             String key = String.format(KEY_FORMAT, host, appName);
 
-            //先删除key
-            client.del(key);
-
-            client.multi();
             Pipeline pipeline = client.pipelined();
             pipeline.multi();
-            for(Map.Entry<Object, Object> entry:appConfig.entrySet()){
+            //先删除key
+            pipeline.del(key);
+            for(Map.Entry<Object, Object> entry: appConfig.entrySet()){
                 pipeline.hset(key, entry.getKey().toString(), entry.getValue().toString());
             }
             Response<List<Object>> responses = pipeline.exec();
@@ -70,63 +69,39 @@ public class RedisConfigStoreManager  implements ConfigStoreManager{
         }
     }
 
-    @Override
-    public Map<String, String> getAppConfigMap(ApplicationHost appHost) {
+    private Properties getOneAppConfig(String key){
         try(Jedis client = pool.getResource()){
-            Map<String, String> config = new HashMap<>();
-            String key = String.format(KEY_FORMAT, appHost.getHost(), appHost.getAppName());
+            Properties config = new Properties();
+
             Pipeline pipeline = client.pipelined();
             pipeline.multi();
-            for(String hKey: client.hkeys(key)){
-               pipeline.hget(key, hKey).get();
-            }
-            Response<List<Object>> responses = pipeline.exec();
+            Response<Map<String, String>> keyvaluesResp = pipeline.hgetAll(key);
+            pipeline.exec();
             pipeline.sync();
 
-            boolean result = true;
-            int i = 0;
-            for(String hKey: client.hkeys(key)){
-                Object o = responses.get().get(i ++);
-                if(o != null){
-                    config.put(hKey, o.toString());
-                }
-                else{
-                    result = false;
-                    break;
-                }
+            for(Map.Entry<String, String> entry: keyvaluesResp.get().entrySet()){
+                config.put(entry.getKey(), entry.getValue());
             }
 
-            if(result){
-                return config;
-            }
+            return config;
         }
-        return null;
     }
 
     @Override
-    public List<Properties> getAllAppConfig(ApplicationHost appHost) {
+    public Map<String, String> getAppConfigMap(ApplicationContextInfo appHost) {
+        String key = String.format(KEY_FORMAT, appHost.getHost(), appHost.getAppName());
+        return PropertiesUtils.properties2Map(getOneAppConfig(key));
+    }
+
+    @Override
+    public List<Properties> getAllAppConfig(ApplicationContextInfo appHost) {
         List<Properties> configs = new ArrayList<>();
         try(Jedis jedis = pool.getResource()){
-            String rootKey = String.format(KEY_FORMAT, appHost.getHost(), "");
+            String rootKey = String.format(KEY_FORMAT, appHost.getHost(), "*");
             Set<String> keys = jedis.keys(rootKey);
-            for(String configKey: keys){
-                Set<String> childKeys = jedis.hkeys(configKey);
-                Pipeline pipeline = jedis.pipelined();
-                pipeline.multi();
-                for(String childKey: childKeys){
-                    pipeline.hget(childKey, childKey);
-                }
-                List<Object> result = pipeline.exec().get();
-                pipeline.sync();
 
-                String[] childKeysArr = childKeys.toArray(new String[1]);
-
-                Properties config = new Properties();
-                for(int i = 0; i < childKeysArr.length; i++){
-                    config.put(childKeysArr[i], result.get(i));
-                }
-
-                configs.add(config);
+            for(String hkey: keys){
+                configs.add(getOneAppConfig(hkey));
             }
         }
         return configs;

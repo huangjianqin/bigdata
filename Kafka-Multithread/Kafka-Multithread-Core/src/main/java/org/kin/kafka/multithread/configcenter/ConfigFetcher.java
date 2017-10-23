@@ -2,9 +2,9 @@ package org.kin.kafka.multithread.configcenter;
 
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.config.DefaultAppConfig;
-import org.kin.kafka.multithread.domain.ConfigFetchResponse;
-import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeat;
-import org.kin.kafka.multithread.protocol.app.ApplicationHost;
+import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeatResponse;
+import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeatRequest;
+import org.kin.kafka.multithread.protocol.app.ApplicationContextInfo;
 import org.kin.kafka.multithread.protocol.configcenter.DiamondMasterProtocol;
 import org.kin.kafka.multithread.rpc.factory.RPCFactories;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
@@ -54,14 +54,6 @@ public class ConfigFetcher extends Thread{
         log.info("ready to fetch config from config center(" + host + ":" + port + ")");
     }
 
-    public long getFetcherInterval() {
-        return fetcherInterval;
-    }
-
-    public void setFetcherInterval(long fetcherInterval) {
-        this.fetcherInterval = fetcherInterval;
-    }
-
     @Override
     public void run() {
         log.info("start to fetch config");
@@ -71,33 +63,22 @@ public class ConfigFetcher extends Thread{
         heartbeatTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                ApplicationHost appHost = new ApplicationHost("", HostUtils.localhost());
 
-                List<String> tmpSucceedAppNames = succeedAppNames.subList(0, succeedAppNames.size());
-                List<String> tmpFailAppNames = failAppNames.subList(0, succeedAppNames.size());
-                succeedAppNames.removeAll(tmpSucceedAppNames);
-                failAppNames.removeAll(tmpFailAppNames);
-                ConfigFetcherHeartbeat heartbeat = new ConfigFetcherHeartbeat(
-                        appHost,
-                        tmpSucceedAppNames,
-                        tmpFailAppNames,
-                        System.currentTimeMillis());
-                diamondMasterProtocol.heartbeat(heartbeat);
             }
         }, 0, 5 * 1000);
 
         Map<String, Properties> app2Config = null;
-        ApplicationHost myAppHost = new ApplicationHost();
+        ApplicationContextInfo myAppHost = new ApplicationContextInfo();
         myAppHost.setHost(HostUtils.localhost());
         while(!isStopped && !isInterrupted()){
-            ConfigFetchResponse configFetchResponse = diamondMasterProtocol.getAppConfig(myAppHost);
+            ConfigFetcherHeartbeatResponse configFetcherHeartbeatResponse = heartbeat();
 
-            log.info("fetch " + configFetchResponse.getNewConfigs().size() + " configs at " + configFetchResponse.getFetchTime());
+            log.info("fetch " + configFetcherHeartbeatResponse.getNewConfigs().size() + " configs at " + configFetcherHeartbeatResponse.getResponseTime());
 
             long startTime = System.currentTimeMillis();
             //配置内容,格式匹配成功的配置
-            List<Properties> halfSuccessConfigs = AppConfigUtils.allNecessaryCheckAndFill(configFetchResponse.getNewConfigs());
-            List<Properties> failConfigs = configFetchResponse.getNewConfigs();
+            List<Properties> halfSuccessConfigs = AppConfigUtils.allNecessaryCheckAndFill(configFetcherHeartbeatResponse.getNewConfigs());
+            List<Properties> failConfigs = configFetcherHeartbeatResponse.getNewConfigs();
             failConfigs.removeAll(halfSuccessConfigs);
 
             //通知config center配置更新失败,回滚以前的配置
@@ -154,6 +135,21 @@ public class ConfigFetcher extends Thread{
     public void close(){
         log.info("config fetcher closing...");
         isStopped = true;
+    }
+
+    private ConfigFetcherHeartbeatResponse heartbeat(){
+        ApplicationContextInfo appHost = new ApplicationContextInfo("", HostUtils.localhost());
+
+        List<String> tmpSucceedAppNames = succeedAppNames.subList(0, succeedAppNames.size());
+        List<String> tmpFailAppNames = failAppNames.subList(0, succeedAppNames.size());
+        succeedAppNames.removeAll(tmpSucceedAppNames);
+        failAppNames.removeAll(tmpFailAppNames);
+        ConfigFetcherHeartbeatRequest heartbeat = new ConfigFetcherHeartbeatRequest(
+                appHost,
+                tmpSucceedAppNames,
+                tmpFailAppNames,
+                System.currentTimeMillis());
+        return diamondMasterProtocol.heartbeat(heartbeat);
     }
 
     public void configFailAppNames(List<String> failAppNames){

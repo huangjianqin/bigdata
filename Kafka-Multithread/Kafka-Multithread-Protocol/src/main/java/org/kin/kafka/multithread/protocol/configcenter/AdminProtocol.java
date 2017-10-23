@@ -1,8 +1,5 @@
 package org.kin.kafka.multithread.protocol.configcenter;
 
-import org.kin.kafka.multithread.protocol.app.ApplicationConfig;
-import org.kin.kafka.multithread.protocol.app.ApplicationHost;
-
 import java.util.Map;
 
 /**

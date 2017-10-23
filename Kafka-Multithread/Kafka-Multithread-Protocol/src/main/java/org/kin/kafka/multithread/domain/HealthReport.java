@@ -1,9 +1,11 @@
 package org.kin.kafka.multithread.domain;
 
+import java.io.Serializable;
+
 /**
  * Created by huangjianqin on 2017/9/19.
  */
-public class HealthReport{
+public class HealthReport implements Serializable{
     private long containerId;
     private long totalMemory;
     private long freeMemory;

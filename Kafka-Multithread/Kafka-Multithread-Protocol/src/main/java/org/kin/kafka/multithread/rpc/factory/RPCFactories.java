@@ -42,14 +42,14 @@ public class RPCFactories {
         factory.restService(service, serviceImpl, protocolPort);
     }
 
-    public static <T> T client(Class service, String registryAddress){
+    public static <T> T client(Class<T> service, String registryAddress){
         if(factory == null){
             init(DEFAULT_RPCFACTORY);
         }
         return factory.client(service, registryAddress);
     }
 
-    public static<T> T clientWithoutRegistry(Class service, String host, int port){
+    public static<T> T clientWithoutRegistry(Class<T> service, String host, int port){
         if(factory == null){
             init(DEFAULT_RPCFACTORY);
         }

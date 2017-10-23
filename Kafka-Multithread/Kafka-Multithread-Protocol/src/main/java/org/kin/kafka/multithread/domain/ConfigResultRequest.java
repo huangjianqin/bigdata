@@ -1,9 +1,11 @@
 package org.kin.kafka.multithread.domain;
 
+import java.io.Serializable;
+
 /**
  * Created by huangjianqin on 2017/9/25.
  */
-public class ConfigResultRequest {
+public class ConfigResultRequest implements Serializable{
     private String appName;
     private boolean isSucceed;
     private long requestTime;

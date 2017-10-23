@@ -1,5 +1,4 @@
 configstoremanager:
-  class:org.kin.kafka.multithread.configcenter.manager.impl.RedisConfigStoreManager
   server:
     host:localhost
     port:6379

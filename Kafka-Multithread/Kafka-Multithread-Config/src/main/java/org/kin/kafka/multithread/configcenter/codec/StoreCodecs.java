@@ -4,7 +4,9 @@ import org.kin.kafka.multithread.utils.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -15,17 +17,44 @@ public class StoreCodecs {
 
     private static Map<StoreType, StoreCodec> storeCodecMap = new HashMap<>();
 
+    private static String storeCodecClasspath;
     static {
         log.info("loading store codecs...");
-        for(StoreType storeType: StoreType.values()){
-            storeCodecMap.put(storeType, (StoreCodec) ClassUtils.instance(String.format(StoreCodec.classpath, storeType.getTypeDesc())));
-            log.info("loaded " + storeType.getTypeDesc() + " store codec in classpath" + StoreCodec.classpath, storeType.getTypeDesc());
-        }
+        storeCodecClasspath = StoreCodec.class.getName();
+        storeCodecClasspath = storeCodecClasspath.substring(0, storeCodecClasspath.lastIndexOf("."));
+        storeCodecClasspath += ".impl.%sStoreCodec";
+
+        lazyLoadStoreCodecs(StoreType.values());
         log.info("all available store codecs in classpath load");
     }
 
-    public static StoreCodec getCodecByName(String storeType){
-        return storeCodecMap.get(StoreType.valueOf(storeType));
+    private static List<StoreCodec> lazyLoadStoreCodecs(StoreType... storeTypes){
+        List<StoreCodec> storeCodecs = new ArrayList<>();
+        for(StoreType storeType: storeTypes){
+            //首字母大写
+            String storeTypeDesc = storeType.getTypeDesc();
+            char[] storeTypeDescArr = storeTypeDesc.toCharArray();
+            storeTypeDescArr[0] -= 32;
+            storeTypeDesc = new String(storeTypeDescArr);
+
+            StoreCodec storeCodec = (StoreCodec) ClassUtils.instance(String.format(storeCodecClasspath, storeTypeDesc));
+            storeCodecMap.put(storeType, storeCodec);
+
+            storeCodecs.add(storeCodec);
+            log.info(String.format("loaded '%s' store codec in classpath '%s'", storeType.getTypeDesc(), String.format(storeCodecClasspath, storeTypeDesc), storeTypeDesc));
+        }
+
+        return storeCodecs;
+    }
+
+    public static StoreCodec getCodecByName(String storeTypeDesc){
+        StoreType storeType = StoreType.getByDesc(storeTypeDesc);
+        if(storeType != null){
+            return storeCodecMap.get(storeType);
+        }
+        else{
+            return lazyLoadStoreCodecs(storeType).get(0);
+        }
     }
 
     public static StoreCodec getCodecByType(StoreType storeType){
@@ -33,7 +62,7 @@ public class StoreCodecs {
     }
 
     public enum StoreType {
-        JOSN("Json"), YAML("Yaml"), PROPERTIES("Properties");
+        JOSN("json"), YAML("yaml"), PROPERTIES("properties");
 
         private String typeDesc;
 
@@ -47,6 +76,7 @@ public class StoreCodecs {
                     return type;
                 }
             }
+            log.warn(String.format("StoreType enum doesn't has store type '%s'", typeDesc));
             return null;
         }
 

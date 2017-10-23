@@ -13,11 +13,15 @@ public class AppConfig {
     public static final Properties DEFAULT_APPCONFIG = new Properties();
     public static final List<String> REQUIRE_APPCONFIGS = new ArrayList<>();
     public static final Map<String, String> CONFIG2FORMATOR = new HashMap<>();
+    public static final List<String> CAN_RECONFIG_APPCONFIGS = new ArrayList<>();
 
     //common
     //require
     public static final String APPNAME = "appName";
-    //require
+    /**
+     * app所在节点,默认就是localhost
+     * require
+     */
     public static final String APPHOST = "appHost";
     /**
      * RUN
@@ -51,6 +55,7 @@ public class AppConfig {
     //仅支持RESTART和RUN状态
     //require
     public static final String MESSAGEHANDLER = "messagehandler";
+    //只对OPOT和OCOT有效
     public static final String COMMITSTRATEGY = "commitstrategy";
     //end
     //对OPOT,OPMT,OPMT2无效
@@ -75,7 +80,7 @@ public class AppConfig {
 
     //本地
     //config fetcher
-    public static final String CONFIGFETCHER_FETCHERINTERVAL = "configfetcher.fetcherinterval";
+    public static final String CONFIGFETCHER_HEARTBEAT = "configfetcher.heartbeat";
 
     //配置中心节点信息
     public static final String CONFIGCENTER_HOST = "configcenter.host";
@@ -116,7 +121,7 @@ public class AppConfig {
 
         DEFAULT_APPCONFIG.put(PENDINGWINDOW_SLIDINGWINDOW, DefaultAppConfig.DEFAULT_PENDINGWINDOW_SLIDINGWINDOW);
 
-        DEFAULT_APPCONFIG.put(CONFIGFETCHER_FETCHERINTERVAL, DefaultAppConfig.DEFAULT_CONFIGFETCHER_FETCHERINTERVAL);
+        DEFAULT_APPCONFIG.put(CONFIGFETCHER_HEARTBEAT, DefaultAppConfig.DEFAULT_CONFIGFETCHER_HEARTBEAT);
 
         DEFAULT_APPCONFIG.put(CONFIGCENTER_HOST, DefaultAppConfig.DEFAULT_CONFIGCENTER_HOST);
         DEFAULT_APPCONFIG.put(CONFIGCENTER_PORT, DefaultAppConfig.DEFAULT_CONFIGCENTER_PORT);
@@ -162,9 +167,28 @@ public class AppConfig {
 
         CONFIG2FORMATOR.put(PENDINGWINDOW_SLIDINGWINDOW, "\\d*");
 
-        CONFIG2FORMATOR.put(CONFIGFETCHER_FETCHERINTERVAL, "\\d*");
+        CONFIG2FORMATOR.put(CONFIGFETCHER_HEARTBEAT, "\\d*");
 
         CONFIG2FORMATOR.put(CONFIGCENTER_HOST, "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
         CONFIG2FORMATOR.put(CONFIGCENTER_PORT, "\\d{1,5}");
+    }
+
+    static {
+        CAN_RECONFIG_APPCONFIGS.add(MESSAGEFETCHER_POLL_TIMEOUT);
+        CAN_RECONFIG_APPCONFIGS.add(MESSAGEFETCHER_COMMIT_ENABLERETRY);
+        CAN_RECONFIG_APPCONFIGS.add(MESSAGEFETCHER_COMMIT_MAXRETRY);
+
+        CAN_RECONFIG_APPCONFIGS.add(MESSAGEHANDLERMANAGER_MODEL);
+
+        CAN_RECONFIG_APPCONFIGS.add(OPMT_MINTHREADSIZEPERPARTITION);
+        CAN_RECONFIG_APPCONFIGS.add(OPMT_MAXTHREADSIZEPERPARTITION);
+        CAN_RECONFIG_APPCONFIGS.add(OPMT_THREADQUEUESIZEPERPARTITION);
+        CAN_RECONFIG_APPCONFIGS.add(OPMT_HANDLERSIZE);
+
+        CAN_RECONFIG_APPCONFIGS.add(OPMT2_THREADSIZEPERPARTITION);
+
+        CAN_RECONFIG_APPCONFIGS.add(OCOT_CONSUMERNUM);
+
+        CAN_RECONFIG_APPCONFIGS.add(PENDINGWINDOW_SLIDINGWINDOW);
     }
 }

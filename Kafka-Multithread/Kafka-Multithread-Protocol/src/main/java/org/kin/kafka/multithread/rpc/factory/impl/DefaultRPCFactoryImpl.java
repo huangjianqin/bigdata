@@ -2,6 +2,7 @@ package org.kin.kafka.multithread.rpc.factory.impl;
 
 import com.alibaba.dubbo.config.*;
 import org.kin.kafka.multithread.rpc.factory.RPCFactory;
+import org.kin.kafka.multithread.utils.HostUtils;
 
 /**
  * Created by huangjianqin on 2017/9/8.
@@ -11,13 +12,13 @@ import org.kin.kafka.multithread.rpc.factory.RPCFactory;
 public class DefaultRPCFactoryImpl implements RPCFactory {
     @Override
     public String type() {
-        return "DEFAULT";
+        return "dubbo";
     }
 
     @Override
     public void service(Class service, Object serviceImpl, String registryAddress, String protocolName, int protocolPort){
         ApplicationConfig applicationConfig = new ApplicationConfig();
-        applicationConfig.setName(service.getName() + "-service" + applicationConfig.getId());
+        applicationConfig.setName(service.getSimpleName() + "-" + HostUtils.localhost());
 
         RegistryConfig registryConfig = new RegistryConfig();
         registryConfig.setAddress(registryAddress);
@@ -32,6 +33,7 @@ public class DefaultRPCFactoryImpl implements RPCFactory {
         serviceConfig.setRegistry(registryConfig);
         serviceConfig.setProtocol(protocolConfig);
         serviceConfig.setApplication(applicationConfig);
+        serviceConfig.setRetries(5);
 
         serviceConfig.export();
 
@@ -44,27 +46,7 @@ public class DefaultRPCFactoryImpl implements RPCFactory {
     }
 
     private void serviceWithoutRegistry(Class service, Object serviceImpl, String protocolName, int protocolPort){
-        ApplicationConfig applicationConfig = new ApplicationConfig();
-        applicationConfig.setName(service.getName() + "-service" + applicationConfig.getId());
-
-        ProtocolConfig protocolConfig = new ProtocolConfig();
-        protocolConfig.setName(protocolName);
-        protocolConfig.setPort(protocolPort);
-
-        ServiceConfig serviceConfig = new ServiceConfig();
-        serviceConfig.setInterface(service.getName());
-        serviceConfig.setRef(serviceImpl);
-        serviceConfig.setProtocol(protocolConfig);
-        serviceConfig.setApplication(applicationConfig);
-
-        serviceConfig.export();
-
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                serviceConfig.unexport();
-            }
-        }));
+        service(service, serviceImpl, "N/A", protocolName, protocolPort);
     }
 
     @Override
@@ -78,7 +60,7 @@ public class DefaultRPCFactoryImpl implements RPCFactory {
     }
 
     @Override
-    public <T> T client(Class service, String registryAddress){
+    public <T> T client(Class<T> service, String registryAddress){
         ApplicationConfig applicationConfig = new ApplicationConfig();
         applicationConfig.setName(service.getName() + "-client" + applicationConfig.getId());
 
@@ -86,8 +68,10 @@ public class DefaultRPCFactoryImpl implements RPCFactory {
         registryConfig.setAddress(registryAddress);
 
         ReferenceConfig referenceConfig = new ReferenceConfig();
+        referenceConfig.setInterface(service);
         referenceConfig.setApplication(applicationConfig);
         referenceConfig.setRegistry(registryConfig);
+        referenceConfig.setRetries(5);
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
@@ -100,9 +84,15 @@ public class DefaultRPCFactoryImpl implements RPCFactory {
     }
 
     @Override
-    public <T> T clientWithoutRegistry(Class service, String host, int port){
+    public <T> T clientWithoutRegistry(Class<T> service, String host, int port){
+        ApplicationConfig applicationConfig = new ApplicationConfig();
+        applicationConfig.setName(service.getName() + "-client" + applicationConfig.getId());
+
         ReferenceConfig referenceConfig = new ReferenceConfig();
+        referenceConfig.setApplication(applicationConfig);
+        referenceConfig.setInterface(service);
         referenceConfig.setUrl("dubbo://" + host + ":" + port + "/" + service.getName());
+        referenceConfig.setRetries(5);
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override

@@ -49,7 +49,7 @@ public class DefaultAppConfig {
     public static final String DEFAULT_PENDINGWINDOW_SLIDINGWINDOW = "1000";
 
     //config fetcher
-    public static final String DEFAULT_CONFIGFETCHER_FETCHERINTERVAL = 3 * 1000 + "";
+    public static final String DEFAULT_CONFIGFETCHER_HEARTBEAT = 3 * 1000 + "";
 
     //本地
     //配置中心节点信息

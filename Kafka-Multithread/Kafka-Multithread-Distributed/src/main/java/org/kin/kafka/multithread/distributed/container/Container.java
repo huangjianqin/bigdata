@@ -127,6 +127,14 @@ public abstract class Container implements ContainerMasterProtocol {
                     break;
                 case UPDATE:
                     if(appManager.containsAppName(appName)){
+                        //只拿可更新的配置,其余不变配置不管
+                        Iterator<Map.Entry<Object, Object>> iterator = config.entrySet().iterator();
+                        while(iterator.hasNext()){
+                            Object key = iterator.next().getKey();
+                            if(!AppConfig.CAN_RECONFIG_APPCONFIGS.contains(key)){
+                                iterator.remove();
+                            }
+                        }
                         callable = new UpdateConfigCallable(config);
                     }
                     else{
@@ -268,6 +276,7 @@ public abstract class Container implements ContainerMasterProtocol {
                 e.printStackTrace();
                 log.warn(appName + "deploy has something wrong, throw " + e.getCause() + " exception and mark '" + e.getMessage() + "' message");
                 nodeMasterProtocol.commitConfigResultRequest(new ConfigResultRequest(appName, false, System.currentTimeMillis(), e));
+                //考虑更新配置失败时,回滚
             }
             finally {
                 updateQueue(appName);

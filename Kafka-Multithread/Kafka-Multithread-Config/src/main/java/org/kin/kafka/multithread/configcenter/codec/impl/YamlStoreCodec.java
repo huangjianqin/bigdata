@@ -15,9 +15,7 @@ import java.util.Map;
 public class YamlStoreCodec implements StoreCodec {
     @Override
     public Map<String, String> deSerialize(String source) {
-        Map<String, String> result = new HashMap<>();
-        YAMLUtils.transfer2Map((Map<String, Object>) Yaml.load(source), result, "");
-        return result;
+        return YAMLUtils.transfer2Map((Map<String, Object>) Yaml.load(source));
     }
 
     @Override
@@ -30,9 +28,7 @@ public class YamlStoreCodec implements StoreCodec {
 
     @Override
     public String serialize(Map<String, String> serialized) {
-        Map<String, Object> yaml = new HashMap<>();
-        YAMLUtils.transfer2Yaml(yaml, serialized);
-        return Yaml.dump(yaml);
+        return YAMLUtils.transfer2YamlStr(YAMLUtils.transfer2Yaml(serialized));
     }
 
     @Override

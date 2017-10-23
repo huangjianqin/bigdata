@@ -18,7 +18,7 @@ public class PropertiesUtils {
 
     public static Properties map2Properties(Map<String, String> map){
         Properties properties = new Properties();
-        for(String key: map.values()){
+        for(String key: map.keySet()){
             properties.put(key, map.get(key));
         }
         return properties;

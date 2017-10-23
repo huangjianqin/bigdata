@@ -3,6 +3,8 @@ package org.kin.kafka.multithread.configcenter;
 import org.kin.kafka.multithread.protocol.configcenter.AdminProtocol;
 import org.kin.kafka.multithread.protocol.configcenter.DiamondMasterProtocol;
 import org.kin.kafka.multithread.rpc.factory.RPCFactories;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Properties;
 
@@ -11,23 +13,19 @@ import java.util.Properties;
  */
 public class DiamondRunner {
     public static void main(String[] args) {
-        Diamond diamond = new Diamond();
-        Properties config = diamond.getConfig();
-        RPCFactories.serviceWithoutRegistry(
-                DiamondMasterProtocol.class,
-                diamond,
-                Integer.valueOf(config.get(ConfigCenterConfig.DIAMONDMASTERPROTOCOL_PORT).toString())
-        );
-        RPCFactories.serviceWithoutRegistry(AdminProtocol.class,
-                diamond,
-                Integer.valueOf(config.get(ConfigCenterConfig.ADMINPROTOCOL_PORT).toString())
-        );
-
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                diamond.close();
+        String configPath = "";
+        if(args.length > 0){
+            if(args[0] != null && !args[0].equals("")){
+                configPath = args[0];
             }
-        }));
+        }
+
+        Diamond diamond = configPath.equals("")? new Diamond() : new Diamond(configPath);
+
+        try{
+            diamond.start();
+        }finally {
+            diamond.close();
+        }
     }
 }

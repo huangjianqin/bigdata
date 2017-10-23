@@ -5,15 +5,19 @@ import java.io.Serializable;
 /**
  * Created by huangjianqin on 2017/9/10.
  */
-public class ApplicationHost implements Serializable{
+public class ApplicationContextInfo implements Serializable{
     private String appName;
     private String host;
 
-    public ApplicationHost() {
+    public ApplicationContextInfo() {
     }
 
-    public ApplicationHost(String appName, String host) {
+    public ApplicationContextInfo(String appName, String host) {
         this.appName = appName;
+        this.host = host;
+    }
+
+    public ApplicationContextInfo(String host) {
         this.host = host;
     }
 

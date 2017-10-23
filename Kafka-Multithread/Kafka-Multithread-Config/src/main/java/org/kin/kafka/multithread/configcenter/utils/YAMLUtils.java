@@ -30,6 +30,12 @@ public class YAMLUtils {
         Map<String, Object> yaml = loadYML(configPath);
         Properties properties = new Properties();
         transfer2Properties(yaml, properties, "");
+
+        //因为jyaml会识别类型,所有有些数字型数据需要转换为字符型数据
+        for(Object key: properties.keySet()){
+            properties.put(key, properties.get(key).toString());
+        }
+
         return properties;
     }
 
@@ -39,7 +45,7 @@ public class YAMLUtils {
      * @param properties
      * @param keyHead
      */
-    public static void transfer2Properties(Map<String, Object> yaml, Properties properties, String keyHead){
+    private static void transfer2Properties(Map<String, Object> yaml, Properties properties, String keyHead){
         for(String key: yaml.keySet()){
             Object value = yaml.get(key);
             if(value instanceof HashMap){
@@ -54,6 +60,7 @@ public class YAMLUtils {
                 }
             }
         }
+
     }
 
     /**
@@ -61,7 +68,7 @@ public class YAMLUtils {
      * @param yaml
      * @param map
      */
-    public static void transfer2Map(Map<String, Object> yaml, Map<String, String> map, String keyHead){
+    private static void transfer2Map(Map<String, Object> yaml, Map<String, String> map, String keyHead){
         for(String key: yaml.keySet()){
             Object value = yaml.get(key);
             if(value instanceof HashMap){
@@ -78,12 +85,31 @@ public class YAMLUtils {
         }
     }
 
+    public static Map<String, String> transfer2Map(Map<String, Object> yaml){
+        Map<String, String> config = new HashMap<>();
+        transfer2Map(yaml, config, "");
+        return config;
+    }
+
+    /**
+     * 将配置转换为Yaml字符串
+     * @param yaml
+     * @return
+     */
+    public static String transfer2YamlStr(Map<String, Object> yaml){
+        return Yaml.dump(yaml);
+    }
+
+    public static String transfer2YamlStr(Properties config){
+        return transfer2YamlStr(transfer2Yaml(config));
+    }
+
     /**
      * 将A.B.C的properties的map格式转换多层嵌套map
      * @param yaml
      * @param properties
      */
-    public static void transfer2Yaml(Map<String, Object> yaml, Map<String, String> config){
+    private static void transfer2Yaml(Map<String, Object> yaml, Map<String, String> config){
         for(Object key: config.keySet()){
             String keyStr = (String) key;
             if(keyStr.contains("\\.")){
@@ -94,11 +120,21 @@ public class YAMLUtils {
                 }
                 deepMap(nextLevel, split[1], config.get(key));
             }
+            else {
+                yaml.put(key.toString(), config.get(key));
+            }
         }
+    }
+
+    public static Map<String, Object> transfer2Yaml(Map<String, String> config){
+        Map<String, Object> yaml = new HashMap<>();
+        transfer2Yaml(yaml, config);
+        return yaml;
     }
 
     /**
      * 不断递归创建多层嵌套map
+     * 尾递归,提交性能
      * @param nowLevel
      * @param key 下面层数的key+.组成
      * @param value
@@ -121,7 +157,7 @@ public class YAMLUtils {
      * @param yaml
      * @param properties
      */
-    public static void transfer2Yaml(Map<String, Object> yaml, Properties config){
+    private static void transfer2Yaml(Map<String, Object> yaml, Properties config){
         for(Object key: config.keySet()){
             String keyStr = (String) key;
             if(keyStr.contains("\\.")){
@@ -132,6 +168,16 @@ public class YAMLUtils {
                 }
                 deepMap(nextLevel, split[1], config.get(key));
             }
+            else {
+                yaml.put(key.toString(), config.get(key));
+            }
         }
     }
+
+    public static Map<String, Object> transfer2Yaml(Properties config){
+        Map<String, Object> yaml = new HashMap<>();
+        transfer2Yaml(yaml, config);
+        return yaml;
+    }
+
 }
