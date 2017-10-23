@@ -43,27 +43,4 @@ public class ContainerImpl extends Container {
     public void doClose() {
         isStopped = true;
     }
-
-    public static void main(String[] args) {
-        //利用-D设置参数
-        long containerId = Long.valueOf(System.getProperty("containerId"));
-        int containerProtocolPort = Integer.valueOf(System.getProperty("containerProtocolPort"));
-        long idleTimeout = Long.valueOf(System.getProperty(NodeConfig.CONTAINER_IDLETIMEOUT));
-        long reportInternal = Long.valueOf(System.getProperty(NodeConfig.CONTAINER_HEALTHREPORT_INTERNAL));
-
-        long nodeId = Long.valueOf(System.getProperty("nodeId"));
-        int nodeProtocolPort = Integer.valueOf(System.getProperty(NodeConfig.NODE_PROTOCOL_PORT));
-
-        ContainerContext containerContext = new ContainerContext(containerId, containerProtocolPort, idleTimeout, reportInternal);
-        NodeContext nodeContext = new NodeContext(nodeId, nodeProtocolPort);
-
-        Container container = new ContainerImpl(containerContext, nodeContext);
-        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-            @Override
-            public void run() {
-                container.close();
-            }
-        }));
-        container.start();
-    }
 }

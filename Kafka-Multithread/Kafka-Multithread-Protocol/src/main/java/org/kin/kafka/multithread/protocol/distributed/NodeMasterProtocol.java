@@ -11,4 +11,5 @@ import org.kin.kafka.multithread.domain.HealthReport;
 public interface NodeMasterProtocol {
     void report(HealthReport report);
     void commitConfigResultRequest(ConfigResultRequest configResultRequest);
+    void containerClosed(long containerId);
 }

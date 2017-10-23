@@ -1,7 +1,7 @@
 package org.kin.kafka.multithread.distributed.node;
 
 import org.kin.kafka.multithread.config.AppConfig;
-import org.kin.kafka.multithread.configcenter.ConfigFetcher;
+import org.kin.kafka.multithread.distributed.configcenter.ConfigFetcher;
 import org.kin.kafka.multithread.distributed.ChildRunModel;
 import org.kin.kafka.multithread.distributed.container.impl.JVMContainer;
 import org.kin.kafka.multithread.distributed.container.allocator.ContainerAllocator;
@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Created by huangjianqin on 2017/9/12.
@@ -48,13 +48,15 @@ public class Node implements NodeMasterProtocol{
     private final Properties nodeConfig;
     private boolean isStopped = false;
 
-    private LinkedBlockingQueue<Properties> appConfigs;
+    //配置队列
+    private LinkedBlockingDeque<Properties> appConfigsQueue;
+    private int containerAllocateRetry;
 
     public Node() {
         //加载配置
         this.nodeConfig = new Properties();
         try {
-            this.nodeConfig.load(getClass().getClassLoader().getResourceAsStream("application.properties.template"));
+            this.nodeConfig.load(getClass().getClassLoader().getResourceAsStream("node.properties.template"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -75,17 +77,20 @@ public class Node implements NodeMasterProtocol{
     public void init(){
         log.info("node initing...");
 
-        this.appConfigs =  new LinkedBlockingQueue<>();
+        this.appConfigsQueue =  new LinkedBlockingDeque<>();
         this.containerAllocator = new LocalContainerAllocator(id2Container, nodeConfig);
         this.containerAllocator.init();
         log.info("container allocator(" + containerAllocator.getClass().getName() + ") inited");
 
-        String configCenterHost = nodeConfig.getProperty(AppConfig.CONFIGCENTER_HOST);
-        int configCenterPort = Integer.valueOf(nodeConfig.getProperty(AppConfig.CONFIGCENTER_PORT));
+        String configCenterHost = nodeConfig.getProperty(NodeConfig.CONFIGCENTER_HOST);
+        int configCenterPort = Integer.valueOf(nodeConfig.getProperty(NodeConfig.CONFIGCENTER_PORT));
         int nodeProtocolPort = Integer.valueOf(nodeConfig.getProperty(NodeConfig.NODE_PROTOCOL_PORT));
+        int heartbeatInterval = Integer.valueOf(nodeConfig.getProperty(NodeConfig.CONFIGFETCHER_HEARTBEAT));
 
-        this.configFetcher = new ConfigFetcher(configCenterHost, configCenterPort, appConfigs);
+        this.configFetcher = new ConfigFetcher(configCenterHost, configCenterPort, appConfigsQueue, heartbeatInterval);
         this.configFetcher.start();
+
+        this.containerAllocateRetry = Integer.valueOf(nodeConfig.getProperty(NodeConfig.CONTAINER_ALLOCATE_RETRY));
 
         RPCFactories.serviceWithoutRegistry(NodeMasterProtocol.class, this, nodeProtocolPort);
         log.info("NodeMasterProtocol rpc interface inited, binding " + nodeProtocolPort + " port");
@@ -94,6 +99,7 @@ public class Node implements NodeMasterProtocol{
             @Override
             public void run() {
                 configFetcher.close();
+                Node.this.close();
             }
         }));
         log.info("node inited");
@@ -106,9 +112,10 @@ public class Node implements NodeMasterProtocol{
         int nodeProtocolPort = Integer.valueOf(nodeConfig.getProperty(NodeConfig.NODE_PROTOCOL_PORT));
         int containerInitProtocolPort = Integer.valueOf(nodeConfig.getProperty(NodeConfig.CONTAINER_PROTOCOL_INITPORT));
         NodeContext nodeContext = new NodeContext(nodeId, nodeProtocolPort);
+        int nowContainerAllocateRetry = 0;
         while(!isStopped && !Thread.currentThread().isInterrupted()){
             try {
-                Properties newConfig = appConfigs.take();
+                Properties newConfig = appConfigsQueue.take();
 
                 ChildRunModel runModel = ChildRunModel.getByName(newConfig.getProperty(AppConfig.APP_CHILD_RUN_MODEL));
 
@@ -145,18 +152,30 @@ public class Node implements NodeMasterProtocol{
                         //如果能再现有container中运行app,则返回现有container的containerMasterProtocol接口
                         //否则,利用containerContext参数创建新的container,并返回该container的containerMasterProtocol接口
                         containerMasterProtocol = containerAllocator.containerAllocate(containerContext, nodeContext);
-                        if(containerMasterProtocol == null){
-                            configFetcher.configFailConfigs(Collections.singletonList(newConfig));
-                        }
                         break;
                     default:
                         throw new IllegalStateException("unknown AppChildRunModel '" + newConfig.getProperty(AppConfig.APP_CHILD_RUN_MODEL) + "'");
                 }
-                //更新配置或运行新实例
-                containerMasterProtocol.updateConfig(Collections.singletonList(newConfig));
+                try{
+                    //更新配置或运行新实例
+                    containerMasterProtocol.updateConfig(Collections.singletonList(newConfig));
+                }catch (Exception ex){
+                    ex.printStackTrace();
+                    nowContainerAllocateRetry ++;
+                    if(nowContainerAllocateRetry <= containerAllocateRetry){
+                        log.info("{} times to retry to allocate a container for app '{}'", newConfig.getProperty(AppConfig.APPNAME));
+                        //把配置重新插入队列头,这样当前重试次数仍然对该配置有效
+                        appConfigsQueue.offerFirst(newConfig);
+                    }
+                    else {
+                        nowContainerAllocateRetry = 0;
+                        configFetcher.configFailConfigs(Collections.singletonList(newConfig));
+                    }
+                }
 
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                log.error("node '{}' run wrong", nodeId);
+                this.close();
             }
         }
         log.info("node closed");
@@ -186,6 +205,11 @@ public class Node implements NodeMasterProtocol{
         }
     }
 
+    @Override
+    public void containerClosed(long containId) {
+        containerAllocator.containerClosed(containId);
+    }
+
     private long getContainerId(){
         long min = nodeId * CONTAINER_NUM_LIMIT + 1;
         long max = (nodeId + 1) * CONTAINER_NUM_LIMIT - 1;
@@ -199,11 +223,5 @@ public class Node implements NodeMasterProtocol{
 
     private int getContainerProtocolPort(int containerInitProtocolPort, long containerId){
         return containerInitProtocolPort + (int)(containerId - nodeId * CONTAINER_NUM_LIMIT);
-    }
-
-    public static void main(String[] args) {
-        Node node = new Node();
-        node.init();
-        node.start();
     }
 }

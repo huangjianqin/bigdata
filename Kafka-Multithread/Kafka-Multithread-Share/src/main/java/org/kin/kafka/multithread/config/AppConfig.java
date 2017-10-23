@@ -78,14 +78,6 @@ public class AppConfig {
     //pendingwindow
     public static final String PENDINGWINDOW_SLIDINGWINDOW = "slidingWindow";
 
-    //本地
-    //config fetcher
-    public static final String CONFIGFETCHER_HEARTBEAT = "configfetcher.heartbeat";
-
-    //配置中心节点信息
-    public static final String CONFIGCENTER_HOST = "configcenter.host";
-    public static final String CONFIGCENTER_PORT = "configcenter.port";
-
     //container
     /**
      * jvm,与app同一jvm
@@ -121,11 +113,6 @@ public class AppConfig {
 
         DEFAULT_APPCONFIG.put(PENDINGWINDOW_SLIDINGWINDOW, DefaultAppConfig.DEFAULT_PENDINGWINDOW_SLIDINGWINDOW);
 
-        DEFAULT_APPCONFIG.put(CONFIGFETCHER_HEARTBEAT, DefaultAppConfig.DEFAULT_CONFIGFETCHER_HEARTBEAT);
-
-        DEFAULT_APPCONFIG.put(CONFIGCENTER_HOST, DefaultAppConfig.DEFAULT_CONFIGCENTER_HOST);
-        DEFAULT_APPCONFIG.put(CONFIGCENTER_PORT, DefaultAppConfig.DEFAULT_CONFIGCENTER_PORT);
-
         DEFAULT_APPCONFIG.put(APP_CHILD_RUN_MODEL, DefaultAppConfig.DEFAULT_APP_CHILD_RUN_MODEL);
     }
 
@@ -156,21 +143,17 @@ public class AppConfig {
         CONFIG2FORMATOR.put(COMMITSTRATEGY, ".*");
         CONFIG2FORMATOR.put(CONSUMERREBALANCELISTENER, ".*");
 
-        CONFIG2FORMATOR.put(OPMT_MAXTHREADSIZEPERPARTITION, "\\d*");
-        CONFIG2FORMATOR.put(OPMT_MINTHREADSIZEPERPARTITION, "\\d*");
-        CONFIG2FORMATOR.put(OPMT_THREADQUEUESIZEPERPARTITION, "\\d*");
-        CONFIG2FORMATOR.put(OPMT_HANDLERSIZE, "\\d*");
+        CONFIG2FORMATOR.put(OPMT_MAXTHREADSIZEPERPARTITION, "\\d+");
+        CONFIG2FORMATOR.put(OPMT_MINTHREADSIZEPERPARTITION, "\\d+");
+        CONFIG2FORMATOR.put(OPMT_THREADQUEUESIZEPERPARTITION, "\\d+");
+        CONFIG2FORMATOR.put(OPMT_HANDLERSIZE, "\\d+");
 
-        CONFIG2FORMATOR.put(OPMT2_THREADSIZEPERPARTITION, "\\d*");
+        CONFIG2FORMATOR.put(OPMT2_THREADSIZEPERPARTITION, "\\d+");
 
-        CONFIG2FORMATOR.put(OCOT_CONSUMERNUM, "\\d*");
+        CONFIG2FORMATOR.put(OCOT_CONSUMERNUM, "\\d+");
 
-        CONFIG2FORMATOR.put(PENDINGWINDOW_SLIDINGWINDOW, "\\d*");
+        CONFIG2FORMATOR.put(PENDINGWINDOW_SLIDINGWINDOW, "\\d+");
 
-        CONFIG2FORMATOR.put(CONFIGFETCHER_HEARTBEAT, "\\d*");
-
-        CONFIG2FORMATOR.put(CONFIGCENTER_HOST, "\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}");
-        CONFIG2FORMATOR.put(CONFIGCENTER_PORT, "\\d{1,5}");
     }
 
     static {

@@ -129,6 +129,7 @@ public class LocalContainerAllocator implements ContainerAllocator {
         for(Long idleContainerId: idleContainers){
             log.info("container(id=" + idleContainerId + ") is idle timeout, ask it to close");
             id2Container.remove(idleContainerId).close();
+            containerClosed(idleContainerId);
         }
     }
 
@@ -242,6 +243,17 @@ public class LocalContainerAllocator implements ContainerAllocator {
     }
 
     @Override
+    public void containerClosed(long containerId) {
+        id2IdleTimes.remove(containerId);
+        id2SelectTimes.remove(containerId);
+        id2HealthReport.remove(containerId);
+        id2Container.remove(containerId);
+    }
+
+    @Override
     public void close() {
+        for(ContainerMasterProtocol container: id2Container.values()){
+            container.close();
+        }
     }
 }

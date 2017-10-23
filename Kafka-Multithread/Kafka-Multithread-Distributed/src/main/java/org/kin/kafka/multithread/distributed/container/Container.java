@@ -77,6 +77,13 @@ public abstract class Container implements ContainerMasterProtocol {
         this.nQueue = new HashMap<>();
         this.deployingAppNames = Collections.synchronizedSet(new HashSet<>());
 
+        Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+            @Override
+            public void run() {
+                Container.this.close();
+            }
+        }));
+
         doStart();
         log.info("container(id=" + containerId + ", nodeId=" + belong2 + ") started");
 
@@ -90,6 +97,8 @@ public abstract class Container implements ContainerMasterProtocol {
         log.info("container(id=" + containerId + ", nodeId=" + belong2 + ") closing");
         scheduledExecutorService.shutdownNow();
         appDeployPool.shutdownNow();
+        //通知Node container关闭了
+        nodeMasterProtocol.containerClosed(containerId);
         doClose();
         log.info("container(id=" + containerId + ", nodeId=" + belong2 + ") closed");
     }

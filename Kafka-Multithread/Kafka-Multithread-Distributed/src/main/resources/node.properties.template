@@ -1,0 +1,10 @@
+node.protocol.port=60100
+container.protocol.initport=60101
+container.idletiemout=6000000
+container.healthreport.internal=1000
+container.allocate.retry=3
+
+#configcenter config
+configcenter.host=localhost
+configcenter.port=60001
+configfetcher.heartbeat=3000

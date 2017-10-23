@@ -14,5 +14,6 @@ public interface ContainerAllocator {
     void init();
     ContainerMasterProtocol containerAllocate(ContainerContext containerContext, NodeContext nodeContext);
     void updateContainerStatus(HealthReport healthReport);
+    void containerClosed(long containerId);
     void close();
 }

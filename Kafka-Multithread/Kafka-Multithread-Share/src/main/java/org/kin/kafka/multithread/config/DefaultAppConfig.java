@@ -48,14 +48,6 @@ public class DefaultAppConfig {
     //pendingwindow
     public static final String DEFAULT_PENDINGWINDOW_SLIDINGWINDOW = "1000";
 
-    //config fetcher
-    public static final String DEFAULT_CONFIGFETCHER_HEARTBEAT = 3 * 1000 + "";
-
-    //本地
-    //配置中心节点信息
-    public static final String DEFAULT_CONFIGCENTER_HOST = "localhost";
-    public static final String DEFAULT_CONFIGCENTER_PORT = "60001";
-
     //container
     /**
      * jvm,与app同一jvm

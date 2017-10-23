@@ -1,7 +1,7 @@
-package org.kin.kafka.multithread.configcenter;
+package org.kin.kafka.multithread.distributed.configcenter;
 
 import org.kin.kafka.multithread.config.AppConfig;
-import org.kin.kafka.multithread.config.DefaultAppConfig;
+import org.kin.kafka.multithread.distributed.node.config.DefaultNodeConfig;
 import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeatResponse;
 import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeatRequest;
 import org.kin.kafka.multithread.protocol.app.ApplicationContextInfo;
@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Created by hjq on 2017/6/21.
@@ -26,28 +26,28 @@ public class ConfigFetcher extends Thread{
     private boolean isStopped = false;
     //用于防止同时两个配置在生效,导致组件同时配置两个配置而导致最后配置信息不一致,不完整
     //异步触发应用重构配置
-    private LinkedBlockingQueue<Properties> configQueue;
+    private LinkedBlockingDeque<Properties> configQueue;
     //默认每3秒扫描一次
-    private long fetcherInterval = 3 * 1000;
+    private long heartbeatInterval;
     private DiamondMasterProtocol diamondMasterProtocol;
 
-    //与配置中心Diamond的定时心跳,不可配置,主要用于反馈配置是否生效
-    private Timer heartbeatTimer;
     private List<String> succeedAppNames = new ArrayList<>();
     private List<String> failAppNames = new ArrayList<>();
 
-    public ConfigFetcher(LinkedBlockingQueue<Properties> configQueue) {
+    public ConfigFetcher(LinkedBlockingDeque<Properties> configQueue) {
         super("ConfigFetcher");
         //创建与配置中心的RPC接口
-        String host = DefaultAppConfig.DEFAULT_CONFIGCENTER_HOST;
-        int port = Integer.valueOf(DefaultAppConfig.DEFAULT_CONFIGCENTER_PORT);
+        String host = DefaultNodeConfig.DEFAULT_CONFIGCENTER_HOST;
+        int port = Integer.valueOf(DefaultNodeConfig.DEFAULT_CONFIGCENTER_PORT);
+        heartbeatInterval = Integer.valueOf(DefaultNodeConfig.DEFAULT_CONFIGFETCHER_HEARTBEAT);
         this.diamondMasterProtocol = RPCFactories.clientWithoutRegistry(DiamondMasterProtocol.class, host, port);
         this.configQueue = configQueue;
         log.info("ready to fetch config from config center(" + host + ":" + port + ")");
     }
 
-    public ConfigFetcher(String host, int port, LinkedBlockingQueue<Properties> configQueue) {
+    public ConfigFetcher(String host, int port, LinkedBlockingDeque<Properties> configQueue, int heartbeatInterval) {
         super("ConfigFetcher");
+        heartbeatInterval = heartbeatInterval;
         //创建与配置中心的RPC接口
         this.diamondMasterProtocol = RPCFactories.clientWithoutRegistry(DiamondMasterProtocol.class, host, port);
         this.configQueue = configQueue;
@@ -57,15 +57,6 @@ public class ConfigFetcher extends Thread{
     @Override
     public void run() {
         log.info("start to fetch config");
-
-        //启动定时心跳
-        heartbeatTimer = new Timer();
-        heartbeatTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-
-            }
-        }, 0, 5 * 1000);
 
         Map<String, Properties> app2Config = null;
         ApplicationContextInfo myAppHost = new ApplicationContextInfo();
@@ -122,8 +113,8 @@ public class ConfigFetcher extends Thread{
             long endTime = System.currentTimeMillis();
 
             try {
-                if(endTime - startTime < fetcherInterval){
-                    sleep(fetcherInterval - (endTime - startTime));
+                if(endTime - startTime < heartbeatInterval){
+                    sleep(heartbeatInterval - (endTime - startTime));
                 }
             } catch (InterruptedException e) {
                 e.printStackTrace();
