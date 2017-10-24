@@ -6,11 +6,13 @@ package org.kin.kafka.multithread.distributed.node;
 public class NodeContext {
     private long nodeId;
     private int protocolPort;
+    private String host;
 
     public NodeContext() {
     }
 
-    public NodeContext(long nodeId, int protocolPort) {
+    public NodeContext(String host, long nodeId, int protocolPort) {
+        this.host = host;
         this.nodeId = nodeId;
         this.protocolPort = protocolPort;
     }
@@ -21,5 +23,13 @@ public class NodeContext {
 
     public int getProtocolPort() {
         return protocolPort;
+    }
+
+    public String getHost() {
+        return host;
+    }
+
+    public void setHost(String host) {
+        this.host = host;
     }
 }

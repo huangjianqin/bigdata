@@ -4,6 +4,7 @@ import org.kin.kafka.multithread.distributed.container.impl.ContainerImpl;
 import org.kin.kafka.multithread.distributed.node.ContainerContext;
 import org.kin.kafka.multithread.distributed.node.NodeContext;
 import org.kin.kafka.multithread.distributed.node.config.NodeConfig;
+import org.kin.kafka.multithread.utils.HostUtils;
 
 /**
  * Created by huangjianqin on 2017/10/23.
@@ -20,7 +21,7 @@ public class ContainerRunner {
         int nodeProtocolPort = Integer.valueOf(System.getProperty(NodeConfig.NODE_PROTOCOL_PORT));
 
         ContainerContext containerContext = new ContainerContext(containerId, containerProtocolPort, idleTimeout, reportInternal);
-        NodeContext nodeContext = new NodeContext(nodeId, nodeProtocolPort);
+        NodeContext nodeContext = new NodeContext(HostUtils.localhost(), nodeId, nodeProtocolPort);
 
         Container container = new ContainerImpl(containerContext, nodeContext);
 

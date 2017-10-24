@@ -14,10 +14,20 @@ import java.util.Properties;
 public interface ConfigStoreManager{
     //appHost:appName
     String KEY_FORMAT = "%s:%s";
+    //临时配置
+    String TMP_KEY_FORMAT = "%s:%s_tmp";
+    //临时配置_是否被fetch的标识
+    String FLAG_KEY_FORMAT = "%s:%s_flag";
+    String FLAG_FETCHED = "1";
+    String FLAG_PENDING = "0";
 
     void setup(Properties config);
     void clearup();
+    boolean isCanStoreConfig(ApplicationContextInfo applicationContextInfo);
     boolean storeConfig(Properties appConfig);
-    Map<String, String> getAppConfigMap(ApplicationContextInfo appHost);
+    boolean realStoreConfig(ApplicationContextInfo applicationContextInfo);
+    boolean delTmpConfig(ApplicationContextInfo applicationContextInfo);
+    Map<String, String> getAppConfigMap(ApplicationContextInfo applicationContextInfo);
     List<Properties> getAllAppConfig(ApplicationContextInfo appHost);
+    List<Properties> getAllTmpAppConfig(ApplicationContextInfo appHost);
 }

@@ -1,12 +1,14 @@
 package org.kin.kafka.multithread.domain;
 
+import org.kin.kafka.multithread.protocol.app.ApplicationContextInfo;
+
 import java.io.Serializable;
 
 /**
  * Created by huangjianqin on 2017/9/25.
  */
 public class ConfigResultRequest implements Serializable{
-    private String appName;
+    private ApplicationContextInfo applicationContextInfo;
     private boolean isSucceed;
     private long requestTime;
     private Throwable e;
@@ -14,20 +16,21 @@ public class ConfigResultRequest implements Serializable{
     public ConfigResultRequest() {
     }
 
-    public ConfigResultRequest(String appName, boolean isSucceed, long requestTime, Throwable e) {
-        this.appName = appName;
+    public ConfigResultRequest(ApplicationContextInfo applicationContextInfo, boolean isSucceed, long requestTime, Throwable e) {
+        this.applicationContextInfo = applicationContextInfo;
         this.isSucceed = isSucceed;
         this.requestTime = requestTime;
         this.e = e;
     }
 
-    public String getAppName() {
-        return appName;
+    public ApplicationContextInfo getApplicationContextInfo() {
+        return applicationContextInfo;
     }
 
-    public void setAppName(String appName) {
-        this.appName = appName;
+    public void setApplicationContextInfo(ApplicationContextInfo applicationContextInfo) {
+        this.applicationContextInfo = applicationContextInfo;
     }
+
 
     public boolean isSucceed() {
         return isSucceed;

@@ -11,14 +11,19 @@ import java.util.List;
  */
 public class ConfigFetcherHeartbeatRequest implements Serializable {
     private ApplicationContextInfo appHost;
-    private List<String> succeedAppNames = new ArrayList<>();
-    private List<String> failAppNames = new ArrayList<>();
+    private List<ApplicationContextInfo> succeedAppNames = new ArrayList<>();
+    private List<ApplicationContextInfo> failAppNames = new ArrayList<>();
     private long requestTime;
 
     public ConfigFetcherHeartbeatRequest() {
     }
 
-    public ConfigFetcherHeartbeatRequest(ApplicationContextInfo appHost, List<String> succeedAppNames, List<String> failAppNames, long requestTime) {
+    public ConfigFetcherHeartbeatRequest(
+            ApplicationContextInfo appHost,
+            List<ApplicationContextInfo> succeedAppNames,
+            List<ApplicationContextInfo> failAppNames,
+            long requestTime
+    ) {
         this.appHost = appHost;
         this.succeedAppNames = succeedAppNames;
         this.failAppNames = failAppNames;
@@ -33,19 +38,19 @@ public class ConfigFetcherHeartbeatRequest implements Serializable {
         this.appHost = appHost;
     }
 
-    public List<String> getSucceedAppNames() {
+    public List<ApplicationContextInfo> getSucceedAppNames() {
         return succeedAppNames;
     }
 
-    public void setSucceedAppNames(List<String> succeedAppNames) {
+    public void setSucceedAppNames(List<ApplicationContextInfo> succeedAppNames) {
         this.succeedAppNames = succeedAppNames;
     }
 
-    public List<String> getFailAppNames() {
+    public List<ApplicationContextInfo> getFailAppNames() {
         return failAppNames;
     }
 
-    public void setFailAppNames(List<String> failAppNames) {
+    public void setFailAppNames(List<ApplicationContextInfo> failAppNames) {
         this.failAppNames = failAppNames;
     }
 

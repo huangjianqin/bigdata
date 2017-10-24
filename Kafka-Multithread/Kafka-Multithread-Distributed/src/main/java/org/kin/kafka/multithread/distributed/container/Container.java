@@ -8,6 +8,7 @@ import org.kin.kafka.multithread.distributed.node.ContainerContext;
 import org.kin.kafka.multithread.distributed.node.NodeContext;
 import org.kin.kafka.multithread.domain.ConfigResultRequest;
 import org.kin.kafka.multithread.domain.HealthReport;
+import org.kin.kafka.multithread.protocol.app.ApplicationContextInfo;
 import org.kin.kafka.multithread.protocol.distributed.ContainerMasterProtocol;
 import org.kin.kafka.multithread.protocol.distributed.NodeMasterProtocol;
 import org.slf4j.Logger;
@@ -23,6 +24,7 @@ import java.util.concurrent.*;
 public abstract class Container implements ContainerMasterProtocol {
     protected final Logger log = LoggerFactory.getLogger(this.getClass());
 
+    private NodeContext nodeContext;
     protected long containerId;
     protected long idleTimeout;
     protected long reportInternal;
@@ -53,6 +55,7 @@ public abstract class Container implements ContainerMasterProtocol {
     protected MultiThreadConsumerManager appManager = MultiThreadConsumerManager.instance();
 
     protected Container(ContainerContext containerContext, NodeContext nodeContext) {
+        this.nodeContext = nodeContext;
         this.idleTimeout = containerContext.getIdleTimeout();
         this.containerMasterProtocolPort = containerContext.getProtocolPort();
         this.nodeMasterProtocolPort = nodeContext.getProtocolPort();
@@ -277,14 +280,18 @@ public abstract class Container implements ContainerMasterProtocol {
 
         @Override
         public V call() throws Exception {
+            ApplicationContextInfo applicationContextInfo = new ApplicationContextInfo();
+            applicationContextInfo.setHost(nodeContext.getHost());
+            applicationContextInfo.setAppName(appName);
+            applicationContextInfo.setAppStatus(AppStatus.getByStatusDesc(config.getProperty(AppConfig.APPSTATUS)));
             try{
                 V result =  action();
-                nodeMasterProtocol.commitConfigResultRequest(new ConfigResultRequest(appName, true, System.currentTimeMillis(), null));
+                nodeMasterProtocol.commitConfigResultRequest(new ConfigResultRequest(applicationContextInfo, true, System.currentTimeMillis(), null));
                 return result;
             }catch (Exception e){
                 e.printStackTrace();
                 log.warn(appName + "deploy has something wrong, throw " + e.getCause() + " exception and mark '" + e.getMessage() + "' message");
-                nodeMasterProtocol.commitConfigResultRequest(new ConfigResultRequest(appName, false, System.currentTimeMillis(), e));
+                nodeMasterProtocol.commitConfigResultRequest(new ConfigResultRequest(applicationContextInfo, false, System.currentTimeMillis(), e));
                 //考虑更新配置失败时,回滚
             }
             finally {

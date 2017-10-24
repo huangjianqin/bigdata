@@ -3,7 +3,7 @@ package org.kin.kafka.multithread.configcenter.manager;
 import org.junit.Test;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.ConfigCenterConfig;
-import org.kin.kafka.multithread.configcenter.DiamondRestClient;
+import org.kin.kafka.multithread.configcenter.TestDiamondRestClient;
 import org.kin.kafka.multithread.configcenter.manager.impl.RedisConfigStoreManager;
 import org.kin.kafka.multithread.protocol.app.ApplicationContextInfo;
 import org.kin.kafka.multithread.utils.ClassUtils;
@@ -24,7 +24,7 @@ public class TestRedisConfigStoreManager {
     public void init() throws IOException {
         //appConfig.config
         config = new Properties();
-        String path = DiamondRestClient.class.getResource("/").getPath() + "appConfig.properties";
+        String path = TestDiamondRestClient.class.getResource("/").getPath() + "appConfig.properties";
         config.load(new FileInputStream(new File(path)));
 
         //添加数据源

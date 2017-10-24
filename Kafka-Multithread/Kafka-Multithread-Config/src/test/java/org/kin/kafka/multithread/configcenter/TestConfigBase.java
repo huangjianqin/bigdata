@@ -1,9 +1,11 @@
 package org.kin.kafka.multithread.configcenter;
 
 import org.junit.Before;
+import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.utils.JsonUtils;
 import org.kin.kafka.multithread.configcenter.utils.PropertiesUtils;
 import org.kin.kafka.multithread.configcenter.utils.YAMLUtils;
+import org.kin.kafka.multithread.utils.HostUtils;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -20,8 +22,9 @@ public class TestConfigBase {
     public void init() throws IOException {
         //appConfig.properties
         properties = new Properties();
-        String path = DiamondRestClient.class.getResource("/").getPath() + "appConfig.properties";
+        String path = TestDiamondRestClient.class.getResource("/").getPath() + "appConfig.properties";
         properties.load(new FileInputStream(new File(path)));
+        properties.setProperty(AppConfig.APPHOST, HostUtils.localhost());
     }
 
     public static String getPropertiesStr(Properties properties){

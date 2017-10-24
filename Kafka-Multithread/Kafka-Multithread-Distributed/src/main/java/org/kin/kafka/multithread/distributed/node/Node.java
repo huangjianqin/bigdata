@@ -10,6 +10,7 @@ import org.kin.kafka.multithread.distributed.node.config.NodeConfig;
 import org.kin.kafka.multithread.distributed.utils.NodeConfigUtils;
 import org.kin.kafka.multithread.domain.ConfigResultRequest;
 import org.kin.kafka.multithread.domain.HealthReport;
+import org.kin.kafka.multithread.protocol.app.ApplicationContextInfo;
 import org.kin.kafka.multithread.protocol.distributed.ContainerMasterProtocol;
 import org.kin.kafka.multithread.protocol.distributed.NodeMasterProtocol;
 import org.kin.kafka.multithread.rpc.factory.RPCFactories;
@@ -36,7 +37,7 @@ import java.util.concurrent.LinkedBlockingDeque;
 public class Node implements NodeMasterProtocol{
     private static final Logger log = LoggerFactory.getLogger(Node.class);
 
-    private static final Long nodeId = Long.valueOf(HostUtils.localhost().replaceAll(".", ""));
+    private static final Long nodeId = Long.valueOf(HostUtils.localhost().replaceAll("\\.", ""));
     public static final int CONTAINER_NUM_LIMIT = 10;
     public static final long NODE_JVM_CONTAINER = nodeId * CONTAINER_NUM_LIMIT;
 
@@ -52,11 +53,15 @@ public class Node implements NodeMasterProtocol{
     private LinkedBlockingDeque<Properties> appConfigsQueue;
     private int containerAllocateRetry;
 
-    public Node() {
+    public Node(){
+        this("node.properties");
+    }
+
+    public Node(String configPath) {
         //加载配置
         this.nodeConfig = new Properties();
         try {
-            this.nodeConfig.load(getClass().getClassLoader().getResourceAsStream("node.properties.template"));
+            this.nodeConfig.load(getClass().getClassLoader().getResourceAsStream(configPath));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -93,7 +98,7 @@ public class Node implements NodeMasterProtocol{
         this.containerAllocateRetry = Integer.valueOf(nodeConfig.getProperty(NodeConfig.CONTAINER_ALLOCATE_RETRY));
 
         RPCFactories.serviceWithoutRegistry(NodeMasterProtocol.class, this, nodeProtocolPort);
-        log.info("NodeMasterProtocol rpc interface inited, binding " + nodeProtocolPort + " port");
+        log.info("NodeMasterProtocol rpc interface inited, binding on {}:{}", HostUtils.localhost(), nodeProtocolPort);
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
             @Override
@@ -111,7 +116,7 @@ public class Node implements NodeMasterProtocol{
         long containerHealthReportInternal = Long.valueOf(nodeConfig.getProperty(NodeConfig.CONTAINER_HEALTHREPORT_INTERNAL));
         int nodeProtocolPort = Integer.valueOf(nodeConfig.getProperty(NodeConfig.NODE_PROTOCOL_PORT));
         int containerInitProtocolPort = Integer.valueOf(nodeConfig.getProperty(NodeConfig.CONTAINER_PROTOCOL_INITPORT));
-        NodeContext nodeContext = new NodeContext(nodeId, nodeProtocolPort);
+        NodeContext nodeContext = new NodeContext(HostUtils.localhost(), nodeId, nodeProtocolPort);
         int nowContainerAllocateRetry = 0;
         while(!isStopped && !Thread.currentThread().isInterrupted()){
             try {
@@ -195,13 +200,13 @@ public class Node implements NodeMasterProtocol{
 
     @Override
     public void commitConfigResultRequest(ConfigResultRequest configResultRequest) {
-        String appName = configResultRequest.getAppName();
+        ApplicationContextInfo applicationContextInfo = configResultRequest.getApplicationContextInfo();
         boolean isSucceed = configResultRequest.isSucceed();
         if(isSucceed){
-            configFetcher.configSucceedAppNames(Collections.singletonList(appName));
+            configFetcher.configSucceedAppNames(Collections.singletonList(applicationContextInfo));
         }
         else{
-            configFetcher.configFailAppNames(Collections.singletonList(appName));
+            configFetcher.configFailAppNames(Collections.singletonList(applicationContextInfo));
         }
     }
 

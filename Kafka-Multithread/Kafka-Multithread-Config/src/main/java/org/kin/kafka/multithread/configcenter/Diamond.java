@@ -41,7 +41,6 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
 
     private ConfigStoreManager configStoreManager;
     private Properties config = new Properties();
-    private Map<String, Map<String, Properties>> host2AppName2Config = new ConcurrentHashMap<>();
 
     public Diamond() {
         this(DefaultConfigCenterConfig.DEFALUT_CONFIGPATH);
@@ -117,19 +116,18 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
         Map<String, Object> result = new HashMap<>();
 
         log.info("store app config from app '" + appName + "' on host '" + host + "'" + System.lineSeparator() + config);
-        //先缓存,等待判断是否配置成功后才持久化
-        Map<String, Properties> appName2Config = new HashMap<>();
 
-        if(host2AppName2Config.get(host) != null){
-            appName2Config = host2AppName2Config.get(host);
+        if(configStoreManager.isCanStoreConfig(new ApplicationContextInfo(appName, host))){
+            result.put("result", -1);
+            result.put("info", String.format("{}'s last config update hasn't be finished", appName));
+            return result;
         }
+
         StoreCodec storeCodec = StoreCodecs.getCodecByName(type);
         //保证host与appName一致性
         Properties configProperties = PropertiesUtils.map2Properties(storeCodec.deSerialize(config));
         configProperties.put(AppConfig.APPHOST, host);
         configProperties.put(AppConfig.APPNAME, appName);
-
-        appName2Config.put(appName, configProperties);
 
         //如果是更新配置,则只能更新指定配置,其余配置只能固定
         if(AppStatus.getByStatusDesc(configProperties.getProperty(AppConfig.APPSTATUS)).equals(AppStatus.UPDATE)){
@@ -152,7 +150,8 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
             }
         }
 
-        host2AppName2Config.put(host, appName2Config);
+        //缓存在redis上
+        configStoreManager.storeConfig(configProperties);
 
         result.put("result", 1);
         return result;
@@ -176,9 +175,9 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
             @PathParam("type") String type
     ) {
         log.info("get app config string from app '" + appName + "' on host '" + host + "' tansfer to '" + type + "' string from rest call");
-        ApplicationContextInfo appHost = new ApplicationContextInfo(appName, host);
+        ApplicationContextInfo applicationContextInfo = new ApplicationContextInfo(appName, host);
 
-        Map<String, String> config = configStoreManager.getAppConfigMap(appHost);
+        Map<String, String> config = configStoreManager.getAppConfigMap(applicationContextInfo);
         if(config != null){
             StoreCodec storeCodec = StoreCodecs.getCodecByName(type);
             String configStr = storeCodec.serialize(config);
@@ -194,32 +193,22 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
 
     @Override
     public ConfigFetcherHeartbeatResponse heartbeat(ConfigFetcherHeartbeatRequest heartbeat) {
-        String host = heartbeat.getAppHost().getHost();
-        for(String succeedAppName: heartbeat.getSucceedAppNames()){
-            Properties config = host2AppName2Config.get(host).remove(succeedAppName);
+        for(ApplicationContextInfo succeedApplicationContextInfo: heartbeat.getSucceedAppNames()){
             //持久化
-            configStoreManager.storeConfig(config);
+            configStoreManager.realStoreConfig(succeedApplicationContextInfo);
         }
 
-        for(String failAppName: heartbeat.getFailAppNames()){
-            host2AppName2Config.get(host).remove(failAppName);
+        for(ApplicationContextInfo failApplicationContextInfo: heartbeat.getFailAppNames()){
+            configStoreManager.delTmpConfig(failApplicationContextInfo);
             //通知Admin
         }
 
         ApplicationContextInfo appHost = heartbeat.getAppHost();
 
-        log.info("get app config from app '" + appHost.getAppName() + "' on host '" + appHost.getHost() + "' from rpc call");
-        ConfigFetcherHeartbeatResponse result = new ConfigFetcherHeartbeatResponse(configStoreManager.getAllAppConfig(appHost), System.currentTimeMillis());
+        log.debug("get app config from on host '{}'", appHost.getHost());
+        ConfigFetcherHeartbeatResponse result = new ConfigFetcherHeartbeatResponse(configStoreManager.getAllTmpAppConfig(appHost), System.currentTimeMillis());
 
         return result;
-    }
-
-    private void resetAppStatus(Properties config){
-        AppStatus appStatus = AppStatus.getByStatusDesc(config.getProperty(AppConfig.APPSTATUS));
-        if(appStatus.equals(AppStatus.RESTART) || appStatus.equals(AppStatus.UPDATE)){
-            //restart和update的最终状态是run
-            config.setProperty(AppConfig.APPSTATUS, AppStatus.RUN.getStatusDesc());
-        }
     }
 
     public void close(){

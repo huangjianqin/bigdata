@@ -1,5 +1,7 @@
 package org.kin.kafka.multithread.protocol.app;
 
+import org.kin.kafka.multithread.distributed.AppStatus;
+
 import java.io.Serializable;
 
 /**
@@ -8,6 +10,7 @@ import java.io.Serializable;
 public class ApplicationContextInfo implements Serializable{
     private String appName;
     private String host;
+    private AppStatus appStatus;
 
     public ApplicationContextInfo() {
     }
@@ -15,6 +18,12 @@ public class ApplicationContextInfo implements Serializable{
     public ApplicationContextInfo(String appName, String host) {
         this.appName = appName;
         this.host = host;
+    }
+
+    public ApplicationContextInfo(String appName, String host, AppStatus appStatus) {
+        this.appName = appName;
+        this.host = host;
+        this.appStatus = appStatus;
     }
 
     public ApplicationContextInfo(String host) {
@@ -37,4 +46,11 @@ public class ApplicationContextInfo implements Serializable{
         this.host = host;
     }
 
+    public AppStatus getAppStatus() {
+        return appStatus;
+    }
+
+    public void setAppStatus(AppStatus appStatus) {
+        this.appStatus = appStatus;
+    }
 }

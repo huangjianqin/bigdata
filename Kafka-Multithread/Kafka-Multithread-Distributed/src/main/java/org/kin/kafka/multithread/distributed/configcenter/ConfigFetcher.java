@@ -1,6 +1,7 @@
 package org.kin.kafka.multithread.distributed.configcenter;
 
 import org.kin.kafka.multithread.config.AppConfig;
+import org.kin.kafka.multithread.distributed.AppStatus;
 import org.kin.kafka.multithread.distributed.node.config.DefaultNodeConfig;
 import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeatResponse;
 import org.kin.kafka.multithread.domain.ConfigFetcherHeartbeatRequest;
@@ -14,6 +15,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by hjq on 2017/6/21.
@@ -31,8 +33,8 @@ public class ConfigFetcher extends Thread{
     private long heartbeatInterval;
     private DiamondMasterProtocol diamondMasterProtocol;
 
-    private List<String> succeedAppNames = new ArrayList<>();
-    private List<String> failAppNames = new ArrayList<>();
+    private List<ApplicationContextInfo> succeedAppNames = new ArrayList<>();
+    private List<ApplicationContextInfo> failAppNames = new ArrayList<>();
 
     public ConfigFetcher(LinkedBlockingDeque<Properties> configQueue) {
         super("ConfigFetcher");
@@ -47,7 +49,7 @@ public class ConfigFetcher extends Thread{
 
     public ConfigFetcher(String host, int port, LinkedBlockingDeque<Properties> configQueue, int heartbeatInterval) {
         super("ConfigFetcher");
-        heartbeatInterval = heartbeatInterval;
+        this.heartbeatInterval = heartbeatInterval;
         //创建与配置中心的RPC接口
         this.diamondMasterProtocol = RPCFactories.clientWithoutRegistry(DiamondMasterProtocol.class, host, port);
         this.configQueue = configQueue;
@@ -61,27 +63,23 @@ public class ConfigFetcher extends Thread{
         Map<String, Properties> app2Config = null;
         ApplicationContextInfo myAppHost = new ApplicationContextInfo();
         myAppHost.setHost(HostUtils.localhost());
+
+        int configCount = 0;
+        int fetchTimeMills = 0;
         while(!isStopped && !isInterrupted()){
             ConfigFetcherHeartbeatResponse configFetcherHeartbeatResponse = heartbeat();
 
-            log.info("fetch " + configFetcherHeartbeatResponse.getNewConfigs().size() + " configs at " + configFetcherHeartbeatResponse.getResponseTime());
+            log.debug("fetch " + configFetcherHeartbeatResponse.getNewConfigs().size() + " configs at " + configFetcherHeartbeatResponse.getResponseTime());
+            configCount += configFetcherHeartbeatResponse.getNewConfigs().size();
+            if(fetchTimeMills >= TimeUnit.MINUTES.toMillis(1)){
+                fetchTimeMills = 0;
+                configCount = 0;
+                log.debug("fetch {} configs /min", configCount);
+            }
 
             long startTime = System.currentTimeMillis();
             //配置内容,格式匹配成功的配置
             List<Properties> halfSuccessConfigs = AppConfigUtils.allNecessaryCheckAndFill(configFetcherHeartbeatResponse.getNewConfigs());
-            List<Properties> failConfigs = configFetcherHeartbeatResponse.getNewConfigs();
-            failConfigs.removeAll(halfSuccessConfigs);
-
-            //通知config center配置更新失败,回滚以前的配置
-            if(failConfigs.size() > 0){
-                List<String> failAppNames = new ArrayList<>();
-                for(Properties config: failConfigs){
-                    String failAppName = config.getProperty(AppConfig.APPNAME);
-                    failAppNames.add(failAppName);
-                    log.info(failAppName + " config set up fail");
-                }
-                this.failAppNames.addAll(failAppNames);
-            }
 
             Map<String, Properties> newApp2Config = new HashMap<>();
             for(Properties config: halfSuccessConfigs){
@@ -113,6 +111,7 @@ public class ConfigFetcher extends Thread{
             long endTime = System.currentTimeMillis();
 
             try {
+                fetchTimeMills += (endTime - startTime);
                 if(endTime - startTime < heartbeatInterval){
                     sleep(heartbeatInterval - (endTime - startTime));
                 }
@@ -131,8 +130,8 @@ public class ConfigFetcher extends Thread{
     private ConfigFetcherHeartbeatResponse heartbeat(){
         ApplicationContextInfo appHost = new ApplicationContextInfo("", HostUtils.localhost());
 
-        List<String> tmpSucceedAppNames = succeedAppNames.subList(0, succeedAppNames.size());
-        List<String> tmpFailAppNames = failAppNames.subList(0, succeedAppNames.size());
+        List<ApplicationContextInfo> tmpSucceedAppNames = succeedAppNames.subList(0, succeedAppNames.size());
+        List<ApplicationContextInfo> tmpFailAppNames = failAppNames.subList(0, succeedAppNames.size());
         succeedAppNames.removeAll(tmpSucceedAppNames);
         failAppNames.removeAll(tmpFailAppNames);
         ConfigFetcherHeartbeatRequest heartbeat = new ConfigFetcherHeartbeatRequest(
@@ -143,39 +142,54 @@ public class ConfigFetcher extends Thread{
         return diamondMasterProtocol.heartbeat(heartbeat);
     }
 
-    public void configFailAppNames(List<String> failAppNames){
-        for(String failAppName: failAppNames){
-            log.info(failAppName + " config set up fail");
+    public void configFailAppNames(List<ApplicationContextInfo> failApplicationContextInfos){
+        for(ApplicationContextInfo failApplicationContextInfo: failApplicationContextInfos){
+            log.info(failApplicationContextInfo.getAppName() + " config set up fail");
         }
-        this.failAppNames.addAll(failAppNames);
-        log.info(failAppNames.size() + " configs set up fail");
+        this.failAppNames.addAll(failApplicationContextInfos);
+        log.info(failApplicationContextInfos.size() + " configs set up fail");
     }
 
     public void configFailConfigs(List<Properties> failConfigs){
-        List<String> failAppNames = new ArrayList<>();
+        List<ApplicationContextInfo> failAppNames = new ArrayList<>();
         for(Properties config: failConfigs){
-            String failAppName = config.getProperty(AppConfig.APPNAME);
-            failAppNames.add(failAppName);
-            log.info(failAppName + " config set up fail");
+            ApplicationContextInfo failApplicationContextInfo = new ApplicationContextInfo();
+            failApplicationContextInfo.setAppName(config.getProperty(AppConfig.APPNAME));
+            failApplicationContextInfo.setHost(config.getProperty(AppConfig.APPHOST));
+            failAppNames.add(failApplicationContextInfo);
+            log.info(failApplicationContextInfo.getAppName() + " config set up fail");
         }
         this.failAppNames.addAll(failAppNames);
         log.info(failAppNames.size() + " configs set up fail");
     }
 
-    public void configSucceedAppNames(List<String> succeedAppNames){
-        for(String succeedAppName: succeedAppNames){
-            log.info(succeedAppName + " config set up succeed");
+    public void configSucceedAppNames(List<ApplicationContextInfo> succeedApplicationContextInfos){
+        for(ApplicationContextInfo succeedApplicationContextInfo: succeedApplicationContextInfos){
+            log.info(succeedApplicationContextInfo.getAppName() + " config set up succeed");
         }
-        this.succeedAppNames.addAll(succeedAppNames);
-        log.info(succeedAppNames.size() + " configs set up succeed");
+        this.succeedAppNames.addAll(succeedApplicationContextInfos);
+        log.info(succeedApplicationContextInfos.size() + " configs set up succeed");
     }
 
     public void configSucceedConfigs(List<Properties> succeedConfigs){
-        List<String> succeedAppNames = new ArrayList<>();
+        List<ApplicationContextInfo> succeedAppNames = new ArrayList<>();
         for(Properties config: succeedConfigs){
-            String succeedAppName = config.getProperty(AppConfig.APPNAME);
-            succeedAppNames.add(succeedAppName);
-            log.info(succeedAppName + " config set up succeed");
+            ApplicationContextInfo succeedApplicationContextInfo = new ApplicationContextInfo();
+            succeedApplicationContextInfo.setAppName(config.getProperty(AppConfig.APPNAME));
+            succeedApplicationContextInfo.setHost(config.getProperty(AppConfig.APPHOST));
+            AppStatus expectedAppStatus = AppStatus.getByStatusDesc(config.getProperty(AppConfig.APPSTATUS));
+            switch (expectedAppStatus){
+                case RUN:
+                case UPDATE:
+                case RESTART:
+                    succeedApplicationContextInfo.setAppStatus(AppStatus.RUN);
+                    break;
+                case CLOSE:
+                    succeedApplicationContextInfo.setAppStatus(AppStatus.CLOSE);
+                    break;
+            }
+            succeedAppNames.add(succeedApplicationContextInfo);
+            log.info(succeedApplicationContextInfo.getAppName() + " config set up succeed");
         }
         this.succeedAppNames.addAll(succeedAppNames);
         log.info(succeedAppNames.size() + " configs set up succeed");
