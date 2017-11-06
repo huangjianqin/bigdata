@@ -20,9 +20,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>23.0</version>
+            <groupId>org.kin</groupId>
+            <artifactId>kin-framework</artifactId>
+            <version>1.0-SNAPSHOT</version>
         </dependency>
 
         <!-- 测试包-->
