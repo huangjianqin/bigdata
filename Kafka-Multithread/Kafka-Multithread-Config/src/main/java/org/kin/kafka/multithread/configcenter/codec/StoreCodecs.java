@@ -53,7 +53,9 @@ public class StoreCodecs {
             return storeCodecMap.get(storeType);
         }
         else{
-            return lazyLoadStoreCodecs(storeType).get(0);
+            //尝试全局Classpath搜索
+            //...
+            return null;
         }
     }
 

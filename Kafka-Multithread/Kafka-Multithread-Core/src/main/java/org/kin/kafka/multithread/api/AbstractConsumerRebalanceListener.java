@@ -13,7 +13,7 @@ import java.util.Collection;
  * Created by 健勤 on 2017/7/26.
  */
 public abstract class AbstractConsumerRebalanceListener implements ConsumerRebalanceListener {
-    protected static Logger log = LoggerFactory.getLogger(AbstractConsumerRebalanceListener.class);
+    protected static Logger log = LoggerFactory.getLogger("OCOT");
     protected OCOTMultiProcessor.OCOTProcessor processor;
 
     public AbstractConsumerRebalanceListener() {

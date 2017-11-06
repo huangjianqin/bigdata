@@ -1,4 +1,4 @@
-package org.kin.kafka.multithread.core;
+package org.kin.kafka.multithread.api;
 
 import org.kin.kafka.multithread.configcenter.ReConfigable;
 

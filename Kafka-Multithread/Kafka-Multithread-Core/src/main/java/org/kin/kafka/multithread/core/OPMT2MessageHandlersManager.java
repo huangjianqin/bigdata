@@ -2,15 +2,15 @@ package org.kin.kafka.multithread.core;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.log4j.Level;
+import org.kin.framework.log.LoggerBinder;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
 import org.kin.kafka.multithread.common.DefaultThreadFactory;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
-import org.kin.kafka.multithread.common.ConsumerRecordInfo;
+import org.kin.kafka.multithread.domain.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.TPStrUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.SynchronousQueue;
@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  * 2.改进负载均衡策略
  */
 public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager {
-    private static final Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);
+    static {log();}
     private Map<TopicPartition, PendingWindow> topicPartition2PendingWindow = new HashMap<>();
     private Map<TopicPartition, List<OPMT2MessageQueueHandlerThread>> topicPartition2Threads = new HashMap<>();
     //所有消息处理线程在同一线程池维护
@@ -60,13 +60,35 @@ public class OPMT2MessageHandlersManager extends AbstractMessageHandlersManager 
     private int slidingWindow;
 
     public OPMT2MessageHandlersManager() {
-        super(AppConfig.DEFAULT_APPCONFIG);
+        super("OPMT", AppConfig.DEFAULT_APPCONFIG);
+        log();
     }
 
     public OPMT2MessageHandlersManager(Properties config) {
-        super(config);
+        super("OPMT", config);
         this.threadSizePerPartition = Integer.valueOf(config.getProperty(AppConfig.OPMT2_THREADSIZEPERPARTITION));
         this.slidingWindow = Integer.valueOf(config.getProperty(AppConfig.PENDINGWINDOW_SLIDINGWINDOW));
+        log();
+    }
+
+    /**
+     * 如果没有适合的logger使用api创建默认logger
+     */
+    private static void log(){
+        String logger = "OPMT";
+        if(!LoggerBinder.exist(logger)){
+            String appender = "opmt";
+            LoggerBinder.create()
+                    .setLogger(Level.INFO, logger, appender)
+                    .setDailyRollingFileAppender(appender)
+                    .setFile(appender, "/tmp/kafka-multithread/core/opmt.log")
+                    .setDatePattern(appender)
+                    .setAppend(appender, true)
+                    .setThreshold(appender, Level.INFO)
+                    .setPatternLayout(appender)
+                    .setConversionPattern(appender)
+                    .bind();
+        }
     }
 
     @Override

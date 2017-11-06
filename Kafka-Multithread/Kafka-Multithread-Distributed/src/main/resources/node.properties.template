@@ -5,6 +5,6 @@ container.healthreport.internal=1000
 container.allocate.retry=3
 
 #configcenter config
-configcenter.host=localhost
+configcenter.host=127.0.0.1
 configcenter.port=60001
 configfetcher.heartbeat=3000

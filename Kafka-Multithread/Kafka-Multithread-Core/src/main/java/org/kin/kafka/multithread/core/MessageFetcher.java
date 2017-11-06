@@ -2,16 +2,18 @@ package org.kin.kafka.multithread.core;
 
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.log4j.Level;
+import org.kin.framework.log.LoggerBinder;
+import org.kin.kafka.multithread.api.Application;
 import org.kin.kafka.multithread.api.CallBack;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.statistics.Statistics;
 import org.kin.kafka.multithread.utils.ClassUtils;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
-import org.kin.kafka.multithread.common.ConsumerRecordInfo;
+import org.kin.kafka.multithread.domain.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.TPStrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import scala.App;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,7 +25,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * 负责抓取信息的线程
  */
 public class MessageFetcher<K, V> extends Thread implements Application {
-    private static Logger log = LoggerFactory.getLogger(MessageFetcher.class);
+    static {log();}
+    private static Logger log = LoggerFactory.getLogger("MessageFetcher");
     private final KafkaConsumer<K, V> consumer;
     //等待提交的Offset
     //用Map的原因是如果同一时间内队列中有相同的topic分区的offset需要提交，那么map会覆盖原有的
@@ -85,8 +88,30 @@ public class MessageFetcher<K, V> extends Thread implements Application {
 
         callBackClass = ClassUtils.getClass(config.getProperty(AppConfig.MESSAGEFETCHER_CONSUME_CALLBACK));
 
+        log();
+
         this.consumer = new KafkaConsumer<K, V>(config);
         this.consumer.subscribe(AppConfigUtils.getSubscribeTopic(config), new MessageFetcher.InnerConsumerRebalanceListener<>(this));
+    }
+
+    /**
+     * 如果没有适合的logger使用api创建默认logger
+     */
+    private static void log(){
+        String logger = "MessageFetcher";
+        if(!LoggerBinder.exist(logger)){
+            String appender = "messagefetcher";
+            LoggerBinder.create()
+                    .setLogger(Level.INFO, logger, appender)
+                    .setDailyRollingFileAppender(appender)
+                    .setFile(appender, "/tmp/kafka-multithread/core/messagefetcher.log")
+                    .setDatePattern(appender)
+                    .setAppend(appender, true)
+                    .setThreshold(appender, Level.INFO)
+                    .setPatternLayout(appender)
+                    .setConversionPattern(appender)
+                    .bind();
+        }
     }
 
     @Override

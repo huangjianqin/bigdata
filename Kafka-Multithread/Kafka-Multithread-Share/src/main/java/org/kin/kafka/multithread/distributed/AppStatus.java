@@ -19,7 +19,7 @@ public enum AppStatus {
 
     public static AppStatus getByStatusDesc(String statusDesc){
         for(AppStatus appStatus : values()){
-            if(appStatus.getStatusDesc().equals(statusDesc)){
+            if(appStatus.getStatusDesc().equals(statusDesc.toUpperCase())){
                 return appStatus;
             }
         }

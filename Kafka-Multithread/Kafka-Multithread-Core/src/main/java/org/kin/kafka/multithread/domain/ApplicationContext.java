@@ -1,8 +1,9 @@
-package org.kin.kafka.multithread.api;
+package org.kin.kafka.multithread.domain;
 
+import org.kin.kafka.multithread.api.MultiThreadConsumerManager;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.core.AbstractMessageHandlersManager;
-import org.kin.kafka.multithread.core.Application;
+import org.kin.kafka.multithread.api.Application;
 import org.kin.kafka.multithread.distributed.ChildRunModel;
 
 import java.util.Properties;

@@ -1,13 +1,15 @@
 package org.kin.kafka.multithread.api;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
+import org.kin.framework.log.LoggerBinder;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.ReConfigable;
 import org.kin.kafka.multithread.core.AbstractMessageHandlersManager;
-import org.kin.kafka.multithread.core.Application;
 import org.kin.kafka.multithread.core.MessageFetcher;
 import org.kin.kafka.multithread.core.OCOTMultiProcessor;
 import org.kin.kafka.multithread.distributed.ChildRunModel;
+import org.kin.kafka.multithread.domain.ApplicationContext;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +29,8 @@ import java.util.*;
  * 消息处理时间越短,OPOT多实例模式会更有优势.
  */
 public class MultiThreadConsumerManager implements ReConfigable{
-    private static final Logger log = LoggerFactory.getLogger(MultiThreadConsumerManager.class);
+    static {log();}
+    private static final Logger log = LoggerFactory.getLogger("MultiThreadConsumerManager");
 
     private static final MultiThreadConsumerManager manager = new MultiThreadConsumerManager();
     private static final Map<String, ApplicationContext> appName2ApplicationContext = new HashMap();
@@ -49,11 +52,74 @@ public class MultiThreadConsumerManager implements ReConfigable{
     }
 
     private MultiThreadConsumerManager() {
+
+    }
+
+    /**
+     * 如果没有适合的logger使用api创建默认logger
+     */
+    private static void log(){
+        Enumeration<org.apache.log4j.Logger> loggerEnumeration = LogManager.getCurrentLoggers();
+        while(loggerEnumeration.hasMoreElements()){
+            System.out.println(loggerEnumeration.nextElement().getName());
+        }
+
+
+        String managerLogger = "MultiThreadConsumerManager";
+        if(!LoggerBinder.exist(managerLogger)){
+            String appender = "multithreadconsumermanager";
+            LoggerBinder.create()
+                    .setLogger(Level.INFO, managerLogger, appender)
+                    .setDailyRollingFileAppender(appender)
+                    .setFile(appender, "/tmp/kafka-multithread/core/multithreadconsumermanager.log")
+                    .setDatePattern(appender)
+                    .setAppend(appender, true)
+                    .setThreshold(appender, Level.INFO)
+                    .setPatternLayout(appender)
+                    .setConversionPattern(appender)
+                    .bind();
+        }
+
+        String zookeeperLogger = "org.apache.zookeeper";
+        if(!LoggerBinder.exist(zookeeperLogger)){
+            String appender = "zookeeper";
+            LoggerBinder.create()
+                    .setLogger(Level.INFO, zookeeperLogger, appender)
+                    .setDailyRollingFileAppender(appender)
+                    .setFile(appender, "/tmp/kafka-multithread/zookeeper.log")
+                    .setDatePattern(appender)
+                    .setAppend(appender, true)
+                    .setThreshold(appender, Level.INFO)
+                    .setPatternLayout(appender)
+                    .setConversionPattern(appender)
+                    .bind();
+        }
+
+        String kafkaLogger = "org.apache.kafka";
+        if(!LoggerBinder.exist(kafkaLogger)){
+            String appender = "kafka";
+            LoggerBinder.create()
+                    .setLogger(Level.INFO, kafkaLogger, appender)
+                    .setDailyRollingFileAppender(appender)
+                    .setFile(appender, "/tmp/kafka-multithread/kafka.log")
+                    .setDatePattern(appender)
+                    .setAppend(appender, true)
+                    .setThreshold(appender, Level.INFO)
+                    .setPatternLayout(appender)
+                    .setConversionPattern(appender)
+                    .bind();
+        }
     }
 
     private void checkAppName(String appName){
         if (appName2ApplicationContext.containsKey(appName)){
             throw new IllegalStateException("Manager has same app name");
+        }
+    }
+
+    private void hasAppName(String appName){
+        if (!appName2ApplicationContext.containsKey(appName)){
+            throw new IllegalStateException(String.format("Manager doesn't has app name '%s' when reconfig operation", appName));
         }
     }
 
@@ -141,7 +207,7 @@ public class MultiThreadConsumerManager implements ReConfigable{
 
         String appName = newConfig.getProperty(AppConfig.APPNAME);
 
-        checkAppName(appName);
+        hasAppName(appName);
 
         appName2ApplicationContext.get(appName).reConfig(newConfig);
     }

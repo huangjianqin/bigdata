@@ -2,11 +2,13 @@ package org.kin.kafka.multithread.core;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.log4j.Level;
+import org.kin.framework.log.LoggerBinder;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.common.DefaultThreadFactory;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
-import org.kin.kafka.multithread.common.ConsumerRecordInfo;
+import org.kin.kafka.multithread.domain.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.TPStrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +36,7 @@ import java.util.concurrent.*;
  *
  */
 public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
-    private static final Logger log = LoggerFactory.getLogger(OPMTMessageHandlersManager.class);
+    static {log();}
     /**
      * keepalive为60s,目的是尽可能充分利用系统资源,因为在OPMT模式下,处理线程是动态的,在高负载且系统能够撑住的情况下,充分利用线程资源处理消息
      */
@@ -63,16 +65,38 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
     private int slidingWindow;
 
     public OPMTMessageHandlersManager() {
-        super(AppConfig.DEFAULT_APPCONFIG);
+        super("OPMT", AppConfig.DEFAULT_APPCONFIG);
+        log();
     }
 
     public OPMTMessageHandlersManager(Properties config){
-        super(config);
+        super("OPMT", config);
         this.handlerSize = Integer.valueOf(config.get(AppConfig.OPMT_HANDLERSIZE).toString());
         this.minThreadSizePerPartition = Integer.valueOf(config.getProperty(AppConfig.OPMT_MINTHREADSIZEPERPARTITION));
         this.maxThreadSizePerPartition = Integer.valueOf(config.getProperty(AppConfig.OPMT_MAXTHREADSIZEPERPARTITION));
         this.threadQueueSizePerPartition = Integer.valueOf(config.getProperty(AppConfig.OPMT_THREADQUEUESIZEPERPARTITION));
         this.slidingWindow = Integer.valueOf(config.getProperty(AppConfig.PENDINGWINDOW_SLIDINGWINDOW));
+        log();
+    }
+
+    /**
+     * 如果没有适合的logger使用api创建默认logger
+     */
+    private static void log(){
+        String logger = "OPMT";
+        if(!LoggerBinder.exist(logger)){
+            String appender = "opmt";
+            LoggerBinder.create()
+                    .setLogger(Level.INFO, logger, appender)
+                    .setDailyRollingFileAppender(appender)
+                    .setFile(appender, "/tmp/kafka-multithread/core/opmt.log")
+                    .setDatePattern(appender)
+                    .setAppend(appender, true)
+                    .setThreshold(appender, Level.INFO)
+                    .setPatternLayout(appender)
+                    .setConversionPattern(appender)
+                    .bind();
+        }
     }
 
     @Override

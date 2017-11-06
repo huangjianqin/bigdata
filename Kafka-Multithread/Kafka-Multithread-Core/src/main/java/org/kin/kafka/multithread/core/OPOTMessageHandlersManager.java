@@ -2,11 +2,13 @@ package org.kin.kafka.multithread.core;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.log4j.Level;
+import org.kin.framework.log.LoggerBinder;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
 import org.kin.kafka.multithread.common.DefaultThreadFactory;
 import org.kin.kafka.multithread.config.AppConfig;
-import org.kin.kafka.multithread.common.ConsumerRecordInfo;
+import org.kin.kafka.multithread.domain.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.TPStrUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +21,7 @@ import java.util.concurrent.*;
  * OPOT ==> one partition one Thread
  */
 public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
+    static {log();}
     private static final Logger log = LoggerFactory.getLogger(OPOTMessageHandlersManager.class);
     private Map<TopicPartition, OPOTMessageQueueHandlerThread> topicPartition2Thread = new ConcurrentHashMap<>();
     /**
@@ -35,11 +38,33 @@ public class OPOTMessageHandlersManager extends AbstractMessageHandlersManager{
     );
 
     public OPOTMessageHandlersManager() {
-        super(AppConfig.DEFAULT_APPCONFIG);
+        super("OPOT", AppConfig.DEFAULT_APPCONFIG);
+        log();
     }
 
     public OPOTMessageHandlersManager(Properties config) {
-        super(config);
+        super("OPOT", config);
+        log();
+    }
+
+    /**
+     * 如果没有适合的logger使用api创建默认logger
+     */
+    private static void log(){
+        String logger = "OPOT";
+        if(!LoggerBinder.exist(logger)){
+            String appender = "opot";
+            LoggerBinder.create()
+                    .setLogger(Level.INFO, logger, appender)
+                    .setDailyRollingFileAppender(appender)
+                    .setFile(appender, "/tmp/kafka-multithread/core/opot.log")
+                    .setDatePattern(appender)
+                    .setAppend(appender, true)
+                    .setThreshold(appender, Level.INFO)
+                    .setPatternLayout(appender)
+                    .setConversionPattern(appender)
+                    .bind();
+        }
     }
 
     @Override

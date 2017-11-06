@@ -9,21 +9,20 @@ import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.api.CommitStrategy;
 import org.kin.kafka.multithread.configcenter.ReConfigable;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
-import org.kin.kafka.multithread.common.ConsumerRecordInfo;
+import org.kin.kafka.multithread.domain.ConsumerRecordInfo;
 import org.kin.kafka.multithread.utils.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by hjq on 2017/7/4.
  */
 public abstract class AbstractMessageHandlersManager implements MessageHandlersManager {
-    private static final Logger log = LoggerFactory.getLogger(AbstractMessageHandlersManager.class);
+    protected final Logger log;
     protected AtomicBoolean isRebalance = new AtomicBoolean(false);
     protected AtomicBoolean isReconfig = new AtomicBoolean(false);
     protected Properties config;
@@ -33,7 +32,13 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
 
     protected boolean isAutoCommit = false;
 
-    AbstractMessageHandlersManager(Properties config){
+    AbstractMessageHandlersManager(String loggerName, Properties config){
+        if(loggerName == null ||loggerName.equals("")){
+            this.log = LoggerFactory.getLogger(getClass());
+        }
+        else{
+            this.log = LoggerFactory.getLogger(loggerName);
+        }
         this.config = config;
 
         topic2HandlerClass = new HashMap<>();
@@ -184,6 +189,9 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         //最近一次处理的最大的offset
         protected ConsumerRecord lastRecord = null;
 
+        //绑定线程
+        private Thread bind;
+
         public MessageQueueHandlerThread(String LOG_HEAD, Map<TopicPartition, OffsetAndMetadata> pendingOffsets, MessageHandler messageHandler, CommitStrategy commitStrategy) {
             this.LOG_HEAD = LOG_HEAD;
             this.pendingOffsets = pendingOffsets;
@@ -228,6 +236,7 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
          */
         protected void afterStart(){
             log.info(LOG_HEAD + " start up");
+            bind = Thread.currentThread();
         }
 
         /**
@@ -285,6 +294,9 @@ public abstract class AbstractMessageHandlersManager implements MessageHandlersM
         protected void stop(){
             log.info(LOG_HEAD + " stopping...");
             this.isStooped = true;
+            if(bind != null){
+                bind.interrupt();
+            }
         }
 
         /**

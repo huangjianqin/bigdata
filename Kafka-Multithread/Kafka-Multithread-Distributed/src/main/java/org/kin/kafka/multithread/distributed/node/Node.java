@@ -1,5 +1,8 @@
 package org.kin.kafka.multithread.distributed.node;
 
+import org.apache.log4j.Level;
+import org.kin.framework.log.LoggerBinder;
+import org.kin.framework.utils.ExceptionUtils;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.distributed.configcenter.ConfigFetcher;
 import org.kin.kafka.multithread.distributed.ChildRunModel;
@@ -35,7 +38,8 @@ import java.util.concurrent.LinkedBlockingDeque;
  * 充当Container资源的分配与关闭
  */
 public class Node implements NodeMasterProtocol{
-    private static final Logger log = LoggerFactory.getLogger(Node.class);
+    static {log();}
+    private static final Logger log = LoggerFactory.getLogger("Node");
 
     private static final Long nodeId = Long.valueOf(HostUtils.localhost().replaceAll("\\.", ""));
     public static final int CONTAINER_NUM_LIMIT = 10;
@@ -58,6 +62,7 @@ public class Node implements NodeMasterProtocol{
     }
 
     public Node(String configPath) {
+        log();
         //加载配置
         this.nodeConfig = new Properties();
         try {
@@ -72,11 +77,32 @@ public class Node implements NodeMasterProtocol{
     }
 
     public Node(Properties nodeConfig) {
+        log();
         this.nodeConfig = nodeConfig;
         log.info("node config loaded");
         //校验配置
         NodeConfigUtils.oneNecessaryCheckAndFill(nodeConfig);
         log.info("config is Safe" + System.lineSeparator() + NodeConfigUtils.toString(nodeConfig));
+    }
+
+    /**
+     * 如果没有适合的logger使用api创建默认logger
+     */
+    private static void log(){
+        String logger = "Node";
+        if(!LoggerBinder.exist(logger)){
+            String appender = "node";
+            LoggerBinder.create()
+                    .setLogger(Level.INFO, logger, appender)
+                    .setDailyRollingFileAppender(appender)
+                    .setFile(appender, "/tmp/kafka-multithread/distributed/node.log")
+                    .setDatePattern(appender)
+                    .setAppend(appender, true)
+                    .setThreshold(appender, Level.INFO)
+                    .setPatternLayout(appender)
+                    .setConversionPattern(appender)
+                    .bind();
+        }
     }
 
     public void init(){
@@ -130,7 +156,7 @@ public class Node implements NodeMasterProtocol{
                 switch (runModel){
                     case JVM:
                         if(id2Container.containsKey(NODE_JVM_CONTAINER)){
-                            log.info("got jvm app and jvm Container has runned, just to setup app");
+                            log.debug("got jvm app and jvm Container has runned, just to setup app");
                             containerMasterProtocol = id2Container.get(NODE_JVM_CONTAINER);
                         }
                         else{
@@ -139,9 +165,11 @@ public class Node implements NodeMasterProtocol{
                             containerContext = new ContainerContext(
                                     nodeId * CONTAINER_NUM_LIMIT,
                                     getContainerProtocolPort(containerInitProtocolPort, NODE_JVM_CONTAINER),
-                                    containerContext.getIdleTimeout(),
+                                    containerIdleTimeout,
                                     containerHealthReportInternal);
-                            containerMasterProtocol = new JVMContainer(containerContext, nodeContext, this);
+                            JVMContainer jvmContainer = new JVMContainer(containerContext, nodeContext, this);
+                            jvmContainer.start();
+                            containerMasterProtocol = jvmContainer;
                             id2Container.put(containerContext.getContainerId(), containerMasterProtocol);
                         }
                         break;
@@ -165,16 +193,16 @@ public class Node implements NodeMasterProtocol{
                     //更新配置或运行新实例
                     containerMasterProtocol.updateConfig(Collections.singletonList(newConfig));
                 }catch (Exception ex){
-                    ex.printStackTrace();
+                    ExceptionUtils.log(ex);
                     nowContainerAllocateRetry ++;
                     if(nowContainerAllocateRetry <= containerAllocateRetry){
-                        log.info("{} times to retry to allocate a container for app '{}'", newConfig.getProperty(AppConfig.APPNAME));
+                        log.info("{} times to retry to allocate a container for app '{}'", nowContainerAllocateRetry, newConfig.getProperty(AppConfig.APPNAME));
                         //把配置重新插入队列头,这样当前重试次数仍然对该配置有效
                         appConfigsQueue.offerFirst(newConfig);
                     }
                     else {
                         nowContainerAllocateRetry = 0;
-                        configFetcher.configFailConfigs(Collections.singletonList(newConfig));
+                        configFetcher.configFail(Collections.singletonList(newConfig));
                     }
                 }
 
@@ -189,8 +217,12 @@ public class Node implements NodeMasterProtocol{
     public void close(){
         log.info("node closing...");
         this.isStopped = false;
-        this.configFetcher.close();
-        this.containerAllocator.close();
+        if(this.configFetcher != null){
+            this.configFetcher.close();
+        }
+        if(this.containerAllocator != null){
+            this.containerAllocator.close();
+        }
     }
 
     @Override
@@ -203,10 +235,10 @@ public class Node implements NodeMasterProtocol{
         ApplicationContextInfo applicationContextInfo = configResultRequest.getApplicationContextInfo();
         boolean isSucceed = configResultRequest.isSucceed();
         if(isSucceed){
-            configFetcher.configSucceedAppNames(Collections.singletonList(applicationContextInfo));
+            configFetcher.appSucceed(Collections.singletonList(applicationContextInfo));
         }
         else{
-            configFetcher.configFailAppNames(Collections.singletonList(applicationContextInfo));
+            configFetcher.appFail(Collections.singletonList(applicationContextInfo));
         }
     }
 

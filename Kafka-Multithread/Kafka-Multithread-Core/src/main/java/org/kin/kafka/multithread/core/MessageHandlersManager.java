@@ -4,7 +4,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.CommitStrategy;
 import org.kin.kafka.multithread.configcenter.ReConfigable;
-import org.kin.kafka.multithread.common.ConsumerRecordInfo;
+import org.kin.kafka.multithread.domain.ConsumerRecordInfo;
 import org.kin.kafka.multithread.api.MessageHandler;
 
 import java.util.Map;

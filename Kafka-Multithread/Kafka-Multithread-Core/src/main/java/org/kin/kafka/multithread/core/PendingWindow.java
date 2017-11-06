@@ -4,7 +4,7 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.ReConfigable;
-import org.kin.kafka.multithread.common.ConsumerRecordInfo;
+import org.kin.kafka.multithread.domain.ConsumerRecordInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created by hjq on 2017/7/4.
  */
 public class PendingWindow implements ReConfigable{
-    private static  final Logger log = LoggerFactory.getLogger(PendingWindow.class);
+    private static final Logger log = LoggerFactory.getLogger("OPMT");
     private final Map<TopicPartition, OffsetAndMetadata> pendingOffsets;
     private ConcurrentSkipListSet<ConsumerRecordInfo> queue;
     private int slidingWindow;

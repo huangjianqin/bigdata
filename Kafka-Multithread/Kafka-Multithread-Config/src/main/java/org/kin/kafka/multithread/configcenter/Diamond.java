@@ -1,5 +1,7 @@
 package org.kin.kafka.multithread.configcenter;
 
+import org.apache.log4j.Level;
+import org.kin.framework.log.LoggerBinder;
 import org.kin.kafka.multithread.configcenter.codec.StoreCodec;
 import org.kin.kafka.multithread.configcenter.codec.StoreCodecs;
 import org.kin.kafka.multithread.config.AppConfig;
@@ -24,7 +26,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Created by huangjianqin on 2017/9/11.
@@ -37,7 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Path("kafkamultithread")
 public class Diamond implements DiamondMasterProtocol, AdminProtocol{
-    private static final Logger log = LoggerFactory.getLogger(Diamond.class);
+    static {log();}
+    private static final Logger log = LoggerFactory.getLogger("Diamond");
 
     private ConfigStoreManager configStoreManager;
     private Properties config = new Properties();
@@ -66,6 +68,26 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
         }
 
         log.info("diamond inited");
+    }
+
+    /**
+     * 如果没有适合的logger使用api创建默认logger
+     */
+    private static void log(){
+        String logger = "Diamond";
+        if(!LoggerBinder.exist(logger)){
+            String appender = "diamond";
+            LoggerBinder.create()
+                    .setLogger(Level.INFO, logger, appender)
+                    .setDailyRollingFileAppender(appender)
+                    .setFile(appender, "/tmp/kafka-multithread/config/diamond.log")
+                    .setDatePattern(appender)
+                    .setAppend(appender, true)
+                    .setThreshold(appender, Level.INFO)
+                    .setPatternLayout(appender)
+                    .setConversionPattern(appender)
+                    .bind();
+        }
     }
 
     public void start(){
@@ -117,7 +139,7 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
 
         log.info("store app config from app '" + appName + "' on host '" + host + "'" + System.lineSeparator() + config);
 
-        if(configStoreManager.isCanStoreConfig(new ApplicationContextInfo(appName, host))){
+        if(!configStoreManager.isCanStoreConfig(new ApplicationContextInfo(appName, host))){
             result.put("result", -1);
             result.put("info", String.format("{}'s last config update hasn't be finished", appName));
             return result;

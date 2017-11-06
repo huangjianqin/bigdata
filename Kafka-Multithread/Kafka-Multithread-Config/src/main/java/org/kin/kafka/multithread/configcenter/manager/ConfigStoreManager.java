@@ -12,15 +12,6 @@ import java.util.Properties;
  * 而admin可以上传或下载配置,期间就涉及格式转换
  */
 public interface ConfigStoreManager{
-    //appHost:appName
-    String KEY_FORMAT = "%s:%s";
-    //临时配置
-    String TMP_KEY_FORMAT = "%s:%s_tmp";
-    //临时配置_是否被fetch的标识
-    String FLAG_KEY_FORMAT = "%s:%s_flag";
-    String FLAG_FETCHED = "1";
-    String FLAG_PENDING = "0";
-
     void setup(Properties config);
     void clearup();
     boolean isCanStoreConfig(ApplicationContextInfo applicationContextInfo);

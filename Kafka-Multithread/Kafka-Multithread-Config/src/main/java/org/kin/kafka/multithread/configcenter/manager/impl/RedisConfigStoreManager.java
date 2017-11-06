@@ -3,9 +3,11 @@ package org.kin.kafka.multithread.configcenter.manager.impl;
 import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.ConfigCenterConfig;
+import org.kin.kafka.multithread.configcenter.manager.AbstractConfigStoreManager;
 import org.kin.kafka.multithread.configcenter.manager.ConfigStoreManager;
 import org.kin.kafka.multithread.configcenter.utils.PropertiesUtils;
 import org.kin.kafka.multithread.protocol.app.ApplicationContextInfo;
+import org.kin.kafka.multithread.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import redis.clients.jedis.Jedis;
@@ -18,8 +20,16 @@ import java.util.*;
 /**
  * Created by huangjianqin on 2017/9/11.
  */
-public class RedisConfigStoreManager implements ConfigStoreManager{
-    private static final Logger log = LoggerFactory.getLogger(ConfigStoreManager.class);
+public class RedisConfigStoreManager extends AbstractConfigStoreManager{
+    //appHost:appName
+    private static final String KEY_FORMAT = "%s:%s";
+    //临时配置
+    private static final String TMP_KEY_FORMAT = "%s:%s_tmp";
+    //临时配置_是否被fetch的标识
+    private static final String FLAG_KEY_FORMAT = "%s:%s_flag";
+    private static final String FLAG_KEY_REGEX = "(.+)\\:(.+)_flag";
+    private static final String FLAG_FETCHED = "1";
+    private static final String FLAG_PENDING = "0";
 
     private JedisPool pool;
 
@@ -66,7 +76,7 @@ public class RedisConfigStoreManager implements ConfigStoreManager{
                 pipeline.hset(key, entry.getKey().toString(), entry.getValue().toString());
             }
             //写flag
-            Response<String> flagResponse = pipeline.set(flag, FLAG_FETCHED);
+            Response<String> flagResponse = pipeline.set(flag, FLAG_PENDING);
             Response<List<Object>> responses = pipeline.exec();
             pipeline.sync();
 
@@ -78,7 +88,7 @@ public class RedisConfigStoreManager implements ConfigStoreManager{
                     break;
                 }
             }
-            boolean flagResult = flagResponse.get().endsWith(FLAG_FETCHED);
+            boolean flagResult = flagResponse.get().endsWith(FLAG_PENDING);
 
             return result && flagResult;
         }
@@ -127,17 +137,17 @@ public class RedisConfigStoreManager implements ConfigStoreManager{
         try(Jedis client = pool.getResource()){
             String host = applicationContextInfo.getHost();
             String appName = applicationContextInfo.getAppName();
-            String key = String.format(TMP_KEY_FORMAT, host, appName);
+            String configKey = String.format(TMP_KEY_FORMAT, host, appName);
             String flag = String.format(FLAG_KEY_FORMAT, host, appName);
 
             Pipeline pipeline = client.pipelined();
             pipeline.multi();
-            Response<Long> delKeyResult = pipeline.del(key);
             Response<Long> delFlapResult = pipeline.del(flag);
+            pipeline.del(configKey);
             pipeline.exec();
             pipeline.sync();
 
-            return delKeyResult.get() == 1 && delFlapResult.get() == 1;
+            return delFlapResult.get() == 1;
         }
     }
 
@@ -196,32 +206,43 @@ public class RedisConfigStoreManager implements ConfigStoreManager{
         Set<String> excludeSet = new HashSet<>();
         try(Jedis client = pool.getResource()){
             String matchFlag = String.format(FLAG_KEY_FORMAT, appHost.getHost(), "*");
+            //获取cnofig flag
             List<String> matchedConfigFlag = new ArrayList<>(client.keys(matchFlag));
             List<Response<String>> responses = new ArrayList<>();
 
             Pipeline pipeline = client.pipelined();
             pipeline.multi();
+            //获取flag值
             for(String flag: matchedConfigFlag){
                 responses.add(pipeline.get(flag));
             }
             pipeline.exec();
             pipeline.sync();
 
+            //判断哪些config是不可再次fetcher
             for(int i = 0; i < responses.size(); i++){
                 //只获取还没fetch过的app config
-                if(responses.get(i).get().equals(FLAG_FETCHED)){
-                    //设置成功
-                    if(client.set(matchedConfigFlag.get(i), FLAG_FETCHED).equals(FLAG_FETCHED)){
-                        excludeSet.add(matchedConfigFlag.get(i));
-                    }
+                if(responses.get(i).get().equals(FLAG_PENDING)){
+                    //设置fetch成功
+                    client.set(matchedConfigFlag.get(i), FLAG_FETCHED);
+                }
+                else{
+                    //fetch过就不再fetch
+                    String[] hostAndAppName = StringUtils.getHostAndAppName(FLAG_KEY_REGEX, matchedConfigFlag.get(i));
+                    excludeSet.add(String.format(TMP_KEY_FORMAT, hostAndAppName[0], hostAndAppName[1]));
+                }
+            }
+
+            //如果没有任何对应的config flag, 则直接返回有个空lsit
+            if(matchedConfigFlag.size() > 0){
+                if(excludeSet.size() > 0){
+                    return getAllAppConfig(matchKey, excludeSet.toArray(new String[1]));
+                }
+                else{
+                    return getAllAppConfig(matchKey);
                 }
             }
         }
-        if(excludeSet.size() > 0){
-            return getAllAppConfig(matchKey, excludeSet.toArray(new String[1]));
-        }
-        else{
-            return getAllAppConfig(matchKey);
-        }
+        return new ArrayList<>();
     }
 }

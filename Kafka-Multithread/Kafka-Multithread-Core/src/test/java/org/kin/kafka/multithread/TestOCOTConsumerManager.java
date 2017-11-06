@@ -1,7 +1,7 @@
 package org.kin.kafka.multithread;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.kin.kafka.multithread.api.ApplicationContext;
+import org.kin.kafka.multithread.domain.ApplicationContext;
 import org.kin.kafka.multithread.api.MultiThreadConsumerManager;
 import org.kin.kafka.multithread.api.impl.RealEnvironmentMessageHandler;
 import org.kin.kafka.multithread.config.AppConfig;
