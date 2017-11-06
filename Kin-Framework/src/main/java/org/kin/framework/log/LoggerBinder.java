@@ -1,6 +1,7 @@
 package org.kin.framework.log;
 
 import org.apache.log4j.Level;
+import org.apache.log4j.LogManager;
 import org.apache.log4j.PropertyConfigurator;
 
 import java.util.Properties;
@@ -11,8 +12,13 @@ import java.util.Properties;
 public class LoggerBinder {
     private Properties properties = new Properties();
 
+    //example: [INFO] 2017-02-09 22:54:30 774 [main] | LogTest.main(10) : testing
     public static String DEFAULT_PATTERN = "[%p] %d{yyyy-MM-dd HH\\:mm\\:ss SSS} [%t] | %C.%M(%L) : %m %n";
     public static String DEFAULT_DATEPATTERN = "'.'yyyy-MM-dd";
+
+    public static String DEFAULT_CONSOLE_APPENDER_NAME = "console";
+    public static String DEFAULT_STDOUT_APPENDER_NAME = "stdout";
+    public static String DEFAULT_ERROR_APPENDER_NAME = "error";
 
     //common
     public static String ROOT_CATEGORY = "log4j.rootCategory";
@@ -32,10 +38,20 @@ public class LoggerBinder {
 
     //Appender
     public static String CONSOLE_APPENDER = "org.apache.log4j.ConsoleAppender";
-    public static String DAILY_FILE_APPENDER = "org.apache.log4j.DailyRollingFileAppender";
+    public static String DAILY_ROLLING_FILE_APPENDER = "org.apache.log4j.DailyRollingFileAppender";
+    public static String FILE_APPENDER = "org.apache.log4j.FileAppender";
+    public static String ROLLING_FILE_APPENDER = "org.apache.log4j.RollingFileAppender";
+    public static String WRITER_APPENDER = "org.apache.log4j.WriterAppender";
 
     //Layout
     public static String PATTERN_LAYOUT = "org.apache.log4j.PatternLayout";
+    public static String HTML_LAYOUT = "org.apache.log4j.HTMLLayout";
+    public static String SIMPLE_LAYOUT = "org.apache.log4j.SimpleLayout";
+    public static String TTCC_LAYOUT = "org.apache.log4j.TTCCLayout";
+
+    public static Boolean exist(String logger){
+        return LogManager.exists(logger) != null;
+    }
 
     public static LoggerBinder create(){
         return new LoggerBinder();
@@ -75,13 +91,28 @@ public class LoggerBinder {
         return this;
     }
 
-    public LoggerBinder setDailyFileAppender(String appender){
-        properties.setProperty(String.format(APPENDER, appender), DAILY_FILE_APPENDER);
+    public LoggerBinder setDailyRollingFileAppender(String appender){
+        properties.setProperty(String.format(APPENDER, appender), DAILY_ROLLING_FILE_APPENDER);
+        return this;
+    }
+
+    public LoggerBinder setFileAppender(String appender){
+        properties.setProperty(String.format(APPENDER, appender), FILE_APPENDER);
+        return this;
+    }
+
+    public LoggerBinder setRollingFileAppender(String appender){
+        properties.setProperty(String.format(APPENDER, appender), ROLLING_FILE_APPENDER);
         return this;
     }
 
     public LoggerBinder setConsoleAppender(String appender){
         properties.setProperty(String.format(APPENDER, appender), CONSOLE_APPENDER);
+        return this;
+    }
+
+    public LoggerBinder setWriterAppender(String appender){
+        properties.setProperty(String.format(APPENDER, appender), WRITER_APPENDER);
         return this;
     }
 
@@ -95,17 +126,32 @@ public class LoggerBinder {
         return this;
     }
 
-    public LoggerBinder setLayout(String appender){
+    public LoggerBinder setPatternLayout(String appender){
         properties.setProperty(String.format(LAYOUT, appender), PATTERN_LAYOUT);
         return this;
     }
 
-    public LoggerBinder setLayout(String appender, String layoutClass){
+    public LoggerBinder setHtmlLayout(String appender){
+        properties.setProperty(String.format(LAYOUT, appender), HTML_LAYOUT);
+        return this;
+    }
+
+    public LoggerBinder setSimpleLayout(String appender){
+        properties.setProperty(String.format(LAYOUT, appender), SIMPLE_LAYOUT);
+        return this;
+    }
+
+    public LoggerBinder setTTCCLayout(String appender){
+        properties.setProperty(String.format(LAYOUT, appender), TTCC_LAYOUT);
+        return this;
+    }
+
+    public LoggerBinder setPatternLayout(String appender, String layoutClass){
         properties.setProperty(String.format(LAYOUT, appender), layoutClass);
         return this;
     }
 
-    public LoggerBinder setLayout(String appender, Class layoutClass){
+    public LoggerBinder setPatternLayout(String appender, Class layoutClass){
         properties.setProperty(String.format(LAYOUT, appender), layoutClass.getName());
         return this;
     }
@@ -135,14 +181,62 @@ public class LoggerBinder {
         return this;
     }
 
-    public LoggerBinder setThreshold(String appender, String value){
-        properties.setProperty(String.format(THRESHOLD, appender), value);
+    public LoggerBinder setThreshold(String appender, String level){
+        properties.setProperty(String.format(THRESHOLD, appender), level);
+        return this;
+    }
+
+    public LoggerBinder setThreshold(String appender, Level level){
+        properties.setProperty(String.format(THRESHOLD, appender), level.toString());
         return this;
     }
 
     public LoggerBinder setAppend(String appender, String value){
-        properties.setProperty(String.format(APPEND, appender), value);
+        properties.setProperty(String.format(APPEND, appender), Boolean.valueOf(value).toString());
         return this;
+    }
+
+    public LoggerBinder setAppend(String appender, Boolean value){
+        properties.setProperty(String.format(APPEND, appender), value.toString());
+        return this;
+    }
+
+    public LoggerBinder addConsoleAppender(){
+        return addConsoleAppender(DEFAULT_CONSOLE_APPENDER_NAME);
+    }
+
+    public LoggerBinder addConsoleAppender(String appender){
+        return setConsoleAppender(appender)
+                .setPatternLayout(appender)
+                .setConversionPattern(appender);
+    }
+
+    public LoggerBinder addStdoutAppender(String path){
+        return addStdoutAppender(DEFAULT_STDOUT_APPENDER_NAME, path);
+    }
+
+    public LoggerBinder addStdoutAppender(String appender, String path){
+        return setDailyRollingFileAppender(appender)
+                .setFile(appender, path)
+                .setDatePattern(appender)
+                .setThreshold(appender, Level.INFO)
+                .setAppend(appender, true)
+                .setPatternLayout(appender)
+                .setConversionPattern(appender);
+    }
+
+    public LoggerBinder addErrorAppender(String path){
+        return addStdoutAppender(DEFAULT_ERROR_APPENDER_NAME, path);
+    }
+
+    public LoggerBinder addErrorAppender(String appender, String path){
+        return setDailyRollingFileAppender(appender)
+                .setFile(appender, path)
+                .setDatePattern(appender)
+                .setThreshold(appender, Level.ERROR)
+                .setAppend(appender, true)
+                .setPatternLayout(appender)
+                .setConversionPattern(appender);
     }
 
 }
