@@ -13,7 +13,7 @@ object HiveContextTest {
     val hiveContext = new HiveContext(sc)
 
     val movies = hiveContext.sql("select * from movie_info")
-    movies.foreach(println)
+    movies.foreach(println(_))
 
     sc.stop()
   }
