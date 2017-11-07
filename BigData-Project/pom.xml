@@ -17,8 +17,8 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <scala.version>2.11.11</scala.version>
-        <spark.version>1.6.2</spark.version>
-        <kafka.version>0.10.0.1</kafka.version>
+        <spark.version>2.2.0</spark.version>
+        <kafka.version>1.0.0</kafka.version>
         <hadoop.version>2.6.4</hadoop.version>
         <zookeeper.version>3.4.9</zookeeper.version>
         <hbase.version>1.2.4</hbase.version>
@@ -62,12 +62,6 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_2.11</artifactId>
             <version>${spark.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>javax.ws.rs</groupId>
-                    <artifactId>jsr311-api</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <dependency>
@@ -85,7 +79,7 @@
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-streaming-kafka_2.11</artifactId>
-            <version>${spark.version}</version>
+            <version>1.6.2</version>
         </dependency>
 
         <dependency>
@@ -362,7 +356,7 @@
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kin-framework</artifactId>
-            <version>1.0-SNAPSHOT</version>
+            <version>0.1.0.0</version>
         </dependency>
 
     </dependencies>
