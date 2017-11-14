@@ -46,6 +46,10 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
         pool = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new InnerThreadFactory());
     }
 
+    /**
+     * 通过该方法获得eventhandler并handle event,本质上是添加进队列
+     * @return
+     */
     @Override
     public EventHandler getEventHandler() {
         return innerHandler;
