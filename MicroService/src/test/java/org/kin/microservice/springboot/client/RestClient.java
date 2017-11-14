@@ -1,5 +1,6 @@
 package org.kin.microservice.springboot.client;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.ServiceInstance;
@@ -32,10 +33,10 @@ public class RestClient {
         return new RestTemplate();
     }
 
-    @Resource
+    @Autowired
     private RestTemplate loadBalacneTemplate;
 
-    @Resource
+    @Autowired
     private LoadBalancerClient loadBalancerClient;
 
     @RequestMapping(value = "loadbalance", method = RequestMethod.GET)
