@@ -1,7 +1,7 @@
 package org.kin.kafka.multithread.rpc.factory;
 
 import org.apache.log4j.Level;
-import org.kin.framework.log.LoggerBinder;
+import org.kin.framework.log.Log4jLoggerBinder;
 import org.kin.kafka.multithread.rpc.factory.impl.DefaultRPCFactoryImpl;
 import org.kin.kafka.multithread.utils.ClassUtils;
 import org.slf4j.Logger;
@@ -16,9 +16,9 @@ public class RPCFactories {
          * 如果没有适合的logger使用api创建默认logger
          */
         String logger = "com.alibaba.dubbo";
-        if(!LoggerBinder.exist(logger)){
+        if(!Log4jLoggerBinder.exist(logger)){
             String appender = "dubbo";
-            LoggerBinder.create()
+            Log4jLoggerBinder.create()
                     .setLogger(Level.INFO, logger, appender)
                     .setDailyRollingFileAppender(appender)
                     .setFile(appender, "/tmp/kafka-multithread/protocol/dubbo.log")

@@ -3,7 +3,7 @@ package org.kin.kafka.multithread.core;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.log4j.Level;
-import org.kin.framework.log.LoggerBinder;
+import org.kin.framework.log.Log4jLoggerBinder;
 import org.kin.kafka.multithread.api.MessageHandler;
 import org.kin.kafka.multithread.common.DefaultThreadFactory;
 import org.kin.kafka.multithread.config.AppConfig;
@@ -84,9 +84,9 @@ public class OPMTMessageHandlersManager extends AbstractMessageHandlersManager {
      */
     private static void log(){
         String logger = "OPMT";
-        if(!LoggerBinder.exist(logger)){
+        if(!Log4jLoggerBinder.exist(logger)){
             String appender = "opmt";
-            LoggerBinder.create()
+            Log4jLoggerBinder.create()
                     .setLogger(Level.INFO, logger, appender)
                     .setDailyRollingFileAppender(appender)
                     .setFile(appender, "/tmp/kafka-multithread/core/opmt.log")

@@ -3,7 +3,7 @@ package org.kin.kafka.multithread.core;
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.log4j.Level;
-import org.kin.framework.log.LoggerBinder;
+import org.kin.framework.log.Log4jLoggerBinder;
 import org.kin.kafka.multithread.api.Application;
 import org.kin.kafka.multithread.api.CallBack;
 import org.kin.kafka.multithread.config.AppConfig;
@@ -99,9 +99,9 @@ public class MessageFetcher<K, V> extends Thread implements Application {
      */
     private static void log(){
         String logger = "MessageFetcher";
-        if(!LoggerBinder.exist(logger)){
+        if(!Log4jLoggerBinder.exist(logger)){
             String appender = "messagefetcher";
-            LoggerBinder.create()
+            Log4jLoggerBinder.create()
                     .setLogger(Level.INFO, logger, appender)
                     .setDailyRollingFileAppender(appender)
                     .setFile(appender, "/tmp/kafka-multithread/core/messagefetcher.log")

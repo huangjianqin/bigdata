@@ -2,7 +2,7 @@ package org.kin.kafka.multithread.api;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.LogManager;
-import org.kin.framework.log.LoggerBinder;
+import org.kin.framework.log.Log4jLoggerBinder;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.configcenter.ReConfigable;
 import org.kin.kafka.multithread.core.AbstractMessageHandlersManager;
@@ -66,9 +66,9 @@ public class MultiThreadConsumerManager implements ReConfigable{
 
 
         String managerLogger = "MultiThreadConsumerManager";
-        if(!LoggerBinder.exist(managerLogger)){
+        if(!Log4jLoggerBinder.exist(managerLogger)){
             String appender = "multithreadconsumermanager";
-            LoggerBinder.create()
+            Log4jLoggerBinder.create()
                     .setLogger(Level.INFO, managerLogger, appender)
                     .setDailyRollingFileAppender(appender)
                     .setFile(appender, "/tmp/kafka-multithread/core/multithreadconsumermanager.log")
@@ -81,9 +81,9 @@ public class MultiThreadConsumerManager implements ReConfigable{
         }
 
         String zookeeperLogger = "org.apache.zookeeper";
-        if(!LoggerBinder.exist(zookeeperLogger)){
+        if(!Log4jLoggerBinder.exist(zookeeperLogger)){
             String appender = "zookeeper";
-            LoggerBinder.create()
+            Log4jLoggerBinder.create()
                     .setLogger(Level.INFO, zookeeperLogger, appender)
                     .setDailyRollingFileAppender(appender)
                     .setFile(appender, "/tmp/kafka-multithread/zookeeper.log")
@@ -96,9 +96,9 @@ public class MultiThreadConsumerManager implements ReConfigable{
         }
 
         String kafkaLogger = "org.apache.kafka";
-        if(!LoggerBinder.exist(kafkaLogger)){
+        if(!Log4jLoggerBinder.exist(kafkaLogger)){
             String appender = "kafka";
-            LoggerBinder.create()
+            Log4jLoggerBinder.create()
                     .setLogger(Level.INFO, kafkaLogger, appender)
                     .setDailyRollingFileAppender(appender)
                     .setFile(appender, "/tmp/kafka-multithread/kafka.log")

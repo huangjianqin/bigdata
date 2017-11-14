@@ -8,8 +8,9 @@ import java.util.Properties;
 
 /**
  * Created by huangjianqin on 2017/11/4.
+ * log4j api动态绑定logger
  */
-public class LoggerBinder {
+public class Log4jLoggerBinder {
     private Properties properties = new Properties();
 
     //example: [INFO] 2017-02-09 22:54:30 774 [main] | LogTest.main(10) : testing
@@ -53,15 +54,15 @@ public class LoggerBinder {
         return LogManager.exists(logger) != null;
     }
 
-    public static LoggerBinder create(){
-        return new LoggerBinder();
+    public static Log4jLoggerBinder create(){
+        return new Log4jLoggerBinder();
     }
 
     public void bind(){
         PropertyConfigurator.configure(properties);
     }
 
-    public LoggerBinder setRootCategory(Level level, String... appenders){
+    public Log4jLoggerBinder setRootCategory(Level level, String... appenders){
         String value = level.toString();
         for(String appender: appenders){
             value += "," + appender;
@@ -71,7 +72,7 @@ public class LoggerBinder {
         return this;
     }
 
-    public LoggerBinder setRootLogger(Level level, String... appenders){
+    public Log4jLoggerBinder setRootLogger(Level level, String... appenders){
         String value = level.toString();
         for(String appender: appenders){
             value += "," + appender;
@@ -81,7 +82,7 @@ public class LoggerBinder {
         return this;
     }
 
-    public LoggerBinder setLogger(Level level, String logger, String... appenders){
+    public Log4jLoggerBinder setLogger(Level level, String logger, String... appenders){
         String value = level.toString();
         for(String appender: appenders){
             value += "," + appender;
@@ -91,131 +92,131 @@ public class LoggerBinder {
         return this;
     }
 
-    public LoggerBinder setDailyRollingFileAppender(String appender){
+    public Log4jLoggerBinder setDailyRollingFileAppender(String appender){
         properties.setProperty(String.format(APPENDER, appender), DAILY_ROLLING_FILE_APPENDER);
         return this;
     }
 
-    public LoggerBinder setFileAppender(String appender){
+    public Log4jLoggerBinder setFileAppender(String appender){
         properties.setProperty(String.format(APPENDER, appender), FILE_APPENDER);
         return this;
     }
 
-    public LoggerBinder setRollingFileAppender(String appender){
+    public Log4jLoggerBinder setRollingFileAppender(String appender){
         properties.setProperty(String.format(APPENDER, appender), ROLLING_FILE_APPENDER);
         return this;
     }
 
-    public LoggerBinder setConsoleAppender(String appender){
+    public Log4jLoggerBinder setConsoleAppender(String appender){
         properties.setProperty(String.format(APPENDER, appender), CONSOLE_APPENDER);
         return this;
     }
 
-    public LoggerBinder setWriterAppender(String appender){
+    public Log4jLoggerBinder setWriterAppender(String appender){
         properties.setProperty(String.format(APPENDER, appender), WRITER_APPENDER);
         return this;
     }
 
-    public LoggerBinder setAppender(String appender, String appenderClass){
+    public Log4jLoggerBinder setAppender(String appender, String appenderClass){
         properties.setProperty(String.format(APPENDER, appender), appenderClass);
         return this;
     }
 
-    public LoggerBinder setAppender(String appender, Class appenderClass){
+    public Log4jLoggerBinder setAppender(String appender, Class appenderClass){
         properties.setProperty(String.format(APPENDER, appender), appenderClass.getName());
         return this;
     }
 
-    public LoggerBinder setPatternLayout(String appender){
+    public Log4jLoggerBinder setPatternLayout(String appender){
         properties.setProperty(String.format(LAYOUT, appender), PATTERN_LAYOUT);
         return this;
     }
 
-    public LoggerBinder setHtmlLayout(String appender){
+    public Log4jLoggerBinder setHtmlLayout(String appender){
         properties.setProperty(String.format(LAYOUT, appender), HTML_LAYOUT);
         return this;
     }
 
-    public LoggerBinder setSimpleLayout(String appender){
+    public Log4jLoggerBinder setSimpleLayout(String appender){
         properties.setProperty(String.format(LAYOUT, appender), SIMPLE_LAYOUT);
         return this;
     }
 
-    public LoggerBinder setTTCCLayout(String appender){
+    public Log4jLoggerBinder setTTCCLayout(String appender){
         properties.setProperty(String.format(LAYOUT, appender), TTCC_LAYOUT);
         return this;
     }
 
-    public LoggerBinder setPatternLayout(String appender, String layoutClass){
+    public Log4jLoggerBinder setPatternLayout(String appender, String layoutClass){
         properties.setProperty(String.format(LAYOUT, appender), layoutClass);
         return this;
     }
 
-    public LoggerBinder setPatternLayout(String appender, Class layoutClass){
+    public Log4jLoggerBinder setPatternLayout(String appender, Class layoutClass){
         properties.setProperty(String.format(LAYOUT, appender), layoutClass.getName());
         return this;
     }
 
-    public LoggerBinder setConversionPattern(String appender){
+    public Log4jLoggerBinder setConversionPattern(String appender){
         properties.setProperty(String.format(LAYOUT_CONVERSIONPATTERN, appender), DEFAULT_PATTERN);
         return this;
     }
 
-    public LoggerBinder setConversionPattern(String appender, String pattern){
+    public Log4jLoggerBinder setConversionPattern(String appender, String pattern){
         properties.setProperty(String.format(LAYOUT_CONVERSIONPATTERN, appender), pattern);
         return this;
     }
 
-    public LoggerBinder setFile(String appender, String path){
+    public Log4jLoggerBinder setFile(String appender, String path){
         properties.setProperty(String.format(FILE, appender), path);
         return this;
     }
 
-    public LoggerBinder setDatePattern(String appender){
+    public Log4jLoggerBinder setDatePattern(String appender){
         properties.setProperty(String.format(DATEPATTERN, appender), DEFAULT_DATEPATTERN);
         return this;
     }
 
-    public LoggerBinder setDatePattern(String appender, String pattern){
+    public Log4jLoggerBinder setDatePattern(String appender, String pattern){
         properties.setProperty(String.format(DATEPATTERN, appender), pattern);
         return this;
     }
 
-    public LoggerBinder setThreshold(String appender, String level){
+    public Log4jLoggerBinder setThreshold(String appender, String level){
         properties.setProperty(String.format(THRESHOLD, appender), level);
         return this;
     }
 
-    public LoggerBinder setThreshold(String appender, Level level){
+    public Log4jLoggerBinder setThreshold(String appender, Level level){
         properties.setProperty(String.format(THRESHOLD, appender), level.toString());
         return this;
     }
 
-    public LoggerBinder setAppend(String appender, String value){
+    public Log4jLoggerBinder setAppend(String appender, String value){
         properties.setProperty(String.format(APPEND, appender), Boolean.valueOf(value).toString());
         return this;
     }
 
-    public LoggerBinder setAppend(String appender, Boolean value){
+    public Log4jLoggerBinder setAppend(String appender, Boolean value){
         properties.setProperty(String.format(APPEND, appender), value.toString());
         return this;
     }
 
-    public LoggerBinder addConsoleAppender(){
+    public Log4jLoggerBinder addConsoleAppender(){
         return addConsoleAppender(DEFAULT_CONSOLE_APPENDER_NAME);
     }
 
-    public LoggerBinder addConsoleAppender(String appender){
+    public Log4jLoggerBinder addConsoleAppender(String appender){
         return setConsoleAppender(appender)
                 .setPatternLayout(appender)
                 .setConversionPattern(appender);
     }
 
-    public LoggerBinder addStdoutAppender(String path){
+    public Log4jLoggerBinder addStdoutAppender(String path){
         return addStdoutAppender(DEFAULT_STDOUT_APPENDER_NAME, path);
     }
 
-    public LoggerBinder addStdoutAppender(String appender, String path){
+    public Log4jLoggerBinder addStdoutAppender(String appender, String path){
         return setDailyRollingFileAppender(appender)
                 .setFile(appender, path)
                 .setDatePattern(appender)
@@ -225,11 +226,11 @@ public class LoggerBinder {
                 .setConversionPattern(appender);
     }
 
-    public LoggerBinder addErrorAppender(String path){
+    public Log4jLoggerBinder addErrorAppender(String path){
         return addStdoutAppender(DEFAULT_ERROR_APPENDER_NAME, path);
     }
 
-    public LoggerBinder addErrorAppender(String appender, String path){
+    public Log4jLoggerBinder addErrorAppender(String appender, String path){
         return setDailyRollingFileAppender(appender)
                 .setFile(appender, path)
                 .setDatePattern(appender)

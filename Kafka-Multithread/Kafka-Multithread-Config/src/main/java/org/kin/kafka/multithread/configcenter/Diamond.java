@@ -1,7 +1,7 @@
 package org.kin.kafka.multithread.configcenter;
 
 import org.apache.log4j.Level;
-import org.kin.framework.log.LoggerBinder;
+import org.kin.framework.log.Log4jLoggerBinder;
 import org.kin.kafka.multithread.configcenter.codec.StoreCodec;
 import org.kin.kafka.multithread.configcenter.codec.StoreCodecs;
 import org.kin.kafka.multithread.config.AppConfig;
@@ -75,9 +75,9 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
      */
     private static void log(){
         String logger = "Diamond";
-        if(!LoggerBinder.exist(logger)){
+        if(!Log4jLoggerBinder.exist(logger)){
             String appender = "diamond";
-            LoggerBinder.create()
+            Log4jLoggerBinder.create()
                     .setLogger(Level.INFO, logger, appender)
                     .setDailyRollingFileAppender(appender)
                     .setFile(appender, "/tmp/kafka-multithread/config/diamond.log")

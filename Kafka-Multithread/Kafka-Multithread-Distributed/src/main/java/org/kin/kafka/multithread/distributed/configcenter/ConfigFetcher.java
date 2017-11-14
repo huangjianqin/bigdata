@@ -1,7 +1,7 @@
 package org.kin.kafka.multithread.distributed.configcenter;
 
 import org.apache.log4j.Level;
-import org.kin.framework.log.LoggerBinder;
+import org.kin.framework.log.Log4jLoggerBinder;
 import org.kin.framework.utils.ExceptionUtils;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.distributed.AppStatus;
@@ -70,9 +70,9 @@ public class ConfigFetcher extends Thread{
      */
     private static void log(){
         String logger = "ConfigFetcher";
-        if(!LoggerBinder.exist(logger)){
+        if(!Log4jLoggerBinder.exist(logger)){
             String appender = "configfetcher";
-            LoggerBinder.create()
+            Log4jLoggerBinder.create()
                     .setLogger(Level.INFO, logger, appender)
                     .setDailyRollingFileAppender(appender)
                     .setFile(appender, "/tmp/kafka-multithread/distributed/configfetcher.log")
