@@ -14,7 +14,7 @@ import org.kin.kafka.multithread.domain.HealthReport;
 import org.kin.kafka.multithread.protocol.app.ApplicationContextInfo;
 import org.kin.kafka.multithread.protocol.distributed.ContainerMasterProtocol;
 import org.kin.kafka.multithread.protocol.distributed.NodeMasterProtocol;
-import org.kin.framework.utils.ExceptionUtils;
+import org.kin.kafka.multithread.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

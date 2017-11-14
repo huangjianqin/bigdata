@@ -1,4 +1,4 @@
-package org.kin.framework.utils;
+package org.kin.kafka.multithread.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

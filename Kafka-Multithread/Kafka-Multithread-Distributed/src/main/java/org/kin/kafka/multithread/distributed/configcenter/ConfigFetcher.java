@@ -2,7 +2,7 @@ package org.kin.kafka.multithread.distributed.configcenter;
 
 import org.apache.log4j.Level;
 import org.kin.framework.log.Log4jLoggerBinder;
-import org.kin.framework.utils.ExceptionUtils;
+import org.kin.kafka.multithread.utils.ExceptionUtils;
 import org.kin.kafka.multithread.config.AppConfig;
 import org.kin.kafka.multithread.distributed.AppStatus;
 import org.kin.kafka.multithread.distributed.node.config.DefaultNodeConfig;
