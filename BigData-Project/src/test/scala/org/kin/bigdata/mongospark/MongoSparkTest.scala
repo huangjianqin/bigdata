@@ -1,6 +1,6 @@
 package org.kin.bigdata.mongospark
 
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
@@ -60,44 +60,44 @@ object MongoSparkTest {
 //    MongoSpark.builder()
 
     //利用SparkConf的mongodb配置加载到Spark SQL转换成DataFrame
-    val sqlContext = SQLContext.getOrCreate(sc)
-//    val df1 = MongoSpark.load(sqlContext)
+    val sparkSession = SparkSession.builder().config(conf).getOrCreate()
+//    val df1 = MongoSpark.load(sparkSession)
 //    df1.registerTempTable("test")
-//    sqlContext.sql("select * from test where test.a != test.b").foreach(println)
-
-    //利用隐式转换读取mongodb集合
-//    val df1 = sqlContext.loadFromMongoDB(ReadConfig(Map("uri" -> "mongodb://139.199.185.84/test.c3?readPreference=primaryPreferred")))
+//    sparkSession.sql("select * from test where test.a != test.b").foreach(println)
+//
+//    利用隐式转换读取mongodb集合
+//    val df1 = sparkSession.loadFromMongoDB(ReadConfig(Map("uri" -> "mongodb://139.199.185.84/test.c3?readPreference=primaryPreferred")))
 //    df1.registerTempTable("test")
-//    sqlContext.sql("select * from test where test.a > 15").foreach(println)
-
-    //利用sqlContext.read
-//    val df1 = sqlContext.read.format("com.mongodb.spark.sql").load()
+//    sparkSession.sql("select * from test where test.a > 15").foreach(println)
+//
+//    利用sqlContext.read
+//    val df1 = sparkSession.read.format("com.mongodb.spark.sql").load()
 //    df1.registerTempTable("test")
-//    sqlContext.sql("select * from test where test.a != test.b").foreach(println)
-
+//    sparkSession.sql("select * from test where test.a != test.b").foreach(println)
+//
 //    val readConfig = ReadConfig(Map("uri" -> "mongodb://139.199.185.84/test.c3?readPreference=primaryPreferred"))
-//    val df1 = sqlContext.read.mongo(readConfig)
+//    val df1 = sparkSession.read.mongo(readConfig)
 //    df1.registerTempTable("test")
-//    sqlContext.sql("select * from test where test.a > 15").foreach(println)
-
-//    val df1 = sqlContext.read.format("com.mongodb.spark.sql").options(readConfig.asOptions).load()
+//    sparkSession.sql("select * from test where test.a > 15").foreach(println)
+//
+//    val df1 = sparkSession.read.format("com.mongodb.spark.sql").options(readConfig.asOptions).load()
 //    df1.registerTempTable("test")
-//    sqlContext.sql("select * from test where test.a > 15").foreach(println)
-
-    //使用filter,在底层SQLContext是使用aggregation pipeline来过滤数据
-//    val df1 = sqlContext.read.format("com.mongodb.spark.sql").load()
+//    sparkSession.sql("select * from test where test.a > 15").foreach(println)
+//
+//    使用filter,在底层SQLContext是使用aggregation pipeline来过滤数据
+//    val df1 = sparkSession.read.format("com.mongodb.spark.sql").load()
 //    df1.filter(df1("a") === df1("b")).show()
-
-    //默认情况下,会使用mongo集合document的schema作为dataframe的schema
-    //使用case类的话可以自定义dataframe的schema,而且只会读取这些field
-//    val df1 = MongoSpark.load[A](sqlContext)
+//
+//    默认情况下,会使用mongo集合document的schema作为dataframe的schema
+//    使用case类的话可以自定义dataframe的schema,而且只会读取这些field
+//    val df1 = MongoSpark.load[A](sparkSession)
 //    df1.printSchema()
-
-    //转换成dataset
+//
+//    转换成dataset
 //    val dataset = df1.as[A]
 //    dataset.show()
-
-    //RDD[document]转换成DataFrame或Dataset
+//
+//    RDD[document]转换成DataFrame或Dataset
 //    val rdd = sc.loadFromMongoDB(ReadConfig(Map("uri" -> "mongodb://139.199.185.84/test.c3?readPreference=primaryPreferred")))
 //    val df1 = rdd.toDF()
 //    df1.printSchema()
@@ -105,12 +105,13 @@ object MongoSparkTest {
 //    df2.printSchema()
 //    val ds1 = rdd.toDS[A]()
 //    ds1.show()
-
-    //保存至MongoDB
+//
+//    保存至MongoDB
 //    MongoSpark.save(df1.filter(df1("a") === 19).write.option("collection", "c4").mode("overwrite"))
 //    df1.filter(df1("a") === 18).write.option("collection", "c4").mode("overwrite").mongo()
 //    df1.filter(df1("a") === 19).write.option("collection", "c4").format("com.mongodb.spark.sql").mode("append").save()
 
+    sparkSession.stop()
     sc.stop()
   }
 }
