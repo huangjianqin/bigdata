@@ -1,20 +1,20 @@
 package org.kin.bigdata.hive
 
+import org.apache.spark.sql.SparkSession
+
 import org.apache.spark.sql.hive.HiveContext
-import org.apache.spark.{SparkContext, SparkConf}
+import org.apache.spark.{SparkConf, SparkContext}
 
 /**
  * Created by 健勤 on 2017/8/6.
  */
 object HiveContextTest {
   def main(args: Array[String]) {
-    val conf = new SparkConf().setAppName("HiveContextTest").setMaster("local[4]")
-    val sc = new SparkContext(conf)
-    val hiveContext = new HiveContext(sc)
+    val sparkSession = SparkSession.builder().enableHiveSupport().appName("HiveContextTest").master("local[2]").getOrCreate()
 
-    val movies = hiveContext.sql("select * from movie_info")
+    val movies = sparkSession.sql("select * from movie_info")
     movies.foreach(println(_))
 
-    sc.stop()
+    sparkSession.stop()
   }
 }

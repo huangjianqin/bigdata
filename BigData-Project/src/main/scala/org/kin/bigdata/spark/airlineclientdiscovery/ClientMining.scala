@@ -20,7 +20,7 @@ object ClientMining {
       }
       //k-means||
       //random
-      val model = KMeans.train(lrfmcV, 5, 50, 10)
+      val model = KMeans.train(lrfmcV, 5, 50)
       println(model.computeCost(lrfmcV))
       val numInCluster = lrfmcV.map{v =>
         (model.predict(v), 1)

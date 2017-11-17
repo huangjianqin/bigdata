@@ -1,6 +1,6 @@
 package org.kin.bigdata.sparksql
 
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
@@ -9,8 +9,8 @@ import org.apache.spark.{SparkConf, SparkContext}
 object SparkSQLInsert {
   def main(args: Array[String]): Unit = {
     val conf = new SparkConf().setAppName("SparkSQLInsert").setMaster("local[2]")
-    val sc = new SparkContext(conf)
-    val ssc = new SQLContext(sc)
+    val sparkSession = SparkSession.builder().config(conf).getOrCreate()
+    val sc = sparkSession.sparkContext
 
     val originData = Seq(Person("AAAA", 12), Person("BBBB", 13))
     val data = sc.parallelize(originData)
@@ -18,14 +18,15 @@ object SparkSQLInsert {
     val originData1 = Seq(Person("CCCC", 14), Person("DDDD", 15))
     val data1 = sc.parallelize(originData1)
 
-    import ssc.implicits._
+    import sparkSession.implicits._
     val dataDF = data.toDF()
-    dataDF.registerTempTable("person")
-    val dataDF1 = data1.toDF().unionAll(ssc.sql("select * from person"))
-    dataDF1.registerTempTable("person")
+    dataDF.createOrReplaceTempView("person")
+    val dataDF1 = data1.toDF().union(sparkSession.sql("select * from person"))
+    dataDF1.createOrReplaceTempView("person")
 
-    ssc.sql("select * from person").show()
+    sparkSession.sql("select * from person").show()
 
+    sparkSession.stop()
     sc.stop()
   }
 }
