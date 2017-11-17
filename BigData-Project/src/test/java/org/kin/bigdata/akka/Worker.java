@@ -1,20 +1,24 @@
 package org.kin.bigdata.akka;
 
+import akka.actor.AbstractActor;
 import akka.actor.PoisonPill;
-import akka.actor.UntypedActor;
+import akka.japi.pf.ReceiveBuilder;
 
 /**
  * Created by 健勤 on 2017/5/18.
  */
-public class Worker extends UntypedActor{
+public class Worker extends AbstractActor{
+
     @Override
-    public void onReceive(Object message) throws Exception {
-        Thread.sleep(2000);
-        if(message instanceof String){
-            String content = message.toString();
-            getSender().tell("a", self());
-        }else if(message instanceof PoisonPill){
-            System.out.println("worker shutdown");
-        }
+    public Receive createReceive() {
+        return ReceiveBuilder.create()
+                .match(String.class, message -> {
+                    String content = message.toString();
+                    getSender().tell("a", getSelf());
+                })
+                .match(PoisonPill.class, message ->{
+                    System.out.println("worker shutdown");
+                })
+                .build();
     }
 }
