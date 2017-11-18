@@ -1,16 +1,22 @@
 package org.kin.kafka.multithread.rpc.factory;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import org.apache.log4j.Level;
 import org.kin.framework.log.LoggerBinder;
+import org.kin.framework.utils.ExceptionUtils;
 import org.kin.kafka.multithread.rpc.factory.impl.DefaultRPCFactoryImpl;
 import org.kin.kafka.multithread.utils.ClassUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+
 /**
  * Created by huangjianqin on 2017/9/8.
  */
-public class RPCFactories {
+public class RPCFactories{
     static {
         /**
          * 如果没有适合的logger使用api创建默认logger
@@ -32,49 +38,39 @@ public class RPCFactories {
     }
 
     private static final Logger log = LoggerFactory.getLogger(RPCFactories.class);
-    private static RPCFactory factory;
     private static final String DEFAULT_RPCFACTORY = DefaultRPCFactoryImpl.class.getName();
+    private static Cache<String, RPCFactory> rpcFactories = CacheBuilder.newBuilder().softValues().build();
 
-    public static void init(String factoryClass){
-        if(factoryClass == null || factoryClass.equals("")){
-            factoryClass = DEFAULT_RPCFACTORY;
-        }
-        log.info("init RPCFactory(class = " + factoryClass + ")");
-        factory = (RPCFactory) ClassUtils.instance(factoryClass);
+    private RPCFactories(){
     }
 
-    public static void service(Class protocol, Object service, String registryAddress, String protocolName, int protocolPort){
-        if(factory == null){
-            init(DEFAULT_RPCFACTORY);
-        }
-        factory.service(protocol, service, registryAddress, protocolName, protocolPort);
+    public static RPCFactory instance(){
+        return instance(DEFAULT_RPCFACTORY);
     }
 
-    public static void serviceWithoutRegistry(Class service, Object serviceImpl, int protocolPort){
-        if(factory == null){
-            init(DEFAULT_RPCFACTORY);
-        }
-        factory.serviceWithoutRegistry(service, serviceImpl, protocolPort);
-    }
+    public static RPCFactory instance(final String factoryClass){
+        RPCFactory rpcFactory = null;
+        try {
+            rpcFactory =  rpcFactories.get(factoryClass, new Callable<RPCFactory>() {
+                @Override
+                public RPCFactory call() throws Exception {
+                    String iFactoryClass = factoryClass;
+                    if(iFactoryClass == null || iFactoryClass.equals("")){
+                        iFactoryClass = DEFAULT_RPCFACTORY;
+                    }
+                    log.info("init RPCFactory(class = " + iFactoryClass + ")");
+                    RPCFactory factory = (RPCFactory) ClassUtils.instance(iFactoryClass);
 
-    public static void restServiceWithoutRegistry(Class service, Object serviceImpl, int protocolPort) {
-        if(factory == null){
-            init(DEFAULT_RPCFACTORY);
+                    rpcFactories.put(iFactoryClass, factory);
+                    return factory;
+                }
+            });
+        } catch (ExecutionException e) {
+            log.error("hit exception when initting RPCFactory(class = " + factoryClass + ")");
+            ExceptionUtils.log(e);
         }
-        factory.restService(service, serviceImpl, protocolPort);
-    }
-
-    public static <T> T client(Class<T> service, String registryAddress){
-        if(factory == null){
-            init(DEFAULT_RPCFACTORY);
+        finally {
+            return rpcFactory;
         }
-        return factory.client(service, registryAddress);
-    }
-
-    public static<T> T clientWithoutRegistry(Class<T> service, String host, int port){
-        if(factory == null){
-            init(DEFAULT_RPCFACTORY);
-        }
-        return factory.clientWithoutRegistry(service, host, port);
     }
 }

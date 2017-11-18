@@ -123,7 +123,7 @@ public class Node implements NodeMasterProtocol{
 
         this.containerAllocateRetry = Integer.valueOf(nodeConfig.getProperty(NodeConfig.CONTAINER_ALLOCATE_RETRY));
 
-        RPCFactories.serviceWithoutRegistry(NodeMasterProtocol.class, this, nodeProtocolPort);
+        RPCFactories.instance().serviceWithoutRegistry(NodeMasterProtocol.class, this, nodeProtocolPort);
         log.info("NodeMasterProtocol rpc interface inited, binding on {}:{}", HostUtils.localhost(), nodeProtocolPort);
 
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {

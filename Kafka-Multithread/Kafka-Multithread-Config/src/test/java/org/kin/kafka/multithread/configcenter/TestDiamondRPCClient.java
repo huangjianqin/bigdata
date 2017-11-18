@@ -20,7 +20,7 @@ import java.util.Properties;
 public class TestDiamondRPCClient extends TestConfigBase{
 
     public DiamondMasterProtocol client(){
-        return RPCFactories.clientWithoutRegistry(DiamondMasterProtocol.class, HostUtils.localhost(), 60001);
+        return RPCFactories.instance().clientWithoutRegistry(DiamondMasterProtocol.class, HostUtils.localhost(), 60001);
     }
 
     @Test

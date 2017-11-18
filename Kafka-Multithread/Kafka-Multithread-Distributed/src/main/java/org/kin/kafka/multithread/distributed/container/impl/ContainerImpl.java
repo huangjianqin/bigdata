@@ -26,8 +26,8 @@ public class ContainerImpl extends Container {
     @Override
     public void doStart() {
         //启动RPC接口
-        RPCFactories.serviceWithoutRegistry(ContainerMasterProtocol.class, this, containerMasterProtocolPort);
-        RPCFactories.clientWithoutRegistry(NodeMasterProtocol.class, HostUtils.localhost(), nodeMasterProtocolPort);
+        RPCFactories.instance().serviceWithoutRegistry(ContainerMasterProtocol.class, this, containerMasterProtocolPort);
+        RPCFactories.instance().clientWithoutRegistry(NodeMasterProtocol.class, HostUtils.localhost(), nodeMasterProtocolPort);
 
         while(isStopped){
             //阻塞main线程......

@@ -100,7 +100,7 @@ public class LocalContainerAllocator implements ContainerAllocator {
                     e.printStackTrace();
                 }
                 //构建与cotainer的RPC接口
-                ContainerMasterProtocol containerClient = RPCFactories.clientWithoutRegistry(ContainerMasterProtocol.class, HostUtils.localhost(), containerContext.getProtocolPort());
+                ContainerMasterProtocol containerClient = RPCFactories.instance().clientWithoutRegistry(ContainerMasterProtocol.class, HostUtils.localhost(), containerContext.getProtocolPort());
                 id2Container.put(containerContext.getContainerId(), containerClient);
 
                 selectedContainerClient = containerClient;
