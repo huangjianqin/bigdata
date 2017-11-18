@@ -8,13 +8,10 @@ import akka.japi.pf.ReceiveBuilder;
  */
 public class Server extends AbstractActor {
     private ActorRef worker;
-    private ActorRef client;
 
     @Override
     public void preStart() throws Exception {
-        ActorSystem actorSystem = getContext().system();
-        worker = actorSystem.actorOf(Props.create(Worker.class), "worker");
-        client = actorSystem.actorFor("akka://akkaTest/user/client");
+        worker = getContext().actorOf(Props.create(Worker.class), "worker");
         super.preStart();
     }
 
@@ -30,8 +27,9 @@ public class Server extends AbstractActor {
         return ReceiveBuilder.create()
                 .match(String.class, message -> {
                     String content = message.toString();
+                    System.out.println(content);
                     if(content.equals("a")){
-                        client.tell("success", self());
+                        getContext().actorSelection("akka://akkaTest/user/client").tell("success", self());
                     }else{
                         worker.tell(message, self());
                     }

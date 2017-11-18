@@ -42,6 +42,6 @@ public class Client extends AbstractActor {
         client.tell(PoisonPill.getInstance(), client);
         server.tell(PoisonPill.getInstance(), server);
 
-
+        actorSystem.terminate();
     }
 }

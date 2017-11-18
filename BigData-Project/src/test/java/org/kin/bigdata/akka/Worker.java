@@ -14,6 +14,7 @@ public class Worker extends AbstractActor{
         return ReceiveBuilder.create()
                 .match(String.class, message -> {
                     String content = message.toString();
+                    System.out.println(content);
                     getSender().tell("a", getSelf());
                 })
                 .match(PoisonPill.class, message ->{
