@@ -3,6 +3,8 @@ package org.kin.bigdata.spark.kafka
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, Dataset, Row}
 import org.apache.spark.streaming.dstream.DStream
+//want to use specify implicit, must import this package or add compiler option language:implicitConversions
+import scala.language.implicitConversions
 
 import scala.reflect.ClassTag
 
