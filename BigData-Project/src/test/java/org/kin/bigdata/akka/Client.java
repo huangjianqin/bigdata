@@ -1,16 +1,16 @@
 package org.kin.bigdata.akka;
 
 import akka.actor.*;
+import akka.japi.pf.ReceiveBuilder;
 
 /**
  * Created by 健勤 on 2017/5/18.
  */
-public class Client extends UntypedActor {
+public class Client extends AbstractActor {
     private static int count = 0;
 
     @Override
     public void preStart() throws Exception {
-        ActorSystem actorSystem = getContext().system();
         System.out.println(self().path());
 
         if(count < 5){
@@ -22,13 +22,15 @@ public class Client extends UntypedActor {
     }
 
     @Override
-    public void onReceive(Object message) throws Exception {
-        if(message instanceof PoisonPill){
-            System.out.println("worker shutdown");
-        }
-        else {
-            System.out.println("client receive:" + message.toString());
-        }
+    public Receive createReceive() {
+        return ReceiveBuilder.create()
+                .match(PoisonPill.class, message -> {
+                    System.out.println("worker shutdown");
+                })
+                .matchAny(message -> {
+                    System.out.println("client receive:" + message.toString());
+                })
+                .build();
     }
 
     public static void main(String[] args) throws InterruptedException {
@@ -40,6 +42,6 @@ public class Client extends UntypedActor {
         client.tell(PoisonPill.getInstance(), client);
         server.tell(PoisonPill.getInstance(), server);
 
-
+        actorSystem.terminate();
     }
 }

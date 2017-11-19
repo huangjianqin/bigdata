@@ -87,7 +87,7 @@ public class ConfigFetcher extends Thread{
 
     private void initDiamondClient(DiamondContext diamondContext){
         this.diamondMasterProtocol =
-                RPCFactories.clientWithoutRegistry(
+                RPCFactories.instance().clientWithoutRegistry(
                         DiamondMasterProtocol.class,
                         diamondContext.getHost(),
                         diamondContext.getPort()

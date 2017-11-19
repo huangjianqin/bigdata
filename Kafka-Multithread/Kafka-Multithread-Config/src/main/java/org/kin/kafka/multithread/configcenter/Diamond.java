@@ -100,13 +100,13 @@ public class Diamond implements DiamondMasterProtocol, AdminProtocol{
             }
         }));
 
-        RPCFactories.serviceWithoutRegistry(
+        RPCFactories.instance().serviceWithoutRegistry(
                 DiamondMasterProtocol.class,
                 this,
                 Integer.valueOf(config.getProperty(ConfigCenterConfig.DIAMONDMASTERPROTOCOL_PORT))
         );
         log.info(String.format("Diamond RPC interface bind '%s' port", config.getProperty(ConfigCenterConfig.DIAMONDMASTERPROTOCOL_PORT)));
-        RPCFactories.restServiceWithoutRegistry(AdminProtocol.class,
+        RPCFactories.instance().restService(AdminProtocol.class,
                 this,
                 Integer.valueOf(config.getProperty(ConfigCenterConfig.ADMINPROTOCOL_PORT))
         );

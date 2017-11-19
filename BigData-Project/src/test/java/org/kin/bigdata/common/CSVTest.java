@@ -1,4 +1,4 @@
-package common;
+package org.kin.bigdata.common;
 
 import au.com.bytecode.opencsv.CSVParser;
 
