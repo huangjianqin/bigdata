@@ -24,6 +24,7 @@ app.child.run.model=jvm
 #kafka.consumer.subscribe=
 #key.deserializer=org.apache.kafka.common.serialization.StringDeserializer
 #value.deserializer=org.apache.kafka.common.serialization.StringDeserializer
+#kafka.offset=
 
 #-----------------------------------------------------------------------------------------------------------------------------
 #app required

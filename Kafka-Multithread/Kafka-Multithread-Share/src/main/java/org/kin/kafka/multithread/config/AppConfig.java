@@ -41,6 +41,8 @@ public class AppConfig {
     //静态topic-par,topic-par(不支持)
     public static final String KAFKA_CONSUMER_SUBSCRIBE = "kafka.consumer.subscribe";
 
+    public static final String KAFKA_OFFSET = "kafka.offset";
+
     //message fetcher
     //定义KafkaConsumer poll(), ocot也会用到
     public static final String MESSAGEFETCHER_POLL_TIMEOUT = "messagefetcher.poll.timeout";
@@ -91,6 +93,7 @@ public class AppConfig {
         DEFAULT_APPCONFIG.put(AppConfig.APPSTATUS, DefaultAppConfig.DEFAULT_APPSTATUS);
 
         DEFAULT_APPCONFIG.put(AppConfig.KAFKA_CONSUMER_SUBSCRIBE, DefaultAppConfig.DEFAULT_NULL);
+        DEFAULT_APPCONFIG.put(AppConfig.KAFKA_OFFSET, DefaultAppConfig.DEFAULT_NULL);
 
         DEFAULT_APPCONFIG.put(MESSAGEFETCHER_POLL_TIMEOUT, DefaultAppConfig.DEFAULT_MESSAGEFETCHER_POLL_TIMEOUT);
         DEFAULT_APPCONFIG.put(MESSAGEFETCHER_COMMIT_ENABLERETRY, DefaultAppConfig.DEFAULT_MESSAGEFETCHER_COMMIT_ENABLERETRY);
@@ -132,6 +135,7 @@ public class AppConfig {
         CONFIG2FORMATOR.put(AppConfig.APPSTATUS, "(RUN)|(UPDATE)|(CLOSE)|(RESTART)");
 
         CONFIG2FORMATOR.put(AppConfig.KAFKA_CONSUMER_SUBSCRIBE, ".*");
+        CONFIG2FORMATOR.put(AppConfig.KAFKA_OFFSET, "(\\w+:\\d+:\\d+,{0,1})*");
 
         CONFIG2FORMATOR.put(MESSAGEFETCHER_POLL_TIMEOUT, "\\d*");
         CONFIG2FORMATOR.put(MESSAGEFETCHER_COMMIT_ENABLERETRY, "(true)|(false)");

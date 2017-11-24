@@ -7,6 +7,7 @@ import org.kin.framework.log.Log4jLoggerBinder;
 import org.kin.kafka.multithread.api.Application;
 import org.kin.kafka.multithread.api.CallBack;
 import org.kin.kafka.multithread.config.AppConfig;
+import org.kin.kafka.multithread.config.DefaultAppConfig;
 import org.kin.kafka.multithread.statistics.Statistics;
 import org.kin.kafka.multithread.utils.ClassUtils;
 import org.kin.kafka.multithread.utils.AppConfigUtils;
@@ -92,6 +93,9 @@ public class MessageFetcher<K, V> extends Thread implements Application {
 
         this.consumer = new KafkaConsumer<K, V>(config);
         this.consumer.subscribe(AppConfigUtils.getSubscribeTopic(config), new MessageFetcher.InnerConsumerRebalanceListener<>(this));
+
+        //设置Kafka consumer某些分区开始消费的Offset
+        AppConfigUtils.setupKafkaStartOffset(this.config.getProperty(AppConfig.KAFKA_OFFSET), this.consumer);
     }
 
     /**

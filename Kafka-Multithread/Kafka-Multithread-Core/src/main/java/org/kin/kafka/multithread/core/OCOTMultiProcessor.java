@@ -214,21 +214,25 @@ public class OCOTMultiProcessor<K, V>  implements Application{
         private boolean isStopped = false;
         private Map<TopicPartition, ConsumerRecord> topicPartition2ConsumerRecord = new HashMap<>();
 
-        //kafka consumer订阅topic partition
+        //缓存kafka consumer订阅topic partition
         private List<TopicPartition> subscribed;
 
+        //缓存topic某些partition配置定义开始消费的Offset
+        private String topicPartitionOffsetStr = "";
+
         private OCOTProcessor(int processorId,
-                              Properties properties,
+                              Properties config,
                               Set<String> topics,
                               MessageHandler<K, V> messageHandler,
                               CommitStrategy commitStrategy,
                               Class<? extends ConsumerRebalanceListener> consumerRebalanceListenerClass,
                               CallBack callBack) {
             this.processorId = processorId;
-            this.consumer = new KafkaConsumer<K, V>(properties);
+            this.consumer = new KafkaConsumer<K, V>(config);
             this.messageHandler = messageHandler;
             this.commitStrategy = commitStrategy;
             this.callBack = callBack;
+            this.topicPartitionOffsetStr = config.getProperty(AppConfig.KAFKA_OFFSET);
 
             if(topics != null && topics.size() > 0){
                 if(consumerRebalanceListenerClass != null){
@@ -274,6 +278,9 @@ public class OCOTMultiProcessor<K, V>  implements Application{
             } catch (Exception e) {
                 e.printStackTrace();
             }
+
+            //设置Kafka consumer某些分区开始消费的Offset
+            AppConfigUtils.setupKafkaStartOffset(this.topicPartitionOffsetStr, this.consumer);
 
             log.info("message processor-" + processorId + " inited");
         }
@@ -336,6 +343,7 @@ public class OCOTMultiProcessor<K, V>  implements Application{
         @Override
         public void run() {
             init();
+
             log.info("start message processor-" + processorId);
             try{
                 while (!isStopped && !Thread.currentThread().isInterrupted()){

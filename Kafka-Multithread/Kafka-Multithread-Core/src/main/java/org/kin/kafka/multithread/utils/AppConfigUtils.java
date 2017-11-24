@@ -1,5 +1,6 @@
 package org.kin.kafka.multithread.utils;
 
+import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.kafka.multithread.api.AbstractConsumerRebalanceListener;
 import org.kin.kafka.multithread.api.CallBack;
@@ -264,5 +265,19 @@ public class AppConfigUtils {
             sb.append(entry.getKey() + "  =  " + entry.getValue() + System.lineSeparator());
         }
         return sb.toString();
+    }
+
+    public static void setupKafkaStartOffset(String topicPartitionOffsetStr, KafkaConsumer consumer){
+        if(topicPartitionOffsetStr != null && topicPartitionOffsetStr.equals(DefaultAppConfig.DEFAULT_NULL)){
+            for(String topicPartitionOffset: topicPartitionOffsetStr.split(",")){
+                String[] splits = topicPartitionOffset.split(":");
+                String topic = splits[0];
+                int partition = Integer.valueOf(splits[1]);
+                long startOffset = Long.valueOf(splits[2]);
+                if(startOffset > 0){
+                    consumer.seek(new TopicPartition(topic, partition), startOffset);
+                }
+            }
+        }
     }
 }
