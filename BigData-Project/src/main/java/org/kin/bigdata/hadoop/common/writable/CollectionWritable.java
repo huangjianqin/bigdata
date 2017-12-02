@@ -1,8 +1,6 @@
 package org.kin.bigdata.hadoop.common.writable;
 
 import org.apache.hadoop.io.WritableComparable;
-import org.apache.hadoop.io.WritableComparator;
-import org.apache.hadoop.io.WritableUtils;
 import org.kin.bigdata.utils.ReflectUtils;
 
 import java.io.DataInput;
@@ -11,7 +9,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.TreeSet;
 
 /**
  * Created by huangjianqin on 2017/9/4.
@@ -24,10 +21,10 @@ import java.util.TreeSet;
  * 本质上是基类
  * Comparator实现需先根据collection长度判断,再对比元素
  */
-public class CollectionWritable<T extends WritableComparable> implements WritableComparable<CollectionWritable<T>>, Collection<WritableComparable> {
+public class CollectionWritable<T extends WritableComparable> implements WritableComparable<CollectionWritable<T>>, Collection<T> {
     //作为成员进行读操作的容器
     private final Class<T> itemType;
-    private Collection<WritableComparable> collection = new ArrayList<>();
+    private Collection<T> collection = new ArrayList<>();
 
     public CollectionWritable(Class<T> itemType) {
         this.itemType = itemType;
@@ -37,7 +34,7 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
     public CollectionWritable(Class<T> itemType, Collection<T> collection, boolean isOverwrite){
         this(itemType);
         if(isOverwrite){
-            this.collection = (Collection<WritableComparable>) collection;
+            this.collection = (Collection<T>) collection;
         }
         else{
             addAll(collection);
@@ -74,7 +71,7 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
         for(int i = 0; i < size; i++){
             WritableComparable item = ReflectUtils.instance(itemType);
             item.readFields(dataInput);
-            collection.add(item);
+            collection.add((T) item);
         }
     }
 
@@ -123,7 +120,7 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
     }
 
     @Override
-    public Iterator<WritableComparable> iterator() {
+    public Iterator<T> iterator() {
         return collection.iterator();
     }
 
@@ -138,12 +135,12 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
     }
 
     @Override
-    public boolean add(WritableComparable writableComparable) {
-        if(writableComparable == null){
+    public boolean add(T item) {
+        if(item == null){
             throw new IllegalArgumentException("item can't be null");
         }
 
-        return collection.add(writableComparable);
+        return collection.add(item);
     }
 
     @Override
@@ -161,7 +158,7 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
     }
 
     @Override
-    public boolean addAll(Collection<? extends WritableComparable> c) {
+    public boolean addAll(Collection<? extends T> c) {
         if(c.contains(null)){
             throw new IllegalArgumentException("item can't be null");
         }

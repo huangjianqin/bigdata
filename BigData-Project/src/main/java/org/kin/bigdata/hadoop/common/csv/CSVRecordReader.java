@@ -27,12 +27,10 @@ import static org.kin.bigdata.hadoop.common.csv.CSVInputFormat.IS_ZIPFILE;
 /**
  * Created by huangjianqin on 2017/9/4.
  */
-public class CSVRecordReader extends RecordReader<LongWritable, List<Text>> {
-
-
+public class CSVRecordReader extends RecordReader<LongWritable, TextCollectionWritable> {
     private final CSVParser parser = new CSVParser();
     private LongWritable cKey;
-    private List<Text> cValue;
+    private TextCollectionWritable cValue;
 
     private boolean isZipFile;
     private long start;
@@ -68,7 +66,7 @@ public class CSVRecordReader extends RecordReader<LongWritable, List<Text>> {
         FileSystem fs = file.getFileSystem(job);
         FSDataInputStream fileIs = fs.open(fileSplit.getPath());
 
-        if(compressionCodeces != null){
+        if(compressionCodec != null){
             InputStream is = compressionCodec.createInputStream(fileIs);
             end = Long.MAX_VALUE;
         }
@@ -102,7 +100,7 @@ public class CSVRecordReader extends RecordReader<LongWritable, List<Text>> {
         cKey.set(pos);
 
         if(cValue == null){
-            cValue = new ArrayList<Text>((Collection) new TextCollectionWritable());
+            cValue = new TextCollectionWritable();
         }
 
         while (true) {
@@ -129,7 +127,7 @@ public class CSVRecordReader extends RecordReader<LongWritable, List<Text>> {
         }
     }
 
-    private long readLine(List<Text> cValue) throws IOException {
+    private long readLine(TextCollectionWritable cValue) throws IOException {
         //clean tha last csv values
         cValue.clear();
 
@@ -149,6 +147,11 @@ public class CSVRecordReader extends RecordReader<LongWritable, List<Text>> {
         if(sb.length() > 0 && sb.indexOf("\n") == sb.length() - 1){
             //remove \n
             sb.replace(sb.length() - 1, sb.length(), "");
+            if(sb.indexOf("\r") == sb.length() - 1){
+                //windows下编辑的文件
+                //remove \r
+                sb.replace(sb.length() - 1, sb.length(), "");
+            }
         }
 
         String csvLine = sb.toString();
@@ -167,7 +170,7 @@ public class CSVRecordReader extends RecordReader<LongWritable, List<Text>> {
     }
 
     @Override
-    public List<Text> getCurrentValue() throws IOException, InterruptedException {
+    public TextCollectionWritable getCurrentValue() throws IOException, InterruptedException {
         return cValue;
     }
 

@@ -12,6 +12,8 @@ import org.apache.hadoop.mapreduce.lib.output.LazyOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
+import org.kin.bigdata.hadoop.common.writable.TextCollectionWritable;
 
 import java.io.IOException;
 import java.util.List;
@@ -47,8 +49,9 @@ public class CSVInputFormatTest extends Configured implements Tool {
         return job.waitForCompletion(true)? 1 : 0;
     }
 
-    public static void main(String[] args) {
-
+    public static void main(String[] args) throws Exception {
+        ToolRunner.run(new CSVInputFormatTest(), args);
+//        baseTest();
     }
 
     public static void baseTest() throws IOException, InterruptedException {
@@ -58,7 +61,7 @@ public class CSVInputFormatTest extends Configured implements Tool {
         TaskAttemptContext taskAttemptContext = new TaskAttemptContextImpl(conf, new TaskAttemptID());
         CSVInputFormat csvInputFormat = new CSVInputFormat();
         List<InputSplit> inputSplits = csvInputFormat.getSplits(job);
-        RecordReader<LongWritable, List<Text>> recordReader = csvInputFormat.createRecordReader(inputSplits.get(0), taskAttemptContext);
+        RecordReader<LongWritable, TextCollectionWritable> recordReader = csvInputFormat.createRecordReader(inputSplits.get(0), taskAttemptContext);
 
         //begin
         while(recordReader.nextKeyValue()){
@@ -69,14 +72,15 @@ public class CSVInputFormatTest extends Configured implements Tool {
             }
             System.out.println();
         }
+        System.out.println(recordReader.getProgress());
 
         recordReader.close();
     }
 }
 
-class TestMapper extends Mapper<LongWritable, List<Text>, LongWritable, List<Text>>{
+class TestMapper extends Mapper<LongWritable, TextCollectionWritable, LongWritable, TextCollectionWritable>{
     @Override
-    protected void map(LongWritable key, List<Text> value, Context context) throws IOException, InterruptedException {
+    protected void map(LongWritable key, TextCollectionWritable value, Context context) throws IOException, InterruptedException {
         System.out.println("Mapper...");
         for(Text text: value){
             System.out.print(text.toString() + ",");
