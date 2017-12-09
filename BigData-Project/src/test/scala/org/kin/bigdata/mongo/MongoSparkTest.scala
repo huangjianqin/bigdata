@@ -1,6 +1,6 @@
-package org.kin.bigdata.mongospark
+package org.kin.bigdata.mongo
 
-import org.apache.spark.sql.{SQLContext, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**

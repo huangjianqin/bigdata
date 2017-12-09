@@ -1,11 +1,10 @@
-package org.kin.bigdata.reactivemongo
+package org.kin.bigdata.mongo
 
-import reactivemongo.api.collections.bson.BSONCollection
 import reactivemongo.api._
-import reactivemongo.bson.{BSONDocument, BSONDocumentReader, BSONDocumentWriter, Macros, document}
+import reactivemongo.api.collections.bson.BSONCollection
+import reactivemongo.bson.{BSONDocumentReader, BSONDocumentWriter, Macros, document}
 
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 import scala.language.implicitConversions
 import scala.util.{Failure, Success}
 
