@@ -10,6 +10,7 @@ import scala.util.{Failure, Success}
 
 /**
   * Created by huangjianqin on 2017/12/7.
+  * asynchronous non-blocking 底层由Akka支持，高并发，与Play无缝对接
   */
 object ReactiveMongoTest {
   implicit def personWriter: BSONDocumentWriter[Person] = Macros.writer[Person]
