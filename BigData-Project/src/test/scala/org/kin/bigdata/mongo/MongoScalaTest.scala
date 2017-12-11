@@ -7,6 +7,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
+import scala.language.postfixOps
+
 //use implicit
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Filters._
