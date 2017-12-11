@@ -9,7 +9,7 @@ import java.util.concurrent.TimeoutException;
 /**
  * Created by 健勤 on 2017/7/30.
  */
-public class demo {
+public class RabbitMQDemo {
     public static void main(String[] args) throws IOException, TimeoutException, InterruptedException {
         ConnectionFactory factory = new ConnectionFactory();
         factory.setHost("localhost");
