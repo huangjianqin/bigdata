@@ -10,7 +10,7 @@
     </parent>
     <artifactId>bigdata-project</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
+    <packaging>jar</packaging>
 
     <properties>
         <java.version>1.8</java.version>
@@ -27,6 +27,7 @@
         <hbase.version>1.2.4</hbase.version>
         <hive.version>1.2.1</hive.version>
         <mongo.version>3.2.2</mongo.version>
+        <grpc.version>1.8.0</grpc.version>
     </properties>
 
     <dependencies>
@@ -243,12 +244,6 @@
             <version>${hive.version}</version>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.hive</groupId>
-            <artifactId>hive-hbase-handler</artifactId>
-            <version>1.2.2</version>
-        </dependency>
-
         <!-- kafka-->
         <dependency>
             <groupId>org.apache.kafka</groupId>
@@ -351,7 +346,36 @@
         <dependency>
             <groupId>io.grpc</groupId>
             <artifactId>grpc-all</artifactId>
-            <version>1.8.0</version>
+            <version>${grpc.version}</version>
+        </dependency>
+
+        <!--下面解决冲突方式，在单独gprc下可能是不需要哒-->
+        <!--
+            解决protobuf-java冲突
+            解决不了hive-hbase-handler依赖导致的protobuf-java冲突，目前已删除hive-hbase-handler依赖
+        -->
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.4.0</version>
+        </dependency>
+
+        <!--
+            解决guava冲突
+        -->
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>19.0</version>
+        </dependency>
+
+        <!--
+            解决冲突
+        -->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.16.Final</version>
         </dependency>
 
         <!-- 解析yml-->
@@ -381,14 +405,23 @@
         <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
         <resources>
             <resource>
-                <directory>${basedir}/src/main/resource</directory>
+                <directory>src/main/resources</directory>
             </resource>
         </resources>
         <testResources>
             <testResource>
-                <directory>${basedir}/src/test/resource</directory>
+                <directory>${basedir}/src/test/resources</directory>
             </testResource>
         </testResources>
+
+        <!--protobuf 插件相关 自动解析出${os.detected.classifier}变量-->
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.5.0.Final</version>
+            </extension>
+        </extensions>
 
         <plugins>
             <plugin>
@@ -442,6 +475,7 @@
                         <configuration>
                             <sources>
                                 <source>${basedir}/src/main/scala</source>
+                                <source>${basedir}/src/main/proto</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -454,6 +488,7 @@
                         <configuration>
                             <sources>
                                 <source>${basedir}/src/test/scala</source>
+                                <source>${basedir}/src/test/proto</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -510,6 +545,28 @@
                     <execution>
                         <goals>
                             <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!--protobuf 插件-->
+            <plugin>
+                <groupId>org.xolstice.maven.plugins</groupId>
+                <artifactId>protobuf-maven-plugin</artifactId>
+                <version>0.5.0</version>
+                <configuration>
+                    <protocArtifact>com.google.protobuf:protoc:3.5.0:exe:${os.detected.classifier}</protocArtifact>
+                    <pluginId>grpc-java</pluginId>
+                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <!--运行标准的protobuf-->
+                            <goal>compile</goal>
+                            <!--运行自定义的protobuf-->
+                            <goal>compile-custom</goal>
                         </goals>
                     </execution>
                 </executions>
