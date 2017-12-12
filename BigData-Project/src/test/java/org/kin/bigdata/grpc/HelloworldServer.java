@@ -13,10 +13,12 @@ import java.io.IOException;
  * Created by huangjianqin on 2017/12/9.
  */
 public class HelloworldServer {
+    //server
     private Server server;
 
     public void start() throws IOException {
         int port = 50001;
+        //创建server
         this.server = ServerBuilder.forPort(port)
                 .addService(new GreeterImpl())
                 .build()
@@ -37,6 +39,7 @@ public class HelloworldServer {
 
     public void awaitShutdown() throws InterruptedException {
         if(server != null){
+            //阻塞等待关闭
             server.awaitTermination();
         }
     }
@@ -47,6 +50,7 @@ public class HelloworldServer {
         server.awaitShutdown();
     }
 
+    //实现由IDL自动生成的服务接口
     static class GreeterImpl extends GreeterGrpc.GreeterImplBase{
         @Override
         public void sayHello(HelloRequest request, StreamObserver<HelloReply> responseObserver) {
@@ -58,9 +62,11 @@ public class HelloworldServer {
         @Override
         public void sayMore(HelloRequest request, StreamObserver<HelloReply> responseObserver) {
             HelloReply reply = HelloReply.newBuilder().setMessage("Hi Hi.").build();
+            //堆responses
             responseObserver.onNext(reply);
             responseObserver.onNext(reply);
             responseObserver.onNext(reply);
+            //返回responses stream
             responseObserver.onCompleted();
         }
 
@@ -88,8 +94,14 @@ public class HelloworldServer {
             };
         }
 
+        /**
+         *
+         * @param responseObserver 返回responses的观察者
+         * @return
+         */
         @Override
         public StreamObserver<HelloRequest> repeat(StreamObserver<HelloReply> responseObserver) {
+            //返回一个处理requests的stream观察者
             return new StreamObserver<HelloRequest>() {
                 @Override
                 public void onNext(HelloRequest helloRequest) {

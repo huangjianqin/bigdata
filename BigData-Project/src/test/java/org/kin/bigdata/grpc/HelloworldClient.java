@@ -15,14 +15,19 @@ import java.util.concurrent.TimeUnit;
  * Created by huangjianqin on 2017/12/11.
  */
 public class HelloworldClient {
+    //与server的连接，可定制参数改变行为
     private ManagedChannel channel;
+    //在连接上套一层，可能实现了负载均衡
+    //阻塞式
     private GreeterGrpc.GreeterBlockingStub stblockingStub;
+    //异步
     private GreeterGrpc.GreeterStub stub;
 
     public HelloworldClient(String host, int port) {
         this(ManagedChannelBuilder
                 .forAddress(host, port)
                 //默认使用SSL/TLS
+                //下面代码就是为了不使用安全的连接
                 .usePlaintext(true)
                 .build()
         );
@@ -35,6 +40,7 @@ public class HelloworldClient {
     }
 
     public void shutdown() throws InterruptedException {
+        //关闭连接
         channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
     }
 
@@ -88,6 +94,7 @@ public class HelloworldClient {
     public void repeat(String msg) throws InterruptedException {
         System.out.println("---------------------repeat---------------------");
         final CountDownLatch latch = new CountDownLatch(1);
+        //读取多个server返回的response
         StreamObserver<HelloReply> response = new StreamObserver<HelloReply>() {
             @Override
             public void onNext(HelloReply helloReply) {
@@ -107,12 +114,15 @@ public class HelloworldClient {
         };
 
         HelloRequest helloRequest = HelloRequest.newBuilder().setMessage(msg).build();
+        //获得request stream
         StreamObserver<HelloRequest> request = stub.repeat(response);
+        //堆request
         request.onNext(helloRequest);
         request.onNext(helloRequest);
         request.onNext(helloRequest);
         request.onNext(helloRequest);
         request.onNext(helloRequest);
+        //发送
         request.onCompleted();
 
         latch.await();
