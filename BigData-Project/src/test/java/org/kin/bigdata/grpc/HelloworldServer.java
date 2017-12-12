@@ -54,5 +54,59 @@ public class HelloworldServer {
             responseObserver.onNext(reply);
             responseObserver.onCompleted();
         }
+
+        @Override
+        public void sayMore(HelloRequest request, StreamObserver<HelloReply> responseObserver) {
+            HelloReply reply = HelloReply.newBuilder().setMessage("Hi Hi.").build();
+            responseObserver.onNext(reply);
+            responseObserver.onNext(reply);
+            responseObserver.onNext(reply);
+            responseObserver.onCompleted();
+        }
+
+        @Override
+        public StreamObserver<HelloRequest> sayLittle(StreamObserver<HelloReply> responseObserver) {
+            return new StreamObserver<HelloRequest>() {
+                private String all = "";
+
+                @Override
+                public void onNext(HelloRequest helloRequest) {
+                    all += helloRequest.getMessage();
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    throwable.printStackTrace();
+                }
+
+                @Override
+                public void onCompleted() {
+                    HelloReply reply = HelloReply.newBuilder().setMessage(all).build();
+                    responseObserver.onNext(reply);
+                    responseObserver.onCompleted();
+                }
+            };
+        }
+
+        @Override
+        public StreamObserver<HelloRequest> repeat(StreamObserver<HelloReply> responseObserver) {
+            return new StreamObserver<HelloRequest>() {
+                @Override
+                public void onNext(HelloRequest helloRequest) {
+                    HelloReply reply = HelloReply.newBuilder().setMessage(helloRequest.getMessage()).build();
+                    responseObserver.onNext(reply);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    throwable.printStackTrace();
+                }
+
+                @Override
+                public void onCompleted() {
+                    responseObserver.onCompleted();
+                }
+            };
+        }
     }
 }
