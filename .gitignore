@@ -1,0 +1,8 @@
+
+.DS_Store
+*.iml
+target/*
+BigData-Project/target/*
+Kin-Framework/target/*
+MicroService/target/*
+BigData-Project/src/main/resources/.DS_Store
