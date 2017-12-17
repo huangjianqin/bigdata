@@ -371,12 +371,13 @@
 
         <!--
             解决冲突
+            grpc需要，会使spark无法远程调试
         -->
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-            <version>4.1.16.Final</version>
-        </dependency>
+        <!--<dependency>-->
+            <!--<groupId>io.netty</groupId>-->
+            <!--<artifactId>netty-all</artifactId>-->
+            <!--<version>4.1.16.Final</version>-->
+        <!--</dependency>-->
 
         <!-- 解析yml-->
         <dependency>
