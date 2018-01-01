@@ -20,6 +20,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <scala.version>2.11.12</scala.version>
+        <scala.version.head>2.11</scala.version.head>
         <spark.version>2.2.0</spark.version>
         <kafka.version>1.0.0</kafka.version>
         <hadoop.version>2.6.4</hadoop.version>
@@ -27,7 +28,6 @@
         <hbase.version>1.2.4</hbase.version>
         <hive.version>1.2.1</hive.version>
         <mongo.version>3.2.2</mongo.version>
-        <grpc.version>1.8.0</grpc.version>
     </properties>
 
     <dependencies>
@@ -36,6 +36,7 @@
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <version>${scala.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!--scala unit test-->
@@ -48,7 +49,7 @@
 
         <dependency>
             <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_2.11</artifactId>
+            <artifactId>scalatest_${scala.version.head}</artifactId>
             <version>3.0.4</version>
             <scope>test</scope>
         </dependency>
@@ -56,58 +57,64 @@
         <!--2.12版本的scala 将akka独立出去了-->
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_2.11</artifactId>
+            <artifactId>akka-actor_${scala.version.head}</artifactId>
             <version>2.5.4</version>
         </dependency>
 
         <!--scala mongo-->
         <dependency>
             <groupId>org.reactivemongo</groupId>
-            <artifactId>reactivemongo_2.11</artifactId>
+            <artifactId>reactivemongo_${scala.version.head}</artifactId>
             <version>0.12.7</version>
         </dependency>
 
         <dependency>
             <groupId>org.mongodb.scala</groupId>
-            <artifactId>mongo-scala-driver_2.11</artifactId>
+            <artifactId>mongo-scala-driver_${scala.version.head}</artifactId>
             <version>2.1.0</version>
         </dependency>
 
         <!-- spark-->
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_2.11</artifactId>
+            <artifactId>spark-core_${scala.version.head}</artifactId>
             <version>${spark.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_2.11</artifactId>
+            <artifactId>spark-sql_${scala.version.head}</artifactId>
             <version>${spark.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-streaming_2.11</artifactId>
+            <artifactId>spark-streaming_${scala.version.head}</artifactId>
             <version>${spark.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-streaming-kafka_2.11</artifactId>
+            <artifactId>spark-streaming-kafka_${scala.version.head}</artifactId>
             <version>1.6.2</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-mllib_2.11</artifactId>
+            <artifactId>spark-mllib_${scala.version.head}</artifactId>
             <version>${spark.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-hive_2.11</artifactId>
+            <artifactId>spark-hive_${scala.version.head}</artifactId>
             <version>${spark.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!--优化过的java集合实现,可减少使用内存-->
@@ -120,8 +127,8 @@
         <!--  spark mongodb-->
         <dependency>
             <groupId>org.mongodb.spark</groupId>
-            <artifactId>mongo-spark-connector_2.11</artifactId>
-            <version>1.1.0</version>
+            <artifactId>mongo-spark-connector_${scala.version.head}</artifactId>
+            <version>2.2.0</version>
         </dependency>
 
         <!-- spark-redis-->
@@ -131,17 +138,12 @@
             <version>0.3.2</version>
         </dependency>
 
+        <!--mongo java driver-->
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
             <version>${mongo.version}</version>
         </dependency>
-
-        <!--<dependency>-->
-        <!--<groupId>org.mongodb</groupId>-->
-        <!--<artifactId>bson</artifactId>-->
-        <!--<version>${mongo.version}</version>-->
-        <!--</dependency>-->
 
         <!-- spark mlib依赖于breeze优化数学运算,而breeze又依赖于下包-->
         <dependency>
@@ -159,26 +161,30 @@
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-common</artifactId>
-            <version>${hadoop.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
             <artifactId>hadoop-hdfs</artifactId>
             <version>${hadoop.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-mapreduce-client-core</artifactId>
+            <artifactId>hadoop-common</artifactId>
             <version>${hadoop.version}</version>
         </dependency>
 
         <dependency>
+            <groupId>org.apache.mrunit</groupId>
+            <artifactId>mrunit</artifactId>
+            <version>1.1.0</version>
+            <classifier>hadoop2</classifier>
+            <scope>test</scope>
+        </dependency>
+
+        <!--Hadoop test artifact for running mini clusters-->
+        <dependency>
             <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-annotations</artifactId>
+            <artifactId>hadoop-minicluster</artifactId>
             <version>${hadoop.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <!-- zookeeper-->
@@ -199,18 +205,21 @@
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-common</artifactId>
             <version>${hbase.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-server</artifactId>
             <version>${hbase.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-hadoop-compat</artifactId>
             <version>${hbase.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- hive-->
@@ -218,6 +227,7 @@
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-common</artifactId>
             <version>${hive.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -236,12 +246,14 @@
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-serde</artifactId>
             <version>${hive.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hive</groupId>
             <artifactId>hive-metastore</artifactId>
             <version>${hive.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- kafka-->
@@ -259,7 +271,7 @@
 
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>kafka_2.11</artifactId>
+            <artifactId>kafka_${scala.version.head}</artifactId>
             <version>${kafka.version}</version>
         </dependency>
 
@@ -299,35 +311,6 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.apache.mrunit</groupId>
-            <artifactId>mrunit</artifactId>
-            <version>1.1.0</version>
-            <classifier>hadoop2</classifier>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- Hadoop test artifact for running mini clusters -->
-        <dependency>
-            <groupId>org.apache.hadoop</groupId>
-            <artifactId>hadoop-minicluster</artifactId>
-            <version>${hadoop.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <!-- spring for bigdata-->
-        <dependency>
-            <groupId>org.springframework.data</groupId>
-            <artifactId>spring-data-hadoop</artifactId>
-            <version>2.5.0.RELEASE</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.kafka</groupId>
-            <artifactId>spring-kafka</artifactId>
-            <version>1.1.5.RELEASE</version>
-        </dependency>
-
         <!-- activeMQ-->
         <dependency>
             <groupId>org.apache.activemq</groupId>
@@ -340,42 +323,6 @@
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>
             <version>4.1.0</version>
-        </dependency>
-
-         <!--grpc-->
-        <dependency>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-all</artifactId>
-            <version>${grpc.version}</version>
-        </dependency>
-
-        <!--下面解决冲突方式，在单独gprc下可能是不需要哒-->
-        <!--
-            解决protobuf-java冲突
-            解决不了hive-hbase-handler依赖导致的protobuf-java冲突，目前已删除hive-hbase-handler依赖
-        -->
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>3.4.0</version>
-        </dependency>
-
-        <!--
-            解决guava冲突
-        -->
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
-            <version>19.0</version>
-        </dependency>
-
-        <!--
-            解决冲突
-        -->
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-            <version>4.1.16.Final</version>
         </dependency>
 
         <!-- 解析yml-->
@@ -400,6 +347,7 @@
 
     </dependencies>
 
+    <!-- mvn clean scala:compile compile package -->
     <build>
         <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
         <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
@@ -425,6 +373,22 @@
 
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.6.1</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <encoding>UTF-8</encoding>
+                    <maxmem>1024m</maxmem>
+                    <fork>true</fork>
+                    <compilerArgs>
+                        <arg>-Xlint:all,-serial,-path</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+
+            <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
                 <version>3.3.1</version>
@@ -432,6 +396,7 @@
                     <execution>
                         <goals>
                             <goal>compile</goal>
+                            <goal>add-source</goal>
                             <goal>testCompile</goal>
                         </goals>
                     </execution>
@@ -460,72 +425,71 @@
                 </configuration>
             </plugin>
 
-            <!-- 添加多个源代码目录-->
+            <!-- 使用MVN打包jar -->
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>build-helper-maven-plugin</artifactId>
-                <version>1.4</version>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
                 <executions>
                     <execution>
-                        <id>add-source</id>
-                        <phase>generate-sources</phase>
                         <goals>
-                            <goal>add-source</goal>
+                            <goal>test-jar</goal>
                         </goals>
-                        <configuration>
-                            <sources>
-                                <source>${basedir}/src/main/scala</source>
-                                <source>${basedir}/src/main/proto</source>
-                            </sources>
-                        </configuration>
                     </execution>
+                </executions>
+                <configuration>
+                    <!--<archive>-->
+                        <!--<manifest>-->
+                            <!--<addClasspath>true</addClasspath>-->
+                            <!--<classpathPrefix>lib/</classpathPrefix>-->
+                            <!--<mainClass>spark.demo.run.Service</mainClass>-->
+                        <!--</manifest>-->
+                    <!--</archive>-->
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
                     <execution>
-                        <id>add-test-sources</id>
-                        <phase>generate-test-sources</phase>
+                        <phase>package</phase>
                         <goals>
-                            <goal>add-test-source</goal>
+                            <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
-                            <sources>
-                                <source>${basedir}/src/test/scala</source>
-                                <source>${basedir}/src/test/proto</source>
-                            </sources>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
                         </configuration>
                     </execution>
                 </executions>
             </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.1</version>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.5.5</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                    <encoding>UTF-8</encoding>
-                    <maxmem>1024m</maxmem>
-                    <fork>true</fork>
-                    <compilerArgs>
-                        <arg>-Xlint:all,-serial,-path</arg>
-                    </compilerArgs>
+                    <!--<archive>-->
+                        <!--<manifest>-->
+                            <!--<mainClass></mainClass>-->
+                        <!--</manifest>-->
+                    <!--</archive>-->
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <version>2.4.1</version>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-source-plugin</artifactId>
-                <version>3.0.1</version>
-                <configuration>
-                    <attach>true</attach>
-                </configuration>
-            </plugin>
+
             <plugin>
                 <groupId>org.scalastyle</groupId>
                 <artifactId>scalastyle-maven-plugin</artifactId>
@@ -545,28 +509,6 @@
                     <execution>
                         <goals>
                             <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <!--protobuf 插件-->
-            <plugin>
-                <groupId>org.xolstice.maven.plugins</groupId>
-                <artifactId>protobuf-maven-plugin</artifactId>
-                <version>0.5.0</version>
-                <configuration>
-                    <protocArtifact>com.google.protobuf:protoc:3.5.0:exe:${os.detected.classifier}</protocArtifact>
-                    <pluginId>grpc-java</pluginId>
-                    <pluginArtifact>io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}</pluginArtifact>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <!--运行标准的protobuf-->
-                            <goal>compile</goal>
-                            <!--运行自定义的protobuf-->
-                            <goal>compile-custom</goal>
                         </goals>
                     </execution>
                 </executions>

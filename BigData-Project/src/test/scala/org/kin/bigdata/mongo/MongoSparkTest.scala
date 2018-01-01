@@ -1,7 +1,8 @@
 package org.kin.bigdata.mongo
 
-import org.apache.spark.sql.SparkSession
+import com.mongodb.spark.MongoSpark
 import org.apache.spark.{SparkConf, SparkContext}
+import org.bson.Document
 
 /**
  * Created by 健勤 on 2017/6/11.
@@ -11,18 +12,20 @@ object MongoSparkTest {
     val conf =
       new SparkConf()
         .setAppName("Mongo-Spark-Test")
-        .setMaster("local[4]")
-        .set("spark.mongodb.input.uri", "mongodb://139.199.185.84/test.c1?readPreference=primaryPreferred")
-        .set("spark.mongodb.output.uri", "mongodb://139.199.185.84/test.c1")
+        .setMaster("spark://192.168.1.102:7077")
+//        .setMaster("local[1]")
+        .setJars(Seq("out/artifacts/bigdata_project_jar/bigdata-project.jar"))
+        .set("spark.mongodb.input.uri", "mongodb://192.168.1.102/test.c1?readPreference=primaryPreferred")
+        .set("spark.mongodb.output.uri", "mongodb://192.168.1.102/test.c1")
 
     val sc = new SparkContext(conf)
-//    val bsonRDD = sc.parallelize(Range(10, 20)).map{i =>
-//      (i, i)
-//    }.map{case (x, y) =>
-//        Document.parse(s"{a: $x, b: $y}")
-//    }
+    val bsonRDD = sc.parallelize(Range(10, 20)).map{i =>
+      (i, i)
+    }.map{case (x, y) =>
+        Document.parse(s"{a: $x, b: $y}")
+    }
     //保存BSON至SparkConf配置的mongodb数据库中
-//    MongoSpark.save(bsonRDD)
+    MongoSpark.save(bsonRDD)
 
     //通过 WriteConfig自定义mongodb数据库配置
     //可以通过参数或Map来构建 WriteConfig
@@ -60,7 +63,7 @@ object MongoSparkTest {
 //    MongoSpark.builder()
 
     //利用SparkConf的mongodb配置加载到Spark SQL转换成DataFrame
-    val sparkSession = SparkSession.builder().config(conf).getOrCreate()
+//    val sparkSession = SparkSession.builder().config(conf).getOrCreate()
 //    val df1 = MongoSpark.load(sparkSession)
 //    df1.registerTempTable("test")
 //    sparkSession.sql("select * from test where test.a != test.b").foreach(println)
@@ -111,7 +114,7 @@ object MongoSparkTest {
 //    df1.filter(df1("a") === 18).write.option("collection", "c4").mode("overwrite").mongo()
 //    df1.filter(df1("a") === 19).write.option("collection", "c4").format("com.mongodb.spark.sql").mode("append").save()
 
-    sparkSession.stop()
+//    sparkSession.stop()
     sc.stop()
   }
 }
