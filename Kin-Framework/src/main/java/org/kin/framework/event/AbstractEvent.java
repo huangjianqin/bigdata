@@ -10,7 +10,7 @@ public abstract class AbstractEvent<TYPE extends Enum<TYPE>> implements Event<TY
 
     public AbstractEvent(TYPE type) {
         this.type = type;
-        timestamp = -1L;
+        timestamp = System.currentTimeMillis();
     }
 
     @Override

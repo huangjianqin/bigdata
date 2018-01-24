@@ -17,7 +17,7 @@ public abstract class AbstractService implements Service{
     private final List<ServiceStateChangeListener> listeners = new LinkedList<>();
     private static final List<ServiceStateChangeListener> globalListeners = new LinkedList<>();
 
-    //仅仅是
+    //
     private final Object lock = new Object();
     private final AtomicBoolean terminationNotification = new AtomicBoolean(false);
 
@@ -42,10 +42,11 @@ public abstract class AbstractService implements Service{
             State pre = state.enterState(State.INITED);
             if(pre != State.INITED){
                 serviceInit();
-                //再次判断
-                if(isInState(State.INITED)){
-                    notifyAllListeners(pre);
-                }
+                notifyAllListeners(pre);
+//                //再次判断
+//                if(isInState(State.INITED)){
+//                    notifyAllListeners(pre);
+//                }
             }
         }
     }
@@ -61,10 +62,16 @@ public abstract class AbstractService implements Service{
             if(pre != State.STARTED){
                 startTime = System.currentTimeMillis();
                 serviceStart();
-                //再次判断
-                if(isInState(State.STARTED)){
-                    notifyAllListeners(pre);
-                }
+                notifyAllListeners(pre);
+
+                //启动JVM挂钩
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    serviceStop();
+                }));
+//                //再次判断
+//                if(isInState(State.STARTED)){
+//                    notifyAllListeners(pre);
+//                }
             }
         }
     }

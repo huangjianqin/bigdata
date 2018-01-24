@@ -1,5 +1,7 @@
 package org.kin.framework.concurrent;
 
+import org.kin.framework.concurrent.impl.HashPartitioner;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -32,10 +34,10 @@ public class PartitionTaskExecutors<K> {
     public PartitionTaskExecutors(int numPartition, int maxNumPartition, Partitioner<K> partitioner) {
         this.numPartition = numPartition;
         this.maxNumPartition = maxNumPartition;
-        this.threadPool = new ThreadPoolExecutor(numPartition, maxNumPartition, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>());
+        this.threadPool = new ThreadPoolExecutor(numPartition, maxNumPartition, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
         this.threadPool.allowCoreThreadTimeOut(true);
         this.partitioner = partitioner;
-        this.partitionTasks = new ArrayList<PartitionTask>();
+        this.partitionTasks = new ArrayList<>();
     }
 
     public void init(){
@@ -51,7 +53,7 @@ public class PartitionTaskExecutors<K> {
     }
 
     private void shutdownTask(int num){
-        List<PartitionTask> removedPartitionTasks = new ArrayList<PartitionTask>();
+        List<PartitionTask> removedPartitionTasks = new ArrayList<>();
         //关闭并移除分区执行线程实例,且缓存
         for(int i = 0; i < num; i++){
             PartitionTask task = partitionTasks.remove(0);

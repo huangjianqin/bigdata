@@ -1,4 +1,6 @@
-package org.kin.framework.concurrent;
+package org.kin.framework.concurrent.impl;
+
+import org.kin.framework.concurrent.Partitioner;
 
 /**
  * Created by huangjianqin on 2017/10/26.

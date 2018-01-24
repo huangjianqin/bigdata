@@ -87,15 +87,11 @@ public class ConcurrentHashSet<E> extends AbstractSet<E> {
 
     /**
      * 浅复制
-     * @return
-     * @throws CloneNotSupportedException
      */
     @Override
-    protected Object clone() throws CloneNotSupportedException {
+    public ConcurrentHashSet<E> clone() throws CloneNotSupportedException {
         ConcurrentHashSet<E> cloned = new ConcurrentHashSet<>();
-        for(E item: items.keySet()){
-            cloned.add(item);
-        }
+        cloned.addAll(items.keySet());
         return cloned;
     }
 }
