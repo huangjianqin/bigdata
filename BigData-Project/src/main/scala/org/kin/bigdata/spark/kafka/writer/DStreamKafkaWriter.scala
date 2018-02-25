@@ -13,12 +13,10 @@ import scala.reflect.ClassTag
   * 参考自https://github.com/BenFradet/spark-kafka-writer
   */
 class DStreamKafkaWriter[T: ClassTag](@Transient val dstream: DStream[T]) extends KafkaWriter[T] with Serializable{
-  override def write2Kafka[K, V](
-                                  producerConfig: Map[String, Object],
-                                  transformFunc: (T) => ProducerRecord[K, V],
-                                  callback: Option[Callback]): Unit = {
+  override def write2Kafka[K, V](transformFunc: (T) => ProducerRecord[K, V], callback: Option[Callback])
+                                (implicit producerConfig: Map[String, Object]): Unit = {
     dstream.foreachRDD{rdd =>
-      rdd.write2Kafka(producerConfig, transformFunc, callback)
+      rdd.write2Kafka(transformFunc, callback)(producerConfig)
     }
   }
 }

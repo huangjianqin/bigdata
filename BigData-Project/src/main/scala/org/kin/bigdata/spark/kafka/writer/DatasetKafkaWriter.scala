@@ -12,10 +12,8 @@ import scala.reflect.ClassTag
   * 参考自https://github.com/BenFradet/spark-kafka-writer
   */
 class DatasetKafkaWriter[T: ClassTag](@Transient val dataset: Dataset[T]) extends KafkaWriter[T] with Serializable{
-  override def write2Kafka[K, V](
-                                  producerConfig: Map[String, Object],
-                                  transformFunc: (T) => ProducerRecord[K, V],
-                                  callback: Option[Callback]): Unit = {
-    dataset.rdd.write2Kafka(producerConfig, transformFunc, callback)
+  override def write2Kafka[K, V](transformFunc: (T) => ProducerRecord[K, V], callback: Option[Callback])
+                                (implicit producerConfig: Map[String, Object]): Unit = {
+    dataset.rdd.write2Kafka(transformFunc, callback)(producerConfig)
   }
 }
