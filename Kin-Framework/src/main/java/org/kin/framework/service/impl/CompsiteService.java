@@ -1,10 +1,12 @@
-package org.kin.framework.event.impl;
+package org.kin.framework.service.impl;
 
 
 import org.kin.framework.service.AbstractService;
 import org.kin.framework.service.Service;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nonnull;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -62,7 +64,7 @@ public class CompsiteService extends AbstractService {
         super.serviceStop();
     }
 
-    public void addService(Service service){
+    public void addService(@Nonnull Service service){
         synchronized (services){
             services.add(service);
         }
@@ -78,29 +80,9 @@ public class CompsiteService extends AbstractService {
         }
     }
 
-    public boolean removeService(Service service){
+    public boolean removeService(@Nonnull Service service){
         synchronized (services){
             return services.remove(service);
-        }
-    }
-
-    public void addShutdownHook(){
-        Runtime.getRuntime().addShutdownHook(new Thread(new CompsiteServiceShutdownHook(this)));
-    }
-
-    /**
-     * 关闭CompsiteService实例的钩子
-     */
-    private class CompsiteServiceShutdownHook implements Runnable{
-        private CompsiteService service;
-
-        public CompsiteServiceShutdownHook(CompsiteService service) {
-            this.service = service;
-        }
-
-        @Override
-        public void run() {
-            service.serviceStop();
         }
     }
 }

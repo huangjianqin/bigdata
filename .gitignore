@@ -1,11 +1,7 @@
 
-.DS_Store
 .idea/*
+*/.idea/*
 *.iml
+*/*.iml
 target/*
-BigData-Project/target/*
-Dubbox/target/*
-Kin-Framework/target/*
-MicroService/target/*
-BigData-Project/src/main/resources/.DS_Store
-BigData-Project/src/main/resources/.DS_Store
+*/target/*

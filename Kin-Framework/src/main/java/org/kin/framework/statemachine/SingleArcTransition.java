@@ -1,9 +1,10 @@
-package org.kin.framework.state;
+package org.kin.framework.statemachine;
 
 /**
  * Created by 健勤 on 2017/8/9.
- * 一对一状态转换,无需校验最后状态是否合法
+ * 一对一状态转换逻辑处理
  */
+@FunctionalInterface
 public interface SingleArcTransition<OPERAND, EVENT> {
     void transition(OPERAND operand, EVENT event);
 }

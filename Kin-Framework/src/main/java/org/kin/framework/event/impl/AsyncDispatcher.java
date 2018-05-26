@@ -8,6 +8,7 @@ import org.kin.framework.service.AbstractService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nonnull;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.concurrent.*;
 /**
  * Created by 健勤 on 2017/8/8.
  * 异步事件分发器
+ * 支持多线程事件处理
  */
 public class AsyncDispatcher extends AbstractService implements Dispatcher {
     private static Logger log = LoggerFactory.getLogger(AsyncDispatcher.class);
@@ -33,22 +35,40 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
     //事件分发线程
     private List<EventHandlerThread> eventHandlerThreads = new LinkedList<>();
     //事件分发线程数最大值
-    private final int THREADS_LIMIT = 10;
+    private final int THREADS_LIMIT;
+    //是否开启优化，默认开启
+    //积压待处理事件过多会开启更多线程进行处理
+    private boolean optimized = false;
+    //lock
+    private final Object lock = new Object();
 
     public AsyncDispatcher() {
-        this(new LinkedBlockingQueue<Event>());
+        this(new LinkedBlockingQueue<>(), Integer.MAX_VALUE, true);
     }
 
-    public AsyncDispatcher(BlockingQueue<Event> eventQueue){
+    public AsyncDispatcher(boolean optimized) {
+        this(new LinkedBlockingQueue<Event>(), Integer.MAX_VALUE, optimized);
+    }
+
+    public AsyncDispatcher(int maxThreads) {
+        this(new LinkedBlockingQueue<>(), maxThreads, true);
+    }
+
+    public AsyncDispatcher(int maxThreads, boolean optimized) {
+        this(new LinkedBlockingQueue<>(), maxThreads, optimized);
+    }
+
+    public AsyncDispatcher(BlockingQueue<Event> eventQueue, int maxThreads, boolean optimized){
         super("AsyncDispatcher");
         this.eventQueue = eventQueue;
         event2Dispatcher = new HashMap<>();
-        pool = new ThreadPoolExecutor(1, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new InnerThreadFactory());
+        this.optimized = optimized;
+        this.THREADS_LIMIT = maxThreads;
+        pool = new ThreadPoolExecutor(1, this.THREADS_LIMIT, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new InnerThreadFactory());
     }
 
     /**
      * 通过该方法获得eventhandler并handle event,本质上是添加进队列
-     * @return
      */
     @Override
     public EventHandler getEventHandler() {
@@ -58,7 +78,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
 
     @Override
     public void register(Class<? extends Enum> eventType, EventHandler handler) {
-        //event2Dispatcher需同步,存在一写多读的情况
+        //event2Dispatcher需同步,防止多写的情况
         synchronized (event2Dispatcher){
             EventHandler<Event> registered = event2Dispatcher.get(eventType);
             if(registered == null){
@@ -97,6 +117,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
 
     @Override
     public void serviceStart() {
+        //默认启动一条线程处理
         runNEventHandlerThread(1);
         super.serviceStart();
     }
@@ -115,16 +136,20 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
     }
 
     void runNEventHandlerThread(int size){
-        for(int i = 0; i < size; i++){
-            EventHandlerThread thread = newThread();
-            eventHandlerThreads.add(thread);
-            pool.submit(thread);
+        synchronized (lock){
+            for(int i = 0; i < size; i++){
+                EventHandlerThread thread = newThread();
+                eventHandlerThreads.add(thread);
+                pool.submit(thread);
+            }
         }
     }
 
     void shutdownNEventHandlerThread(int size){
-        for(int i = 0; i < size; i++){
-            eventHandlerThreads.remove(0).shutdown();
+        synchronized (lock){
+            for(int i = 0; i < size; i++){
+                eventHandlerThreads.remove(0).shutdown();
+            }
         }
     }
 
@@ -133,30 +158,37 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
      */
     private final class EventHandlerThread implements Runnable{
         private boolean isStopped = false;
+        private Thread bindThread;
 
         @Override
         public void run() {
+            this.bindThread = Thread.currentThread();
             while(!isStopped && !Thread.currentThread().isInterrupted()){
-                Event event = null;
+                Event event;
                 try {
                     event = eventQueue.take();
+                    if(event != null){
+                        dispatch(event);
+                    }
                 } catch (InterruptedException e) {
                     if(!isStopped){
                         log.warn("AsyncDispatcher event handler thread is interrupted: " + e);
+                        //向外层抛异常，由外层统一处理
+
                     }
                     return;
-                }
-                if(event != null){
-                    dispatch(event);
-                }
-                else{
-                    throw new IllegalStateException("this dispatcher doesn't have eventhanler to handle event " + event);
+                }finally {
+                    //统一异常处理
+                    synchronized (lock){
+                        eventHandlerThreads.remove(this);
+                    }
                 }
             }
         }
 
         public void shutdown(){
             isStopped = true;
+            this.bindThread.interrupt();
         }
     }
 
@@ -166,9 +198,9 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
     private final class InnerThreadFactory implements ThreadFactory {
 
         @Override
-        public Thread newThread(Runnable r) {
+        public Thread newThread(@Nonnull Runnable r) {
             Thread now = new Thread(r);
-            now.setName("AsyncDispatcher event handler-" + (pool.getCorePoolSize() - 1));
+            now.setName("AsyncDispatcher$event_handler-" + (pool.getCorePoolSize() - 1));
             return now;
         }
     }
@@ -189,30 +221,32 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
                 }
                 int remCapacity = eventQueue.remainingCapacity();
                 if(remCapacity < 1000){
-                    log.warn("Very low remaining capacity int the event-queue: " + remCapacity);
+                    log.warn("Very low remaining capacity in the event-queue: " + remCapacity);
                 }
                 //end
 
-                //如果event-queue大小过大,多开线程进行处理
-                if(size > 0){
-                    int coreSize = pool.getCorePoolSize();
-                    //理想是每条线程处理1000个事件
-                    int expectedSize = size % 1000 == 0? (size / 1000) : (size / 1000 + 1);
-                    int finalSize = coreSize;
-                    finalSize = expectedSize <= THREADS_LIMIT? expectedSize : THREADS_LIMIT;
-                    pool.setCorePoolSize(finalSize);
-                    if(finalSize >= coreSize){
-                        runNEventHandlerThread(finalSize - coreSize);
+                if(optimized){
+                    //如果event-queue大小过大,多开线程进行处理
+                    if(size > 0){
+                        int coreSize = pool.getCorePoolSize();
+                        //理想是每条线程处理1000个事件
+                        int expectedSize = size % 1000 == 0? (size / 1000) : (size / 1000 + 1);
+                        int finalSize;
+                        finalSize = expectedSize <= THREADS_LIMIT? expectedSize : THREADS_LIMIT;
+                        pool.setCorePoolSize(finalSize);
+                        if(finalSize >= coreSize){
+                            runNEventHandlerThread(finalSize - coreSize);
+                        }
+                        else{
+                            shutdownNEventHandlerThread(coreSize - finalSize);
+                        }
                     }
-                    else{
-                        shutdownNEventHandlerThread(coreSize - finalSize);
-                    }
+                    //end
                 }
-                //end
 
                 eventQueue.put(event);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                log.error("", e);
             }
         }
     }

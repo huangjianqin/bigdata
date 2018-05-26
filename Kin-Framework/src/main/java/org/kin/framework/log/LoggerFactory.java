@@ -16,14 +16,16 @@ import java.io.File;
  * Created by huangjianqin on 2017/11/14.
  */
 public class LoggerFactory {
-    public static Logger getAsyncFileLogger(LogEvent logEvent){
+    public static final String BASE_PATH = "logs";
+
+    public static Logger getAsyncFileLogger(LogEvent logEvent) {
         Logger logger = org.slf4j.LoggerFactory.getLogger(logEvent.getLoggerName());
-        if(!(logger instanceof ch.qos.logback.classic.Logger)){
+        if (!(logger instanceof ch.qos.logback.classic.Logger)) {
             return logger;
         }
 
-        ch.qos.logback.classic.Logger logbackLogger = (ch.qos.logback.classic.Logger)logger;
-        if(logbackLogger.getAppender(logEvent.getAsyncAppenderName()) != null){
+        ch.qos.logback.classic.Logger logbackLogger = (ch.qos.logback.classic.Logger) logger;
+        if (logbackLogger.getAppender(logEvent.getAsyncAppenderName()) != null) {
             return logger;
         }
         //所有组件都必须start
@@ -35,7 +37,7 @@ public class LoggerFactory {
         infoFilter.start();
 
         TimeBasedRollingPolicy policy = new TimeBasedRollingPolicy();
-        policy.setFileNamePattern(File.separator + "%d{yyyy-MM-dd}" + File.separator + "kk" + logEvent.getFileName() + ".%d{yyyy-MM-dd}.log");
+        policy.setFileNamePattern(BASE_PATH + File.separator + "%d{yyyy-MM-dd}" + File.separator + logEvent.getFileName() + ".log.%d{yyyy-MM-dd}");
 //        policy.setMaxHistory(30);
         policy.setContext(lc);
 

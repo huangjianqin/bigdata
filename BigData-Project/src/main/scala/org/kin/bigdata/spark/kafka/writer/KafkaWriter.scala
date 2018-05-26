@@ -9,9 +9,6 @@ import scala.reflect.ClassTag
   * 参考自https://github.com/BenFradet/spark-kafka-writer
   */
 abstract class KafkaWriter[T: ClassTag] extends Serializable{
-  def write2Kafka[K, V](
-                   producerConfig: Map[String, Object],
-                   transformFunc: T => ProducerRecord[K, V],
-                   callback: Option[Callback] = None
-                 ): Unit
+  def write2Kafka[K, V](transformFunc: T => ProducerRecord[K, V], callback: Option[Callback] = None)
+                       (implicit producerConfig: Map[String, Object]): Unit
 }

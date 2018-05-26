@@ -1,4 +1,4 @@
-package org.kin.framework.state;
+package org.kin.framework.statemachine;
 
 
 import org.kin.framework.event.EventHandler;

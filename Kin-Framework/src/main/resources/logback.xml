@@ -15,7 +15,7 @@
             <level>INFO</level>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>/%d{yyyy-MM-dd}/stdout.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>logs/%d{yyyy-MM-dd}/stdout.log.%d{yyyy-MM-dd}</fileNamePattern>
             <!--<maxHistory>30</maxHistory>-->
         </rollingPolicy>
     </appender>
@@ -29,7 +29,7 @@
             <level>ERROR</level>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>/%d{yyyy-MM-dd}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>logs/%d{yyyy-MM-dd}/error.log.%d{yyyy-MM-dd}</fileNamePattern>
             <!--<maxHistory>30</maxHistory>-->
         </rollingPolicy>
     </appender>
