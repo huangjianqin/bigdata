@@ -44,12 +44,16 @@ public class PartitionTaskExecutors<K> {
         startTask(numPartition);
     }
 
-    public void execute(K key, Runnable task){
-        partitionTasks.get(partitioner.toPartition(key, numPartition)).execute(new Task(key, task));
+    public Future<?> execute(K key, Runnable task){
+        FutureTask futureTask = new FutureTask(task, null);
+        partitionTasks.get(partitioner.toPartition(key, numPartition)).execute(new Task(key, futureTask));
+        return futureTask;
     }
 
-    public void execute(K key, Callable task){
-        partitionTasks.get(partitioner.toPartition(key, numPartition)).execute(new Task(key, task));
+    public <T> Future<T> execute(K key, Callable<T> task){
+        FutureTask<T> futureTask = new FutureTask(task);
+        partitionTasks.get(partitioner.toPartition(key, numPartition)).execute(new Task(key, futureTask));
+        return futureTask;
     }
 
     private void shutdownTask(int num){
@@ -130,26 +134,25 @@ public class PartitionTaskExecutors<K> {
         threadPool.setCorePoolSize(originNumPartition);
     }
 
-    private class Task implements Callable{
+    private class Task implements Runnable{
         //缓存分区key,以便重分区时获取分区key
         private final K key;
-        private final Callable target;
+        private final Runnable target;
 
         Task(K key, Runnable target) {
-            this.key = key;
-            this.target = Executors.callable(target);
-        }
-
-        Task(K key, Callable target) {
             this.key = key;
             this.target = target;
         }
 
-        public Object call() throws Exception {
-            return target.call();
+        @Override
+        public void run() {
+            target.run();
         }
     }
 
+    /**
+     * task 执行
+     */
     private class PartitionTask implements Runnable{
         //任务队列
         private BlockingQueue<Task> queue;
@@ -183,7 +186,7 @@ public class PartitionTaskExecutors<K> {
             while(!isStopped && !Thread.currentThread().isInterrupted()){
                 try {
                     Task task = queue.take();
-                    task.call();
+                    task.run();
                 } catch (InterruptedException e) {
 
                 } catch (Exception e) {
