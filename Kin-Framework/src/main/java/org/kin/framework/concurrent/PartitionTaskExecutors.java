@@ -50,6 +50,12 @@ public class PartitionTaskExecutors<K> {
         return futureTask;
     }
 
+    public <T> Future<T> execute(K key, Runnable task, T value){
+        FutureTask futureTask = new FutureTask(task, value);
+        partitionTasks.get(partitioner.toPartition(key, numPartition)).execute(new Task(key, futureTask));
+        return futureTask;
+    }
+
     public <T> Future<T> execute(K key, Callable<T> task){
         FutureTask<T> futureTask = new FutureTask(task);
         partitionTasks.get(partitioner.toPartition(key, numPartition)).execute(new Task(key, futureTask));
