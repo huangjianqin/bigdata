@@ -41,6 +41,11 @@ public class ActorSystem {
         }
     }
 
+    private ActorSystem(String name, ThreadManager threadManager) {
+        this(name);
+        this.threadManager = threadManager;
+    }
+
     public static ActorSystem create(){
         return name2AS.get(DEFAULT_AS_NAME);
     }
@@ -51,6 +56,11 @@ public class ActorSystem {
         return actorSystem;
     }
 
+    public static ActorSystem create(String name, ThreadManager threadManager){
+        ActorSystem actorSystem = new ActorSystem(name, threadManager);
+        name2AS.put(name, actorSystem);
+        return actorSystem;
+    }
 
     public <AA extends AbstractActor<AA>> AA actorOf(Class<AA> claxx, String name){
         ActorPath actorPath = ActorPath.as(name, this);
