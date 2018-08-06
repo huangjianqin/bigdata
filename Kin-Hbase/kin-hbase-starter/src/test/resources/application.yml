@@ -1,0 +1,4 @@
+kin:
+  hbase:
+    zookeeperQuorum: localhost:2181
+    zookeeperClientPort: 2181

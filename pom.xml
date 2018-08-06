@@ -10,6 +10,7 @@
     <modules>
         <module>BigData-Project</module>
         <module>Kin-Framework</module>
+        <module>Kin-Hbase</module>
     </modules>
 
     <properties>
