@@ -5,3 +5,6 @@
 */*.iml
 target/*
 */target/*
+*.csv
+*.jar
+*.txt
