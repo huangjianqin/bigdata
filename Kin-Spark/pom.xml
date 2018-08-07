@@ -2,15 +2,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>org.kin</groupId>
         <artifactId>bigdata</artifactId>
+        <groupId>org.kin</groupId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <artifactId>bigdata-project</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <packaging>jar</packaging>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>kin-spark</artifactId>
+    <modules>
+        <module>kin-spark-core</module>
+    </modules>
+    <version>0.1.0.0</version>
+    <!--多模块情况下，父模块必须是pom-->
+    <packaging>pom</packaging>
 
     <properties>
         <java.version>1.8</java.version>
@@ -20,186 +25,23 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <scala.version>2.11.12</scala.version>
-        <scala.version.head>2.11</scala.version.head>
-        <spark.version>2.2.0</spark.version>
-        <kafka.version>1.0.0</kafka.version>
-        <hadoop.version>2.6.4</hadoop.version>
-        <zookeeper.version>3.4.9</zookeeper.version>
-        <hbase.version>1.2.4</hbase.version>
-        <hive.version>1.2.1</hive.version>
-        <mongo.version>3.2.2</mongo.version>
     </properties>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.kin</groupId>
+                <artifactId>kin-spark-core</artifactId>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
-        <!-- 测试包-->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.4</version>
-            <scope>test</scope>
-        </dependency>
-
-
-        <!-- scala-->
-        <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
-            <version>${scala.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-
-        <!--scala unit test-->
-        <dependency>
-            <groupId>org.specs</groupId>
-            <artifactId>specs</artifactId>
-            <version>1.2.5</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.version.head}</artifactId>
-            <version>3.0.4</version>
-            <scope>test</scope>
-        </dependency>
-
-
-        <!--2.12版本的scala 将akka独立出去了-->
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_${scala.version.head}</artifactId>
-            <version>2.5.4</version>
-        </dependency>
-
-
-        <!--scala mongo-->
-        <dependency>
-            <groupId>org.reactivemongo</groupId>
-            <artifactId>reactivemongo_${scala.version.head}</artifactId>
-            <version>0.12.7</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.mongodb.scala</groupId>
-            <artifactId>mongo-scala-driver_${scala.version.head}</artifactId>
-            <version>2.1.0</version>
-        </dependency>
-
-
-        <!-- druid连接池-->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid</artifactId>
-            <version>1.0.18</version>
-        </dependency>
-
-
-        <!-- activeMQ-->
-        <dependency>
-            <groupId>org.apache.activemq</groupId>
-            <artifactId>activemq-core</artifactId>
-            <version>5.7.0</version>
-        </dependency>
-
-
-        <!-- rabbitMQ -->
-        <dependency>
-            <groupId>com.rabbitmq</groupId>
-            <artifactId>amqp-client</artifactId>
-            <version>4.1.0</version>
-        </dependency>
-
-
-        <!-- 解析yml-->
-        <dependency>
-            <groupId>org.jyaml</groupId>
-            <artifactId>jyaml</artifactId>
-            <version>1.3</version>
-        </dependency>
-
-
-        <!-- spark-->
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-core_${scala.version.head}</artifactId>
-            <version>${spark.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql_${scala.version.head}</artifactId>
-            <version>${spark.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-streaming_${scala.version.head}</artifactId>
-            <version>${spark.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-streaming-kafka_${scala.version.head}</artifactId>
-            <version>1.6.2</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-mllib_${scala.version.head}</artifactId>
-            <version>${spark.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-hive_${scala.version.head}</artifactId>
-            <version>${spark.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-
-        <!-- kin -->
-        <dependency>
-            <groupId>org.kin</groupId>
-            <artifactId>kin-hadoop-core</artifactId>
-            <version>0.1.0.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.kin</groupId>
-            <artifactId>kin-hbase-core</artifactId>
-            <version>0.1.0.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.kin</groupId>
-            <artifactId>kin-hive-core</artifactId>
-            <version>0.1.0.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.kin</groupId>
-            <artifactId>kin-kafka-core</artifactId>
-            <version>0.1.0.0</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.kin</groupId>
-            <artifactId>kin-spark-core</artifactId>
-            <version>0.1.0.0</version>
-        </dependency>
-
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kin-framework</artifactId>
             <version>0.1.0.0</version>
         </dependency>
-
     </dependencies>
 
     <!-- mvn clean scala:compile compile package -->
@@ -216,6 +58,15 @@
                 <directory>${basedir}/src/test/resources</directory>
             </testResource>
         </testResources>
+
+        <!--protobuf 插件相关 自动解析出${os.detected.classifier}变量-->
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.5.0.Final</version>
+            </extension>
+        </extensions>
 
         <plugins>
             <plugin>
@@ -285,11 +136,11 @@
                 </executions>
                 <configuration>
                     <!--<archive>-->
-                        <!--<manifest>-->
-                            <!--<addClasspath>true</addClasspath>-->
-                            <!--<classpathPrefix>lib/</classpathPrefix>-->
-                            <!--<mainClass>spark.demo.run.Service</mainClass>-->
-                        <!--</manifest>-->
+                    <!--<manifest>-->
+                    <!--<addClasspath>true</addClasspath>-->
+                    <!--<classpathPrefix>lib/</classpathPrefix>-->
+                    <!--<mainClass>spark.demo.run.Service</mainClass>-->
+                    <!--</manifest>-->
                     <!--</archive>-->
                 </configuration>
             </plugin>
@@ -317,9 +168,9 @@
                 <version>2.5.5</version>
                 <configuration>
                     <!--<archive>-->
-                        <!--<manifest>-->
-                            <!--<mainClass></mainClass>-->
-                        <!--</manifest>-->
+                    <!--<manifest>-->
+                    <!--<mainClass></mainClass>-->
+                    <!--</manifest>-->
                     <!--</archive>-->
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>

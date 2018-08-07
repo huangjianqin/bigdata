@@ -8,12 +8,11 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>kin-hbase</artifactId>
-    <version>0.1.0.0</version>
+    <artifactId>kin-hadoop</artifactId>
     <modules>
-        <module>kin-hbase-core</module>
-        <module>kin-hbase-starter</module>
+        <module>kin-hadoop-core</module>
     </modules>
+    <version>0.1.0.0</version>
     <!--多模块情况下，父模块必须是pom-->
     <packaging>pom</packaging>
 
@@ -30,18 +29,12 @@
         <dependencies>
             <dependency>
                 <groupId>org.kin</groupId>
-                <artifactId>kin-hbase-core</artifactId>
-            </dependency>
-
-            <dependency>
-                <groupId>org.kin</groupId>
-                <artifactId>kin-hbase-starter</artifactId>
+                <artifactId>kin-hadoop-core</artifactId>
             </dependency>
         </dependencies>
     </dependencyManagement>
-
+    
     <dependencies>
-        <!-- 工具包-->
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kin-framework</artifactId>
@@ -49,6 +42,7 @@
         </dependency>
     </dependencies>
 
+    <!-- mvn clean scala:compile compile package -->
     <build>
         <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
         <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>

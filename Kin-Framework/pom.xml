@@ -16,6 +16,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <scala.version>2.11.12</scala.version>
+        <scala.version.head>2.11</scala.version.head>
     </properties>
 
     <dependencies>
@@ -27,19 +28,31 @@
             <scope>test</scope>
         </dependency>
 
+        
         <!-- scala-->
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
             <version>${scala.version}</version>
+            <scope>provided</scope>
         </dependency>
 
+
+        <!--scala unit test-->
         <dependency>
             <groupId>org.specs</groupId>
             <artifactId>specs</artifactId>
             <version>1.2.5</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.scalatest</groupId>
+            <artifactId>scalatest_${scala.version.head}</artifactId>
+            <version>3.0.4</version>
+            <scope>test</scope>
+        </dependency>
+
 
         <!-- 异步日志-->
         <dependency>
@@ -53,6 +66,7 @@
             <artifactId>logback-classic</artifactId>
             <version>1.2.3</version>
         </dependency>
+
 
         <!-- 日志包-->
         <dependency>
@@ -73,12 +87,14 @@
             <version>1.7.21</version>
         </dependency>
 
+
         <!-- 工具包-->
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>22.0</version>
         </dependency>
+
         <dependency>
             <groupId>it.unimi.dsi</groupId>
             <artifactId>fastutil</artifactId>

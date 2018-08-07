@@ -11,6 +11,10 @@
         <module>BigData-Project</module>
         <module>Kin-Framework</module>
         <module>Kin-Hbase</module>
+        <module>Kin-Kafka</module>
+        <module>Kin-Hadoop</module>
+        <module>Kin-Hive</module>
+        <module>Kin-Spark</module>
     </modules>
 
     <properties>

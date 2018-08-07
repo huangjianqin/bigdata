@@ -3,14 +3,16 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>kin-hbase</artifactId>
+        <artifactId>kin-kafka</artifactId>
         <groupId>org.kin</groupId>
         <version>0.1.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>kin-hbase-core</artifactId>
+
+    <artifactId>kin-kafka-core</artifactId>
     <version>0.1.0.0</version>
     <packaging>jar</packaging>
+
     <properties>
         <java.version>1.8</java.version>
         <CodeCacheSize>512m</CodeCacheSize>
@@ -18,31 +20,38 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <hadoop.version>2.6.4</hadoop.version>
-        <hbase.version>1.2.4</hbase.version>
-        <spring.version>4.3.7.RELEASE</spring.version>
+        <scala.version>2.11.12</scala.version>
+        <scala.version.head>2.11</scala.version.head>
+        <kafka.version>1.0.0</kafka.version>
+        <zookeeper.version>3.4.9</zookeeper.version>
     </properties>
 
     <dependencies>
-        <!-- hbase-->
+        <!-- zookeeper-->
         <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase-client</artifactId>
-            <version>${hbase.version}</version>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
+            <version>${zookeeper.version}</version>
+        </dependency>
+
+
+        <!-- kafka-->
+        <dependency>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-clients</artifactId>
+            <version>${kafka.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase-common</artifactId>
-            <version>${hbase.version}</version>
-            <scope>provided</scope>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-streams</artifactId>
+            <version>${kafka.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase-server</artifactId>
-            <version>${hbase.version}</version>
-            <scope>provided</scope>
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka_${scala.version.head}</artifactId>
+            <version>${kafka.version}</version>
         </dependency>
     </dependencies>
 
