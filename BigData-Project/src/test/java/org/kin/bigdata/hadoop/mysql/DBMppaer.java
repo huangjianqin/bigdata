@@ -1,4 +1,4 @@
-package org.kin.bigdata.hadoop.db;
+package org.kin.bigdata.hadoop.mysql;
 
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.Mapper;
