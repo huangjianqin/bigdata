@@ -8,3 +8,5 @@ target/*
 *.csv
 *.jar
 *.txt
+*.class
+*.DS_Store
