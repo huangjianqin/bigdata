@@ -1,4 +1,4 @@
-package org.kin.hbase.core.utils;
+package org.kin.framework.utils;
 
 /**
  * Created by huangjianqin on 2018/5/25.

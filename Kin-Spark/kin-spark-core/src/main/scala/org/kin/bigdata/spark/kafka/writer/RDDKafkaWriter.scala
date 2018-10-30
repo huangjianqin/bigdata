@@ -12,9 +12,9 @@ import scala.reflect.ClassTag
 class RDDKafkaWriter[T: ClassTag](@transient private val rdd: RDD[T]) extends KafkaWriter[T] with Serializable{
   override def write2Kafka[K, V](transformFunc: (T) => ProducerRecord[K, V], callback: Option[Callback])
                                 (implicit producerConfig: Map[String, Object]): Unit = {
-    rdd.foreachPartition{pattern =>
+    rdd.foreachPartition{partition =>
       val producer = KafkaProducerCache.getProducer[K, V](producerConfig)
-      pattern.foreach{
+      partition.foreach{
         record => producer.send(transformFunc(record), callback.orNull)
       }
     }

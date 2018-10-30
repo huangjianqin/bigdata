@@ -3,7 +3,7 @@ package org.kin.hbase.starter;
 import org.kin.hbase.core.HBasePool;
 import org.kin.hbase.core.config.HBaseConfig;
 import org.kin.hbase.core.domain.Constants;
-import org.kin.hbase.core.utils.StringUtils;
+import org.kin.framework.utils.StringUtils;
 import org.kin.hbase.starter.config.SpringBootHBaseConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;

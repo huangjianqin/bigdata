@@ -1,11 +1,11 @@
 package org.kin.hbase.core;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.kin.framework.utils.StringUtils;
 import org.kin.hbase.core.config.HBaseConfig;
 import org.kin.hbase.core.domain.Constants;
 import org.slf4j.Logger;

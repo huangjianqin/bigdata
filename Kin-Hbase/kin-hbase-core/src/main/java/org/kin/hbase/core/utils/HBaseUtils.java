@@ -3,6 +3,7 @@ package org.kin.hbase.core.utils;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.filter.*;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.kin.framework.utils.StringUtils;
 import org.kin.hbase.core.annotation.HBaseEntity;
 import org.kin.hbase.core.domain.QueryInfo;
 import org.kin.hbase.core.annotation.Column;
