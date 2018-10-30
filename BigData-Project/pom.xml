@@ -162,6 +162,13 @@
             <scope>provided</scope>
         </dependency>
 
+        <!--异步网络IO-->
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.28.Final</version>
+            <scope>provided</scope>
+        </dependency>
 
         <!-- kin -->
         <dependency>
