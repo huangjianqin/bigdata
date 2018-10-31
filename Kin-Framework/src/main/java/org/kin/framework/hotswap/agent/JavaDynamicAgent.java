@@ -4,8 +4,8 @@ import java.lang.instrument.Instrumentation;
 
 /**
  * Created by huangjianqin on 2018/2/3.
- * 必须单独打包，并且设置
- * Agent-Class: agent.MyAgent
+ * 必须单独打包，并且MANNIFEST.MF设置
+ * Agent-Class: JavaDynamicAgent.jar
  * Can-Redefine-Classes: true
  */
 public class JavaDynamicAgent {

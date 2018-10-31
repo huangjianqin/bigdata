@@ -59,7 +59,7 @@ public class CommonHotswapFactory extends HotswapFactory{
                 for (Class<?> changedClass : changedClasses) {
                     try{
                         for (ClassReloadable classReloadable : monitoredClassReferences) {
-                            classReloadable.reload(changedClass);
+                            classReloadable.reload(changedClass, classLoader);
                         }
                     }
                     catch (Exception e){

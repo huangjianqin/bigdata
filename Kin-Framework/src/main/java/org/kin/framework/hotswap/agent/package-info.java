@@ -4,6 +4,7 @@
 package org.kin.framework.hotswap.agent;
 
 /*
+     在MANNIFEST.MF设置
      Agent-Class: JavaDynamicAgent.jar
      Can-Redefine-Classes: true
 

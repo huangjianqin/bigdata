@@ -149,10 +149,8 @@ public class FileMonitor extends Thread {
                         }
                     }
                 });
-                if(key.reset()){
-                    //重置状态，让key等待事件
-                    break;
-                }
+                //重置状态，让key等待事件
+                key.reset();
             } catch (InterruptedException e) {
                 ExceptionUtils.log(e);
             }

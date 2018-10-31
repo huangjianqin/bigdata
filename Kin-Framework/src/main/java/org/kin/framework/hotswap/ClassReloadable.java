@@ -12,41 +12,28 @@ import java.util.List;
  */
 public abstract class ClassReloadable implements Reloadable{
     /**
-     * 默认热更新实现，仅仅会替换当前类的成员域
+     * 默认热更新实现，仅仅会替换当前类(包括子类和父类)的成员域
      *
      ***目前无法处理类的热更替换,因为无法感知当前类在哪里被引用(如果我实现,相当于实现了spring的一部分,所以会有一个基于spring的热更实现)
      *
      * @param changedClass  新Class
      */
-    void reload(Class<?> changedClass){
-        List<Field> affectedFields = new ArrayList<>();
+    void reload(Class<?> changedClass, DynamicClassLoader classLoader){
         Class<?> my = this.getClass();
-        //不断往父类遍历,获取受影响的Field
+        //不断往父类遍历,替换受影响的Field
         for(Field field: ClassUtils.getAllFields(my)){
             try {
                 field.setAccessible(true);
-                if (field.getType().isAssignableFrom(changedClass)) {
-                    //实现类(包括父类)相同
-                    affectedFields.add(field);
+                if (field.get(this) != null
+                        && field.getType().isAssignableFrom(changedClass)
+                        && field.get(this).getClass().getName().equals(changedClass.getName())) {
+                    //实现类相同
+                    Object newObj = changedClass.newInstance();
+                    field.set(this, newObj);
                 }
-            }
-            finally {
-                field.setAccessible(false);
-            }
-        }
-
-        //替换实例
-        for(Field field: affectedFields){
-            try {
-                field.setAccessible(true);
-                Object newObj = field.get(this).getClass().newInstance();
-                field.set(this, newObj);
-            } catch (IllegalAccessException e) {
+            } catch (IllegalAccessException | InstantiationException e) {
                 ExceptionUtils.log(e);
-            } catch (InstantiationException e) {
-                ExceptionUtils.log(e);
-            }
-            finally {
+            } finally {
                 field.setAccessible(false);
             }
         }

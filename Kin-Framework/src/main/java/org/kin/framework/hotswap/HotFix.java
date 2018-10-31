@@ -26,8 +26,8 @@ public class HotFix extends ClassReloadable {
     }
 
     @Override
-    void reload(Class<?> changedClass) {
-        super.reload(changedClass);
+    void reload(Class<?> changedClass, DynamicClassLoader classLoader) {
+        super.reload(changedClass, classLoader);
     }
 
     public void fix(){
