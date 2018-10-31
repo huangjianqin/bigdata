@@ -5,5 +5,8 @@ package org.kin.framework.concurrent;
  */
 @FunctionalInterface
 public interface Partitioner<K> {
+    /**
+     * 获取分区
+     */
     int toPartition(K key, int numPartition);
 }
