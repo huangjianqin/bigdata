@@ -159,6 +159,7 @@ public class FileMonitor extends Thread {
 
             if(changedClasses.size() > 0){
                 executorService.execute(() -> hotswapFactory.reload(changedClasses));
+                HotFix.instance().fix();
             }
         }
         log.info("file monitor end");
