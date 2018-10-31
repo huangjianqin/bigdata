@@ -8,7 +8,6 @@ import java.util.List;
 
 /**
  * Created by huangjianqin on 2018/2/1.
- * 类热更新思路->加载新的Class,重新构建实例,把所有引用了该Class的地方重新加载Class(不断传播下去)
  */
 public abstract class ClassReloadable implements Reloadable{
     /**

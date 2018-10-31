@@ -20,7 +20,7 @@ import java.util.stream.Stream;
  * 利用nio 新api监听文件变换
  * 该api底层本质上是监听了操作系统的文件系统触发的文件更改事件
  *
- * 异步热加载
+ * 异步热加载文件 同步类热更新
  */
 public class FileMonitor extends Thread {
     private static final Logger log = LoggerFactory.getLogger("FileMonitor");
@@ -35,7 +35,7 @@ public class FileMonitor extends Thread {
     private HotswapFactory hotswapFactory;
     //分段锁
     private Object[] locks;
-    //执行线程
+    //异步热加载文件 执行线程
     private ExecutorService executorService;
     private boolean isStopped = false;
 
@@ -86,9 +86,18 @@ public class FileMonitor extends Thread {
         }));
     }
 
+    public FileMonitor hotswapFactory(HotswapFactory hotswapFactory){
+        this.hotswapFactory = hotswapFactory;
+        return this;
+    }
+
+    public FileMonitor executor(ExecutorService executorService){
+        this.executorService = executorService;
+        return this;
+    }
+
     /**
-     * 对于CommonHotswapFactory / JavaAgentHotswapFactory,监听整个classpath
-     * 因为无法感知具体实例是啥
+     * 监听整个classpath
      */
     private void monitorClasspath(){
         String classRoot = Thread.currentThread().getContextClassLoader().getResource("").getPath();
@@ -120,19 +129,25 @@ public class FileMonitor extends Thread {
             List<Path> changedClasses = new ArrayList<>();
             try {
                 WatchKey key = watchService.take();
+                //变化的路径
                 Path parentPath = (Path) key.watchable();
                 List<WatchEvent<?>> events = key.pollEvents();
                 events.forEach(event -> {
+                    //变化item的名字(文件名或者文件夹名)
                     String itemName = event.context().toString();
                     int hashKey = itemName.hashCode();
+                    //真实路径
                     Path childPath = Paths.get(parentPath.toString(), itemName);
                     log.debug("'{}' changed", childPath.toString());
                     if (!Files.isDirectory(childPath)) {
+                        //非文件夹
                         if(itemName.endsWith(ClassUtils.CLASS_SUFFIX)){
+                            //处理类热更新
                             changedClasses.add(childPath);
                         }
                         else{
                             synchronized (getLock(hashKey)){
+                                //处理文件热更新
                                 FileReloadable fileReloadable = monitorItems.get(hashKey);
                                 if(fileReloadable != null){
                                     executorService.execute(() -> {
@@ -156,6 +171,7 @@ public class FileMonitor extends Thread {
             }
 
             if(changedClasses.size() > 0){
+                //类热更新
                 executorService.execute(() -> hotswapFactory.reload(changedClasses));
                 HotFix.instance().fix();
             }
@@ -180,12 +196,13 @@ public class FileMonitor extends Thread {
             ExceptionUtils.log(e);
         }
         executorService.shutdown();
+        //help GC
         monitorItems = null;
         hotswapFactory = null;
         locks = null;
         executorService = null;
 
-        //中断监控线程
+        //中断监控线程, 让本线程退出
         interrupt();
     }
 
@@ -196,7 +213,8 @@ public class FileMonitor extends Thread {
     }
 
     /**
-     * 监听ClassReloadable实现类继承链以及成员域所有class
+     *
+     * @param classReloadable 监听该实例
      */
     public void monitorObject(ClassReloadable classReloadable){
         checkStatus();
@@ -216,6 +234,9 @@ public class FileMonitor extends Thread {
         monitorFile0(path.getParent(), path.getFileName().toString(), fileReloadable);
     }
 
+    /**
+     * 监听文件变化
+     */
     private void monitorFile0(Path dir, String itemName, FileReloadable fileReloadable){
         try {
             dir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);

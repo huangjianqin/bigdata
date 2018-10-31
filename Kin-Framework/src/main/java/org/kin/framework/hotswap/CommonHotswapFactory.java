@@ -14,6 +14,10 @@ public class CommonHotswapFactory extends HotswapFactory{
     private static final Logger log = LoggerFactory.getLogger("hot-fix-class");
     private List<ClassReloadable> monitoredClassReferences = new ArrayList<>();
 
+    /**
+     *
+     * @param classReloadable 注册该对象, 有类热更新, 尝试更新该实例的成员域
+     */
     public void register(ClassReloadable classReloadable){
         monitoredClassReferences.add(classReloadable);
     }
