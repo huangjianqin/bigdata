@@ -1,6 +1,5 @@
 package org.kin.framework.hotswap;
 
-import org.kin.framework.utils.ExceptionUtils;
 import java.io.*;
 
 /**
@@ -16,29 +15,18 @@ public class DynamicClassLoader extends ClassLoader{
     public DynamicClassLoader() {
     }
 
-    public Class<?> loadClass(File file){
-        try(FileInputStream fis = new FileInputStream(file)){
+    public Class<?> loadClass(File file) throws Exception {
+        try (FileInputStream fis = new FileInputStream(file)) {
             return loadClass(fis);
-        } catch (FileNotFoundException e) {
-            ExceptionUtils.log(e);
-        } catch (IOException e) {
-            ExceptionUtils.log(e);
         }
-        return null;
     }
 
-    public Class<?> loadClass(InputStream is){
-        try {
-            if(is.available() > 0) {
-                byte[] bytes = new byte[is.available()];
-                is.read(bytes);
+    public Class<?> loadClass(InputStream is) throws Exception {
+        if (is.available() > 0) {
+            byte[] bytes = new byte[is.available()];
+            is.read(bytes);
 
-                return defineClass(null, bytes, 0, bytes.length);
-            }
-        } catch (FileNotFoundException e) {
-            ExceptionUtils.log(e);
-        } catch (IOException e) {
-            ExceptionUtils.log(e);
+            return defineClass(null, bytes, 0, bytes.length);
         }
         return null;
     }

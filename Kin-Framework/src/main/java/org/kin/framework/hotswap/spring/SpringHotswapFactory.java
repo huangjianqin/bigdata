@@ -3,7 +3,6 @@ package org.kin.framework.hotswap.spring;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import org.kin.framework.hotswap.DynamicClassLoader;
-import org.kin.framework.hotswap.FileMonitor;
 import org.kin.framework.hotswap.HotswapFactory;
 import org.kin.framework.utils.ClassUtils;
 import org.kin.framework.utils.ExceptionUtils;
@@ -17,7 +16,6 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.ScannedGenericBeanDefinition;
 import org.springframework.context.event.ContextRefreshedEvent;
-
 import java.io.File;
 import java.lang.reflect.Field;
 import java.net.URL;
@@ -29,7 +27,7 @@ import java.util.*;
  * 目前仅仅支持AutoWired注解的bean
  */
 public class SpringHotswapFactory extends HotswapFactory implements ApplicationListener<ContextRefreshedEvent> {
-    private static final Logger log = LoggerFactory.getLogger("SpringHotswapFactory");
+    private static final Logger log = LoggerFactory.getLogger("hot-fix-class");
     private DefaultListableBeanFactory beanFactory;
     //缓存所有BeanDefinition
     //hash(class name) -> set(BeanDefinitionDetail)
@@ -50,8 +48,6 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
                 String packageDir = res.getPath();
                 String classFileName = beanClass.getSimpleName() + ClassUtils.CLASS_SUFFIX;
                 File file = new File(packageDir + classFileName);
-                //监听classes 变化
-                FileMonitor.instance().monitorClass(beanClass);
 
                 BeanDefinitionDetail beanDefinitionDetail = new BeanDefinitionDetail(beanName, beanDefinition, file);
                 beanDefinitionDetailsMap.put(beanClass.getName().hashCode(), beanDefinitionDetail);
@@ -67,17 +63,52 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
     public void reload(List<Path> changedPath) {
         List<Class<?>> changedClasses = new ArrayList<>();
         //加载最新的class
-        DynamicClassLoader classLoader = new DynamicClassLoader(parent);
-        Thread.currentThread().setContextClassLoader(classLoader);
-        for(Path path: changedPath){
-            Class<?> changedClass = classLoader.loadClass(path.toFile());
-            changedClasses.add(changedClass);
-
-            classLoader = reload(changedClass, classLoader);
+        ClassLoader old = Thread.currentThread().getContextClassLoader();
+        DynamicClassLoader classLoader;
+        if(parent != null){
+            classLoader = new DynamicClassLoader(parent);
         }
-        parent = classLoader;
+        else{
+            classLoader = new DynamicClassLoader(old);
+        }
 
-        injectNewBeans(changedClasses);
+        Thread.currentThread().setContextClassLoader(classLoader);
+
+        boolean isClassRedefineSuccess = true;
+        for(Path path: changedPath){
+            boolean isSuccess = false;
+            Class<?> changedClass = null;
+            try {
+                changedClass = classLoader.loadClass(path.toFile());
+                changedClasses.add(changedClass);
+                isSuccess = true;
+                classLoader = reload(changedClass, classLoader);
+            } catch (Exception e) {
+                isClassRedefineSuccess = false;
+                log.debug("hot swap class '" + changedClass.getName() + "' failure", e);
+            }
+            finally {
+                if(isSuccess){
+                    log.info("hot swap class '{}' success", changedClass.getName());
+                }
+                else{
+                    log.info("hot swap class '{}' failure", changedClass.getName());
+                }
+            }
+        }
+
+        if(isClassRedefineSuccess){
+            try{
+                injectNewBeans(changedClasses);
+            }
+            finally {
+                parent = classLoader;
+            }
+        }
+        else{
+            //遇到异常, 回退
+            Thread.currentThread().setContextClassLoader(old);
+        }
     }
 
     /**
@@ -92,6 +123,7 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
         }
 
         for(BeanDefinitionDetail beanDefinitionDetail: beanDefinitionDetails){
+            //@Autowire的注入细节
             ScannedGenericBeanDefinition beanDefinition = (ScannedGenericBeanDefinition) beanDefinitionDetail.getBeanDefinition();
             beanDefinition.setBeanClass(changedClass);
             //删除beanFactory缓存的bean
@@ -119,7 +151,12 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
         for (String dependentBeanName : dependentbeanNames) {
             BeanDefinitionDetail dependentBeanDefinitionDetail = name2DefinitionDetailsMap.get(dependentBeanName);
             //重新加载
-            Class<?> dependentBeanClass = child.loadClass(dependentBeanDefinitionDetail.getFile());
+            Class<?> dependentBeanClass = null;
+            try {
+                dependentBeanClass = child.loadClass(dependentBeanDefinitionDetail.getFile());
+            } catch (Exception e) {
+                ExceptionUtils.log(e);
+            }
 
             //获取该bean所有AutoWired注入
             Collection<InjectionMetadata.InjectedElement> injectedElements = getAffectedInjectElements(dependentBeanName);
@@ -191,13 +228,22 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
      */
     private void injectNewBeans(List<Class<?>> changedClasses){
         for(Class<?> changedClass: changedClasses){
-            Collection<BeanDefinitionDetail> beanDefinitionDetails = beanDefinitionDetailsMap.get(changedClass.getName().hashCode());
+            try{
+                Collection<BeanDefinitionDetail> beanDefinitionDetails = beanDefinitionDetailsMap.get(changedClass.getName().hashCode());
 
-            for(BeanDefinitionDetail beanDefinitionDetail: beanDefinitionDetails){
-                Object newBean = beanFactory.getBean(beanDefinitionDetail.getBeanName());
-                injectDependentBean(beanDefinitionDetail, newBean);
+                if(!beanDefinitionDetails.isEmpty()){
+                    for(BeanDefinitionDetail beanDefinitionDetail: beanDefinitionDetails){
+                        Object newBean = beanFactory.getBean(beanDefinitionDetail.getBeanName());
+                        injectDependentBean(beanDefinitionDetail, newBean);
+                    }
+                    log.info("reinject new class '{}' reference success", changedClass.getName());
+                }
+            }catch (Exception e) {
+                log.error("reinject new class '" + changedClass.getName() + "' reference failure", e);
             }
+
         }
+
     }
 
     /**

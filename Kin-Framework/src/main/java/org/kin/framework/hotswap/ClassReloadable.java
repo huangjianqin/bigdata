@@ -12,7 +12,7 @@ import java.util.List;
  */
 public abstract class ClassReloadable implements Reloadable{
     /**
-     * 默认热更新实现，仅仅会替换当前类的成员接口实现实例(定义类型是interface)
+     * 默认热更新实现，仅仅会替换当前类的成员域
      *
      ***目前无法处理类的热更替换,因为无法感知当前类在哪里被引用(如果我实现,相当于实现了spring的一部分,所以会有一个基于spring的热更实现)
      *
@@ -25,16 +25,10 @@ public abstract class ClassReloadable implements Reloadable{
         for(Field field: ClassUtils.getAllFields(my)){
             try {
                 field.setAccessible(true);
-                if (field.getType().isInterface() &&
-                        field.getType().isAssignableFrom(changedClass) &&
-                        field.get(this).getClass().getName().equals(changedClass.getName())) {
-                    //接口
-                    //changedClass实现了该接口
-                    //实现类相同
+                if (field.getType().isAssignableFrom(changedClass)) {
+                    //实现类(包括父类)相同
                     affectedFields.add(field);
                 }
-            } catch (IllegalAccessException e) {
-                ExceptionUtils.log(e);
             }
             finally {
                 field.setAccessible(false);
@@ -45,7 +39,7 @@ public abstract class ClassReloadable implements Reloadable{
         for(Field field: affectedFields){
             try {
                 field.setAccessible(true);
-                Object newObj = changedClass.newInstance();
+                Object newObj = field.get(this).getClass().newInstance();
                 field.set(this, newObj);
             } catch (IllegalAccessException e) {
                 ExceptionUtils.log(e);

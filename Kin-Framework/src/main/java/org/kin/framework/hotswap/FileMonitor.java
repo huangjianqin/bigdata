@@ -1,8 +1,5 @@
 package org.kin.framework.hotswap;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
-import org.kin.framework.collection.ConcurrentHashSet;
 import org.kin.framework.hotswap.agent.JavaAgentHotswapFactory;
 import org.kin.framework.utils.ClassUtils;
 import org.kin.framework.utils.ExceptionUtils;
@@ -11,20 +8,15 @@ import org.slf4j.LoggerFactory;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
 
 /**
  * Created by huangjianqin on 2018/2/1.
- * 文件监听器
+ * 文件监听器   单例模式
  * 利用nio 新api监听文件变换
  * 该api底层本质上是监听了操作系统的文件系统触发的文件更改事件
  *
@@ -33,33 +25,21 @@ import java.util.stream.Stream;
 public class FileMonitor extends Thread {
     private static final Logger log = LoggerFactory.getLogger("FileMonitor");
     //默认实现
-    private static FileMonitor monitor = new FileMonitor();
+    private static final FileMonitor monitor = new FileMonitor();
     private static boolean isStarted = false;
 
     private WatchService watchService;
-    private Set<String> monitorPaths;
     //hash(file name) -> Reloadable 实例
-    private Multimap<Integer, Reloadable> monitorItems;
+    private Map<Integer, FileReloadable> monitorItems;
     //类热加载工厂
-    private HotswapFactory hotswapFactory = new CommonHotswapFactory();
+    private HotswapFactory hotswapFactory;
     //分段锁
     private Object[] locks;
     //执行线程
-    private ExecutorService executorService = Executors.newFixedThreadPool(
-            5,
-            r -> {
-                Thread thread = new Thread(r);
-                thread.setName("file-monitor-reload-thread");
-                return thread;
-            }
-    );
+    private ExecutorService executorService;
     private boolean isStopped = false;
 
-    public FileMonitor() {
-    }
-
-    public FileMonitor(HotswapFactory hotswapFactory) {
-        this.hotswapFactory = hotswapFactory;
+    private FileMonitor() {
     }
 
     public static FileMonitor instance() {
@@ -76,12 +56,27 @@ public class FileMonitor extends Thread {
             ExceptionUtils.log(e);
         }
 
-        monitorPaths = new ConcurrentHashSet<>();
-        monitorItems = ArrayListMultimap.create();
+        monitorItems = new HashMap<>();
         locks = new Object[5];
         for(int i = 0; i < locks.length; i++){
             locks[i] = new Object();
         }
+        if(hotswapFactory == null){
+            //默认设置
+            hotswapFactory = new CommonHotswapFactory();
+        }
+        if(executorService == null){
+            //默认设置
+            executorService = Executors.newFixedThreadPool(
+                    5,
+                    r -> {
+                        Thread thread = new Thread(r);
+                        thread.setName("file-monitor-reload-thread");
+                        return thread;
+                    }
+            );
+        }
+
         if(hotswapFactory instanceof CommonHotswapFactory || hotswapFactory instanceof JavaAgentHotswapFactory){
             monitorClasspath();
         }
@@ -132,25 +127,18 @@ public class FileMonitor extends Thread {
                     int hashKey = itemName.hashCode();
                     Path childPath = Paths.get(parentPath.toString(), itemName);
                     log.debug("'{}' changed", childPath.toString());
-                    if (!Files.isDirectory(childPath) && monitorItems.containsKey(hashKey)) {
+                    if (!Files.isDirectory(childPath)) {
                         if(itemName.endsWith(ClassUtils.CLASS_SUFFIX)){
                             changedClasses.add(childPath);
                         }
                         else{
-                            synchronized (monitorItems){
-                                Collection<Reloadable> reloadables = monitorItems.get(hashKey);
-                                if(reloadables.size() > 0){
+                            synchronized (getLock(hashKey)){
+                                FileReloadable fileReloadable = monitorItems.get(hashKey);
+                                if(fileReloadable != null){
                                     executorService.execute(() -> {
                                         try {
                                             try(InputStream is = new FileInputStream(childPath.toFile())){
-                                                for(Reloadable reloadable: reloadables){
-                                                    if(reloadable instanceof FileReloadable){
-                                                        FileReloadable fileReloadable = (FileReloadable) reloadable;
-                                                        fileReloadable.reload(is);
-                                                        //重置指针
-                                                        is.reset();
-                                                    }
-                                                }
+                                                fileReloadable.reload(is);
                                             }
                                         } catch (IOException e) {
                                             ExceptionUtils.log(e);
@@ -193,14 +181,13 @@ public class FileMonitor extends Thread {
             ExceptionUtils.log(e);
         }
         executorService.shutdown();
+        monitorItems = null;
+        hotswapFactory = null;
+        locks = null;
+        executorService = null;
+
         //中断监控线程
         interrupt();
-
-        if(this == monitor){
-            //如果是中断默认的文件monitor
-            monitor = new FileMonitor();
-            isStarted = false;
-        }
     }
 
     private void checkStatus(){
@@ -210,45 +197,36 @@ public class FileMonitor extends Thread {
     }
 
     /**
-     * 监听class
+     * 监听ClassReloadable实现类继承链以及成员域所有class
      */
-    public void monitorClass(Class<?> claxx){
+    public void monitorObject(ClassReloadable classReloadable){
         checkStatus();
-        URL res = claxx.getResource("");
-        Path dir;
-        try {
-            dir = Paths.get(res.toURI());
-            String itemName = claxx.getSimpleName() + ClassUtils.CLASS_SUFFIX;
-            monitorFile0(dir, itemName, null);
-        } catch (URISyntaxException e) {
-            ExceptionUtils.log(e);
+        if(hotswapFactory instanceof CommonHotswapFactory){
+            ((CommonHotswapFactory) hotswapFactory).register(classReloadable);
         }
     }
 
-    public void monitorFile(String pathStr, Reloadable reloadable){
+    public void monitorFile(String pathStr, FileReloadable fileReloadable){
         checkStatus();
         Path path = Paths.get(pathStr);
-        monitorFile(path, reloadable);
+        monitorFile(path, fileReloadable);
     }
 
-    public void monitorFile(Path path, Reloadable reloadable){
+    public void monitorFile(Path path, FileReloadable fileReloadable){
         checkStatus();
-        monitorFile0(path.getParent(), path.getFileName().toString(), reloadable);
+        monitorFile0(path.getParent(), path.getFileName().toString(), fileReloadable);
     }
 
-    private void monitorFile0(Path dir, String itemName, Reloadable reloadable){
-        boolean exists = monitorPaths.add(dir.toString());
-        if(!exists){
-            try {
-                dir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
-            } catch (IOException e) {
-                ExceptionUtils.log(e);
-            }
+    private void monitorFile0(Path dir, String itemName, FileReloadable fileReloadable){
+        try {
+            dir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
+        } catch (IOException e) {
+            ExceptionUtils.log(e);
         }
 
         int key = itemName.hashCode();
         synchronized (getLock(key)){
-            monitorItems.put(key, reloadable);
+            monitorItems.put(key, fileReloadable);
         }
     }
 }

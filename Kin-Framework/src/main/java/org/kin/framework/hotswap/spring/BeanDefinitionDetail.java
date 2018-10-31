@@ -18,6 +18,7 @@ public class BeanDefinitionDetail {
         this.file = file;
     }
 
+    //getter
     public String getBeanName() {
         return beanName;
     }

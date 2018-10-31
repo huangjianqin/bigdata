@@ -1,5 +1,8 @@
 package org.kin.framework.hotswap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,19 +11,72 @@ import java.util.List;
  * Created by huangjianqin on 2018/2/2.
  */
 public class CommonHotswapFactory extends HotswapFactory{
-    private List<ClassReloadable> classReloadableList = new ArrayList<>();
+    private static final Logger log = LoggerFactory.getLogger("hot-fix-class");
+    private List<ClassReloadable> monitoredClassReferences = new ArrayList<>();
 
+    public void register(ClassReloadable classReloadable){
+        monitoredClassReferences.add(classReloadable);
+    }
+    
     @Override
     public void reload(List<Path> changedPath) {
-        DynamicClassLoader classLoader = new DynamicClassLoader();
+        ClassLoader old = Thread.currentThread().getContextClassLoader();
+        DynamicClassLoader classLoader;
+        if(parent != null){
+            classLoader = new DynamicClassLoader(parent);
+        }
+        else{
+            classLoader = new DynamicClassLoader(old);
+        }
+
         Thread.currentThread().setContextClassLoader(classLoader);
+
+        boolean isClassRedefineSuccess = true;
+        List<Class<?>> changedClasses = new ArrayList<>();
         for(Path path: changedPath){
-            Class<?> changedClass = classLoader.loadClass(path.toFile());
-            for(ClassReloadable classReloadable: classReloadableList){
-                classReloadable.reload(changedClass);
+            boolean isSuccess = false;
+            Class<?> changedClass = null;
+            try {
+                changedClass = classLoader.loadClass(path.toFile());
+                changedClasses.add(changedClass);
+                isSuccess = true;
+            } catch (Exception e) {
+                isClassRedefineSuccess = false;
+                log.debug("hot swap class '" + changedClass.getName() + "' failure", e);
+            }
+            finally {
+                if(isSuccess){
+                    log.info("hot swap class '{}' success", changedClass.getName());
+                }
+                else{
+                    log.info("hot swap class '{}' failure", changedClass.getName());
+                }
             }
         }
-        //保存最新的classloader
-        parent = classLoader;
+
+        if(isClassRedefineSuccess){
+            try{
+                for (Class<?> changedClass : changedClasses) {
+                    try{
+                        for (ClassReloadable classReloadable : monitoredClassReferences) {
+                            classReloadable.reload(changedClass);
+                        }
+                    }
+                    catch (Exception e){
+                        log.error("replace new class '" + changedClass.getName() + "' reference failure", e);
+                    }
+
+                    log.info("replace new class '{}' reference success", changedClass.getName());
+                }
+            }
+            finally {
+                //保存最新的classloader
+                parent = classLoader;
+            }
+        }
+        else{
+            //遇到异常, 回退
+            Thread.currentThread().setContextClassLoader(old);
+        }
     }
 }

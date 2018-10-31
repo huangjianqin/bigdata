@@ -28,7 +28,7 @@ import java.util.List;
  * 单例模式
  */
 public class JavaAgentHotswapFactory extends HotswapFactory {
-    private static final Logger log = LoggerFactory.getLogger(JavaAgentHotswapFactory.class);
+    private static final Logger log = LoggerFactory.getLogger("hot-fix-class");
     private static final String classesPath;
     private static final String jarPath;
     private static VirtualMachine vm;

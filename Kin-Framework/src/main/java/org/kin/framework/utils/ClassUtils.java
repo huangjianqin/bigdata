@@ -215,4 +215,23 @@ public class ClassUtils {
         }
         return fields;
     }
+
+    public static Set<Class<?>> getAllClasses(Class<?> claxx){
+        return getClasses(claxx, Object.class);
+    }
+
+    /**
+     * 获取claxx -> parent的所有class
+     */
+    public static Set<Class<?>> getClasses(Class<?> claxx, Class<?> parent){
+        if(parent.isAssignableFrom(claxx)){
+            throw new IllegalStateException(String.format("%s is not super class of %s", parent.getName(), claxx.getName()));
+        }
+        Set<Class<?>> classes = new HashSet<>();
+        while(!claxx.equals(parent)){
+            classes.add(claxx);
+            claxx = claxx.getSuperclass();
+        }
+        return classes;
+    }
 }
