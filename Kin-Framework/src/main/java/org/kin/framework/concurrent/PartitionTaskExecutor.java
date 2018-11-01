@@ -193,7 +193,7 @@ public class PartitionTaskExecutor<K> {
         Preconditions.checkArgument(newPartitionNum > 0, "param newPartitionNum '{}' can't be zero or negative", newPartitionNum);
         Preconditions.checkArgument(newPartitionNum < partitionNum, "param newPartitionNum '{}' must be lower than nowPartitionNum '{}'", newPartitionNum, partitionNum);
 
-        //对partitionTasks加锁并处理, 然后更新numPartition, 最后更新partitionTasks大小
+        //对partitionTasks加锁, 然后更新numPartition, 最后更新partitionTasks大小
         //这样能保证一致性, 并且不会发生数组index异常(因数组长度缩小)
         synchronized (partitionTasks) {
             int originPartitionNum = partitionNum;
