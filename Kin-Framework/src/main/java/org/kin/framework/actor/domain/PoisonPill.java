@@ -6,9 +6,13 @@ package org.kin.framework.actor.domain;
  * 终止Actor的message类
  */
 public final class PoisonPill {
-    public static final PoisonPill INSTANCE = new PoisonPill();
+    private static final PoisonPill INSTANCE = new PoisonPill();
 
     private PoisonPill(){
 
+    }
+
+    public static PoisonPill instance(){
+        return INSTANCE;
     }
 }

@@ -8,6 +8,7 @@ import org.kin.framework.actor.impl.AbstractActor;
  * 处理预定义方法匹配接口
  */
 public interface Receive {
+    @FunctionalInterface
     interface Func<AA extends AbstractActor<AA>, T>{
         void apply(AA applier, T message) throws Exception;
     }

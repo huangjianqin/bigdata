@@ -15,6 +15,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by huangjianqin on 2018/6/5.
+ *
+ * 部分成员域, 在Actor 线程, lazy init
  */
 public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
     private static final Logger log = LoggerFactory.getLogger("Actor");
@@ -23,29 +25,44 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
     //唯一标识该ActorSystem下的这个Actor
     private final ActorPath actorPath;
     private final AA self;
-    private final Receive receive;
+    private Receive receive;
     private final ActorSystem actorSystem;
 
-    private Queue<Mail<AA>> mailBox = new ConcurrentLinkedDeque<>();
-    private AtomicInteger boxSize = new AtomicInteger();
+    private final Queue<Mail<AA>> mailBox = new ConcurrentLinkedDeque<>();
+    private final AtomicInteger boxSize = new AtomicInteger();
     private volatile Thread currentThread;
+    private volatile boolean isStarted = false;
+    private volatile boolean isStopped = false;
 
     private static Map<ActorContext<?>, Queue<Future>> futures = new ConcurrentHashMap<>();
-    static {
-        ForkJoinPool.commonPool().execute(() -> clearFinishedFutures());
-    }
     //-----------------------------------------------------------------------------------------------
-    ActorContext(ActorPath actorPath, AA self, Receive receive, ActorSystem actorSystem) {
+
+    ActorContext(ActorPath actorPath, AA self, ActorSystem actorSystem) {
         this.actorPath = actorPath;
         this.self = self;
-        this.receive = receive;
         this.actorSystem = actorSystem;
+    }
+
+    /**
+     * Actor 线程执行
+     */
+    private void selfInit(){
+        self.preStart();
+        receive = self.createReceiver();
+        self.postStart();
+        isStarted = true;
+        //每12h清楚已结束的调度
+        receiveFixedRateSchedule(actor -> clearFinishedFutures(), 0, 12, TimeUnit.HOURS);
     }
 
     @Override
     public void run() {
+        if(!isStarted){
+            selfInit();
+        }
         this.currentThread = Thread.currentThread();
-        while(true){
+
+        while(isStarted && !isStopped && this.currentThread != null && !this.currentThread.isInterrupted()){
             Mail<AA> mail = mailBox.poll();
             if(mail == null){
                 break;
@@ -61,6 +78,7 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
                 break;
             }
         }
+        this.currentThread = null;
     }
 
     //-----------------------------------------------------------------------------------------------
@@ -69,6 +87,9 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
         String name();
     }
 
+    /**
+     * 处理消息匹配
+     */
     private class ReceiveMailImpl<T> implements Mail<AA>{
         private T arg;
 
@@ -80,8 +101,8 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
         public void handle(AA applier) {
             receive.receive(applier, arg);
             if(arg instanceof PoisonPill){
-                //执行完用户自定义方法后, clear
-                applier.stop();
+                //执行完开发者自定消息处理后, close
+                close();
             }
         }
 
@@ -91,6 +112,9 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
         }
     }
 
+    /**
+     * 直接执行task
+     */
     private class MessageMailImpl implements Mail<AA>{
         private Message<AA> message;
 
@@ -111,7 +135,7 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
 
     //-----------------------------------------------------------------------------------------------
     private void tryRun(){
-        if(boxSize.incrementAndGet() == 1){
+        if(isStarted && !isStopped && boxSize.incrementAndGet() == 1){
             actorSystem.getThreadManager().execute(this);
         }
     }
@@ -136,8 +160,7 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
         return future;
     }
 
-
-    public Future<?> receiveScheduleAtFixedRate(Message<AA> message, long initialDelay, long period, TimeUnit unit) {
+    public Future<?> receiveFixedRateSchedule(Message<AA> message, long initialDelay, long period, TimeUnit unit) {
         Future future = actorSystem.getThreadManager().scheduleAtFixedRate(() -> {
             receive(message);
         }, initialDelay, period, unit);
@@ -145,9 +168,48 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
         return future;
     }
 
+    /**
+     * Actor线程执行
+     */
     public void close(){
-        clearFutures();
+        isStopped = true;
         actorSystem.remove(actorPath);
+        self.preStop();
+        try {
+            clearFutures();
+            boxSize.set(0);
+            mailBox.clear();
+            //help GC
+            this.currentThread = null;
+        }
+        finally {
+            self.postStop();
+        }
+    }
+
+    /**
+     * Actor线程执行
+     * ps: 停止当前执行线程, 另外开
+     */
+    public void closeNow(){
+        isStopped = true;
+        actorSystem.remove(actorPath);
+        if(this.currentThread != null){
+            this.currentThread.interrupt();
+            //help GC
+            this.currentThread = null;
+        }
+        actorSystem.getThreadManager().execute(() -> {
+            self.preStop();
+            try {
+                clearFutures();
+                boxSize.set(0);
+                mailBox.clear();
+            }
+            finally {
+                self.postStop();
+            }
+        });
     }
 
     private void addFuture(Future<?> future){
@@ -167,9 +229,10 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
         }
     }
 
-    private static void clearFinishedFutures(){
-        for(Queue<Future> queue: futures.values()){
-            Iterator<Future> iterator = queue.iterator();
+    private void clearFinishedFutures(){
+        Queue<Future> old = futures.get(this);
+        if(old != null){
+            Iterator<Future> iterator = old.iterator();
             while(iterator.hasNext()){
                 Future future = iterator.next();
                 if(future.isDone()){
@@ -180,8 +243,15 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
     }
 
     //getter
-
     public ActorPath getActorPath() {
         return actorPath;
+    }
+
+    public boolean isStarted() {
+        return isStarted;
+    }
+
+    public boolean isStopped() {
+        return isStopped;
     }
 }

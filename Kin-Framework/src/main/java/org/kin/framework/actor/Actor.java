@@ -35,9 +35,17 @@ public interface Actor<AA extends AbstractActor<AA>> {
     Future<?> scheduleAtFixedRate(Message<AA> message, long initialDelay, long period, TimeUnit unit);
 
     /**
-     * 关闭Actor, 并释放资源
+     * 相当于receive PoisonPill.instance()
+     * Actor 线程执行
+     * 待mailbox里面的mail执行完, 关闭Actor, 并释放资源
      */
     void stop();
+
+    /**
+     * 非Actor 线程执行
+     * 直接中断 Actor 线程, 关闭Actor, 并释放资源
+     */
+    void stopNow();
 
     /**
      * 获取Actor基本信息

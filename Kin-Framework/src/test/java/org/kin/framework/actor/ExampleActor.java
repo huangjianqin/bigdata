@@ -53,6 +53,6 @@ public class ExampleActor extends AbstractActor<ExampleActor> {
         ExampleActor exampleActor = actorSystem.actorOf(ExampleActor.class, "aaa");
         exampleActor.tell(actor -> System.out.println("1"));
         exampleActor.receive(2);
-        exampleActor.receive(PoisonPill.INSTANCE);
+        exampleActor.receive(PoisonPill.instance());
     }
 }

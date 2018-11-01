@@ -4,6 +4,8 @@ import org.kin.framework.actor.Actor;
 import org.kin.framework.actor.domain.ActorPath;
 import org.kin.framework.actor.Message;
 import org.kin.framework.actor.Receive;
+import org.kin.framework.actor.domain.PoisonPill;
+
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -21,11 +23,8 @@ public abstract class AbstractActor<AA extends AbstractActor<AA>> implements Act
     }
 
     private final void init(ActorPath actorPath, ActorSystem actorSystem){
-        //其他线程
-        preStart();
-        actorContext = new ActorContext(actorPath, this, createReceiver(), actorSystem);
+        actorContext = new ActorContext(actorPath, this, actorSystem);
         actorSystem.add(actorPath, this);
-        postStart();
     }
 
     @Override
@@ -45,17 +44,17 @@ public abstract class AbstractActor<AA extends AbstractActor<AA>> implements Act
 
     @Override
     public final Future<?> scheduleAtFixedRate(Message<AA> message, long initialDelay, long period, TimeUnit unit) {
-        return actorContext.receiveScheduleAtFixedRate(message, initialDelay, period, unit);
+        return actorContext.receiveFixedRateSchedule(message, initialDelay, period, unit);
     }
 
     @Override
     public final void stop() {
-        //actor 线程
-        actorContext.receive(actor -> {
-            preStop();
-            actorContext.close();
-            postStop();
-        });
+        actorContext.receive(PoisonPill.instance());
+    }
+
+    @Override
+    public void stopNow() {
+        actorContext.closeNow();
     }
 
     @Override
@@ -79,21 +78,36 @@ public abstract class AbstractActor<AA extends AbstractActor<AA>> implements Act
     }
 
     //-----------------------------------------------------------------------------------------------
+    /**
+     * Actor 线程执行
+     */
     protected void preStart(){
 
     }
 
+    /**
+     * Actor 线程执行
+     */
     protected void postStart(){
 
     }
 
+    /**
+     * Actor 线程执行
+     */
     protected void preStop(){
 
     }
 
+    /**
+     * Actor 线程执行
+     */
     protected void postStop(){
 
     }
 
+    /**
+     * Actor 线程执行
+     */
     public abstract Receive createReceiver();
 }

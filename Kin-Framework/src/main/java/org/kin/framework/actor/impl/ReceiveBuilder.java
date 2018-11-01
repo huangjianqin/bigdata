@@ -2,6 +2,7 @@ package org.kin.framework.actor.impl;
 
 import org.kin.framework.actor.domain.PoisonPill;
 import org.kin.framework.actor.Receive;
+import org.kin.framework.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
@@ -57,7 +58,7 @@ public class ReceiveBuilder {
      * Predicate用于匹配message
      * Comparable用于排序方法
      */
-    private abstract class FuncWrapper<AA extends AbstractActor<AA>, T> implements Predicate, Comparable<T>{
+    private abstract class FuncWrapper<AA extends AbstractActor<AA>, T> implements Predicate, Comparable{
         private final Receive.Func<AA, T> func;
 
         protected FuncWrapper(Receive.Func<AA, T> func) {
@@ -69,7 +70,7 @@ public class ReceiveBuilder {
                 try {
                     func.apply(applier, (T) oArg);
                 } catch (Exception e) {
-                    log.error("", e);
+                    ExceptionUtils.log(e);
                 }
             }
         }
@@ -84,7 +85,7 @@ public class ReceiveBuilder {
         }
 
         @Override
-        public int compareTo(T o) {
+        public int compareTo(Object o) {
             return 0;
         }
 
@@ -103,7 +104,7 @@ public class ReceiveBuilder {
         }
 
         @Override
-        public int compareTo(T o) {
+        public int compareTo(Object o) {
             return 0;
         }
 
@@ -119,7 +120,7 @@ public class ReceiveBuilder {
         }
 
         @Override
-        public int compareTo(T o) {
+        public int compareTo(Object o) {
             return 1;
         }
 
