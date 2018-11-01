@@ -13,11 +13,11 @@ import java.util.Iterator;
 /**
  * Created by huangjianqin on 2017/9/4.
  * 写入顺序size(int),[itemBytes]........
- *
+ * <p>
  * 不能写入null
  * equal hashcode是对比实例引用
  * compareTo以item类型和集合item为基准
- *
+ * <p>
  * 本质上是基类
  * Comparator实现需先根据collection长度判断,再对比元素
  */
@@ -31,26 +31,25 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
     }
 
 
-    public CollectionWritable(Class<T> itemType, Collection<T> collection, boolean isOverwrite){
+    public CollectionWritable(Class<T> itemType, Collection<T> collection, boolean isOverwrite) {
         this(itemType);
-        if(isOverwrite){
+        if (isOverwrite) {
             this.collection = (Collection<T>) collection;
-        }
-        else{
+        } else {
             addAll(collection);
         }
     }
 
-    public String mkString(String separator){
-        if(separator == null || separator.equals("")){
+    public String mkString(String separator) {
+        if (separator == null || separator.equals("")) {
             separator = ",";
         }
 
         StringBuilder sb = new StringBuilder();
-        for(WritableComparable item: collection){
+        for (WritableComparable item : collection) {
             sb.append(item.toString() + separator);
         }
-        if(collection.size() > 0){
+        if (collection.size() > 0) {
             sb.replace(sb.length() - separator.length(), sb.length(), "");
         }
         return sb.toString();
@@ -60,7 +59,7 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
     public void write(DataOutput dataOutput) throws IOException {
         //写入集合数量
         dataOutput.writeInt(collection.size());
-        for(WritableComparable item: collection){
+        for (WritableComparable item : collection) {
             item.write(dataOutput);
         }
     }
@@ -68,7 +67,7 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
     @Override
     public void readFields(DataInput dataInput) throws IOException {
         int size = dataInput.readInt();
-        for(int i = 0; i < size; i++){
+        for (int i = 0; i < size; i++) {
             WritableComparable item = ClassUtils.instance(itemType);
             item.readFields(dataInput);
             collection.add((T) item);
@@ -77,7 +76,7 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
 
     @Override
     public int compareTo(CollectionWritable o) {
-        if(o == null){
+        if (o == null) {
             return 1;
         }
 
@@ -87,16 +86,15 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
         Integer thisArrL = thisArr.length;
         Integer thatArrL = thatArr.length;
         Integer lCmd = thisArrL.compareTo(thatArrL);
-        if(lCmd != 0){
+        if (lCmd != 0) {
             return lCmd;
         }
 
-        for(int i = 0; i < thisArr.length; i++){
+        for (int i = 0; i < thisArr.length; i++) {
             int cmd = thisArr[i].compareTo(thatArr[i]);
-            if(cmd == 1){
+            if (cmd == 1) {
                 return 1;
-            }
-            else if(cmd == -1){
+            } else if (cmd == -1) {
                 return -1;
             }
         }
@@ -136,7 +134,7 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
 
     @Override
     public boolean add(T item) {
-        if(item == null){
+        if (item == null) {
             throw new IllegalArgumentException("item can't be null");
         }
 
@@ -146,7 +144,7 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
     @Override
     public boolean remove(Object o) {
         //当使用sorted列表,集合时,防止传入不合法的Comparable实例
-        if(o instanceof WritableComparable){
+        if (o instanceof WritableComparable) {
             return collection.remove(o);
         }
         return false;
@@ -159,7 +157,7 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
 
     @Override
     public boolean addAll(Collection<? extends T> c) {
-        if(c.contains(null)){
+        if (c.contains(null)) {
             throw new IllegalArgumentException("item can't be null");
         }
         return collection.addAll(c);
@@ -168,9 +166,9 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
     @Override
     public boolean removeAll(Collection<?> c) {
         //当使用sorted列表,集合时,防止传入不合法的Comparable实例,比如自身CollectionWritable.....
-        if(c instanceof CollectionWritable){
-            for(Object o: c){
-                if(!collection.remove(o)){
+        if (c instanceof CollectionWritable) {
+            for (Object o : c) {
+                if (!collection.remove(o)) {
                     return false;
                 }
             }

@@ -10,7 +10,7 @@ public class QueryInfo {
      */
     private String qualifier;
 
-    private QueryInfo(){
+    private QueryInfo() {
 
     }
 
@@ -19,11 +19,11 @@ public class QueryInfo {
         this.qualifier = qualifier;
     }
 
-    public static QueryInfo family(String family){
+    public static QueryInfo family(String family) {
         return new QueryInfo(family, "");
     }
 
-    public static QueryInfo column(String family, String qualifier){
+    public static QueryInfo column(String family, String qualifier) {
         return new QueryInfo(family, qualifier);
     }
 

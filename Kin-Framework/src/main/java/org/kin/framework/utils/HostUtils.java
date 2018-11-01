@@ -7,7 +7,7 @@ import java.net.UnknownHostException;
  * Created by huangjianqin on 2018/1/28.
  */
 public class HostUtils {
-    public static String localhost(){
+    public static String localhost() {
         try {
             return InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {

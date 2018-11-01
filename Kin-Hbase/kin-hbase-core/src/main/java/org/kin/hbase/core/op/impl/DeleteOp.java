@@ -8,6 +8,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.kin.hbase.core.HBasePool;
 import org.kin.hbase.core.op.AbstractHBaseOp;
 import org.kin.hbase.core.utils.HBaseUtils;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,33 +23,32 @@ public class DeleteOp extends AbstractHBaseOp<DeleteOp> {
         super(tableName);
     }
 
-    public <T> void delete(T... objs){
+    public <T> void delete(T... objs) {
         delete(Arrays.asList(objs));
     }
 
-    public <T> void delete(Collection<T> objs){
+    public <T> void delete(Collection<T> objs) {
         List<Delete> deletes = new ArrayList<>();
-        for(T obj: objs){
-            if(obj instanceof String){
+        for (T obj : objs) {
+            if (obj instanceof String) {
                 //row key
                 deletes.add(new Delete(Bytes.toBytes(obj.toString())));
-            }
-            else{
+            } else {
                 //HBase Entity
                 byte[] rowKeyBytes = HBaseUtils.getRowKeyBytes(obj);
-                if(rowKeyBytes != null){
+                if (rowKeyBytes != null) {
                     deletes.add(new Delete(rowKeyBytes));
                 }
             }
         }
 
-        if(deletes.size() > 0){
+        if (deletes.size() > 0) {
             delete0(deletes);
         }
     }
 
-    private void delete0(List<Delete> deletes){
-        try(Connection connection = HBasePool.common().getConnection()){
+    private void delete0(List<Delete> deletes) {
+        try (Connection connection = HBasePool.common().getConnection()) {
             Table table = connection.getTable(TableName.valueOf(getTableName()));
 
             table.delete(deletes);

@@ -14,7 +14,9 @@ import scala.util.{Failure, Success}
   */
 object ReactiveMongoTest {
   implicit def personWriter: BSONDocumentWriter[Person] = Macros.writer[Person]
+
   implicit def personReader: BSONDocumentReader[Person] = Macros.reader[Person]
+
   // or provide a custom one
 
   case class Person(firstName: String, lastName: String, age: Int)
@@ -28,15 +30,17 @@ object ReactiveMongoTest {
     val driver = new MongoDriver()
 
     val parsedUri = MongoConnection.parseURI(uri)
-    val connection = parsedUri.map{
+    val connection = parsedUri.map {
       var conOpts = MongoConnectionOptions(/* connection options */)
-//      driver.connection(List(uri), conOpts = conOpts)
+      //      driver.connection(List(uri), conOpts = conOpts)
       driver.connection(_)
     }
 
     // Database and collections: Get references
     val futureConnection = Future.fromTry(connection)
+
     def db: Future[DefaultDB] = futureConnection.flatMap(_.database("hjq"))
+
     def personCollection: Future[BSONCollection] = db.map(_.collection("person"))
 
     //操作函数
@@ -54,13 +58,13 @@ object ReactiveMongoTest {
       personCollection.flatMap(_.update(selector, person).map(_.n))
     }
 
-    val failOnErrorPrintln = Cursor.FailOnError[List[Person]]{
+    val failOnErrorPrintln = Cursor.FailOnError[List[Person]] {
       (a, throwable) =>
         println(throwable)
     }
 
     def findPerson: Future[List[Person]] = personCollection.flatMap(
-        _.find(document).cursor[Person]().collect[List](100, failOnErrorPrintln))
+      _.find(document).cursor[Person]().collect[List](100, failOnErrorPrintln))
 
     def findPersonByAge(age: Int): Future[List[Person]] =
       personCollection.flatMap(_.find(document("age" -> age)). // query builder
@@ -69,8 +73,8 @@ object ReactiveMongoTest {
 
     def closeConnection = {
       val closingConnection = futureConnection.map(_.close())
-      closingConnection.onComplete{
-        case result =>{
+      closingConnection.onComplete {
+        case result => {
           println(result)
           driver.close()
         }

@@ -6,27 +6,27 @@ import org.kin.hbase.core.op.impl.*;
  * Created by huangjianqin on 2018/5/25.
  */
 public class HBaseOps {
-    public static PutOp put(String tableName){
+    public static PutOp put(String tableName) {
         return new PutOp(tableName);
     }
 
-    public static GetOp get(String tableName, String rowKey){
+    public static GetOp get(String tableName, String rowKey) {
         return new GetOp(tableName, rowKey);
     }
 
-    public static ScanOp scan(String tableName){
+    public static ScanOp scan(String tableName) {
         return new ScanOp(tableName);
     }
 
-    public static ScanOp scan(String tableName, String startRow, String stopRow){
+    public static ScanOp scan(String tableName, String startRow, String stopRow) {
         return new ScanOp(tableName, startRow, stopRow);
     }
 
-    public static DeleteOp delete(String tableName){
+    public static DeleteOp delete(String tableName) {
         return new DeleteOp(tableName);
     }
 
-    public static AdminOp admin(String tableName){
+    public static AdminOp admin(String tableName) {
         return new AdminOp(tableName);
     }
 }

@@ -63,12 +63,11 @@ public class CSVRecordReader extends RecordReader<LongWritable, TextCollectionWr
         FileSystem fs = file.getFileSystem(job);
         FSDataInputStream fileIs = fs.open(fileSplit.getPath());
 
-        if(compressionCodec != null){
+        if (compressionCodec != null) {
             InputStream is = compressionCodec.createInputStream(fileIs);
             end = Long.MAX_VALUE;
-        }
-        else{
-            if(start != 0){
+        } else {
+            if (start != 0) {
                 fileIs.seek(start);
             }
             is = fileIs;
@@ -80,7 +79,7 @@ public class CSVRecordReader extends RecordReader<LongWritable, TextCollectionWr
 
     private void init(InputStream is, Configuration conf) throws IOException {
         isZipFile = conf.getBoolean(IS_ZIPFILE, DEFAULT_ZIP);
-        if(isZipFile){
+        if (isZipFile) {
             ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
             zis.getNextEntry();
             is = zis;
@@ -91,12 +90,12 @@ public class CSVRecordReader extends RecordReader<LongWritable, TextCollectionWr
 
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
-        if(cKey == null){
+        if (cKey == null) {
             cKey = new LongWritable();
         }
         cKey.set(pos);
 
-        if(cValue == null){
+        if (cValue == null) {
             cValue = new TextCollectionWritable();
         }
 
@@ -132,19 +131,19 @@ public class CSVRecordReader extends RecordReader<LongWritable, TextCollectionWr
         long readed = 0L;
         int i;
         StringBuilder sb = new StringBuilder();
-        while((i = reader.read()) != -1){
+        while ((i = reader.read()) != -1) {
             char c = (char) i;
-            readed ++;
+            readed++;
             sb.append(c);
-            if(c == '\n'){
+            if (c == '\n') {
                 break;
             }
         }
         //have content % \n
-        if(sb.length() > 0 && sb.indexOf("\n") == sb.length() - 1){
+        if (sb.length() > 0 && sb.indexOf("\n") == sb.length() - 1) {
             //remove \n
             sb.replace(sb.length() - 1, sb.length(), "");
-            if(sb.indexOf("\r") == sb.length() - 1){
+            if (sb.indexOf("\r") == sb.length() - 1) {
                 //windows下编辑的文件
                 //remove \r
                 sb.replace(sb.length() - 1, sb.length(), "");
@@ -154,7 +153,7 @@ public class CSVRecordReader extends RecordReader<LongWritable, TextCollectionWr
         String csvLine = sb.toString();
 
         //parser a csvLine and fill the container
-        for(String csvItem: parser.parseLine(csvLine)){
+        for (String csvItem : parser.parseLine(csvLine)) {
             cValue.add(new Text(csvItem));
         }
 
@@ -173,22 +172,21 @@ public class CSVRecordReader extends RecordReader<LongWritable, TextCollectionWr
 
     @Override
     public float getProgress() throws IOException, InterruptedException {
-        if(start == end){
+        if (start == end) {
             return 0.0f;
-        }
-        else{
-            return Math.min(1.0f, (pos - start)/(float)(end - start));
+        } else {
+            return Math.min(1.0f, (pos - start) / (float) (end - start));
         }
     }
 
     @Override
     public void close() throws IOException {
-        if(reader != null){
+        if (reader != null) {
             reader.close();
             reader = null;
         }
 
-        if(is != null){
+        if (is != null) {
             is.close();
             is = null;
         }

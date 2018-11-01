@@ -13,7 +13,7 @@ public class Client extends AbstractActor {
     public void preStart() throws Exception {
         System.out.println(self().path());
 
-        if(count < 5){
+        if (count < 5) {
             getContext().actorOf(Props.create(Client.class), "client" + count);
             count++;
         }

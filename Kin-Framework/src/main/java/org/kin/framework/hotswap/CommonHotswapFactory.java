@@ -10,26 +10,24 @@ import java.util.List;
 /**
  * Created by huangjianqin on 2018/2/2.
  */
-public class CommonHotswapFactory extends HotswapFactory{
+public class CommonHotswapFactory extends HotswapFactory {
     private static final Logger log = LoggerFactory.getLogger("hot-fix-class");
     private List<ClassReloadable> monitoredClassReferences = new ArrayList<>();
 
     /**
-     *
      * @param classReloadable 注册该对象, 有类热更新, 尝试更新该实例的成员域
      */
-    public void register(ClassReloadable classReloadable){
+    public void register(ClassReloadable classReloadable) {
         monitoredClassReferences.add(classReloadable);
     }
-    
+
     @Override
     public void reload(List<Path> changedPath) {
         ClassLoader old = Thread.currentThread().getContextClassLoader();
         DynamicClassLoader classLoader;
-        if(parent != null){
+        if (parent != null) {
             classLoader = new DynamicClassLoader(parent);
-        }
-        else{
+        } else {
             classLoader = new DynamicClassLoader(old);
         }
 
@@ -37,7 +35,7 @@ public class CommonHotswapFactory extends HotswapFactory{
 
         boolean isClassRedefineSuccess = true;
         List<Class<?>> changedClasses = new ArrayList<>();
-        for(Path path: changedPath){
+        for (Path path : changedPath) {
             boolean isSuccess = false;
             Class<?> changedClass = null;
             try {
@@ -47,38 +45,33 @@ public class CommonHotswapFactory extends HotswapFactory{
             } catch (Exception e) {
                 isClassRedefineSuccess = false;
                 log.debug("hot swap class '" + changedClass.getName() + "' failure", e);
-            }
-            finally {
-                if(isSuccess){
+            } finally {
+                if (isSuccess) {
                     log.info("hot swap class '{}' success", changedClass.getName());
-                }
-                else{
+                } else {
                     log.info("hot swap class '{}' failure", changedClass.getName());
                 }
             }
         }
 
-        if(isClassRedefineSuccess){
-            try{
+        if (isClassRedefineSuccess) {
+            try {
                 for (Class<?> changedClass : changedClasses) {
-                    try{
+                    try {
                         for (ClassReloadable classReloadable : monitoredClassReferences) {
                             classReloadable.reload(changedClass, classLoader);
                         }
-                    }
-                    catch (Exception e){
+                    } catch (Exception e) {
                         log.error("replace new class '" + changedClass.getName() + "' reference failure", e);
                     }
 
                     log.info("replace new class '{}' reference success", changedClass.getName());
                 }
-            }
-            finally {
+            } finally {
                 //保存最新的classloader
                 parent = classLoader;
             }
-        }
-        else{
+        } else {
             //遇到异常, 回退
             Thread.currentThread().setContextClassLoader(old);
         }

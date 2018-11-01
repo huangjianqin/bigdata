@@ -1,9 +1,9 @@
 package org.kin.framework.actor.impl;
 
 import org.kin.framework.actor.Actor;
-import org.kin.framework.actor.domain.ActorPath;
 import org.kin.framework.actor.Message;
 import org.kin.framework.actor.Receive;
+import org.kin.framework.actor.domain.ActorPath;
 import org.kin.framework.actor.domain.PoisonPill;
 
 import java.util.concurrent.Future;
@@ -11,18 +11,18 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Created by huangjianqin on 2018/2/26.
- *
+ * <p>
  * 业务Actor必须继承该类并根据需求实现业务逻辑
  * 每个Actor实例必须并定一个ActorSystem
  */
-public abstract class AbstractActor<AA extends AbstractActor<AA>> implements Actor<AA>, Comparable<AA>{
+public abstract class AbstractActor<AA extends AbstractActor<AA>> implements Actor<AA>, Comparable<AA> {
     private ActorContext actorContext;
 
     public AbstractActor(ActorPath actorPath, ActorSystem actorSystem) {
         init(actorPath, actorSystem);
     }
 
-    private final void init(ActorPath actorPath, ActorSystem actorSystem){
+    private final void init(ActorPath actorPath, ActorSystem actorSystem) {
         actorContext = new ActorContext(actorPath, this, actorSystem);
         actorSystem.add(actorPath, this);
     }
@@ -78,31 +78,32 @@ public abstract class AbstractActor<AA extends AbstractActor<AA>> implements Act
     }
 
     //-----------------------------------------------------------------------------------------------
+
     /**
      * Actor 线程执行
      */
-    protected void preStart(){
+    protected void preStart() {
 
     }
 
     /**
      * Actor 线程执行
      */
-    protected void postStart(){
+    protected void postStart() {
 
     }
 
     /**
      * Actor 线程执行
      */
-    protected void preStop(){
+    protected void preStop() {
 
     }
 
     /**
      * Actor 线程执行
      */
-    protected void postStop(){
+    protected void postStop() {
 
     }
 

@@ -14,7 +14,7 @@ import org.apache.hadoop.util.ToolRunner;
 /**
  * Created by huangjianqin on 2017/8/26.
  */
-public class PreparationJob extends Configured implements Tool{
+public class PreparationJob extends Configured implements Tool {
     @Override
     public int run(String[] strings) throws Exception {
 //        getConf().set(LazyOutputFormat.OUTPUT_FORMAT, "org.apache.hadoop.mapreduce.lib.output.FileOutputFormat");
@@ -28,7 +28,7 @@ public class PreparationJob extends Configured implements Tool{
         FileOutputFormat.setOutputPath(job, new Path("result"));
         job.setOutputKeyClass(NullWritable.class);
         job.waitForCompletion(false);
-        return job.isSuccessful()? 1:0;
+        return job.isSuccessful() ? 1 : 0;
     }
 
     public static void main(String[] args) throws Exception {

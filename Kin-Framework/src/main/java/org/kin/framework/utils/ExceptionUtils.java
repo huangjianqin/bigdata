@@ -9,11 +9,11 @@ import org.slf4j.LoggerFactory;
 public class ExceptionUtils {
     private static Logger log = LoggerFactory.getLogger("error");
 
-    public static void log(Throwable throwable){
+    public static void log(Throwable throwable) {
         log.error("", throwable);
     }
 
-    public static void log(String msg, Object... params){
+    public static void log(String msg, Object... params) {
         log.error(msg, params);
     }
 }

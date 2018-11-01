@@ -6,8 +6,7 @@ package org.kin.hbase.core.domain;
 public enum ScannerStatus {
     Init(0, "初始化"),
     WORKING(1, "生效中"),
-    CLOSED(2, "关闭"),
-    ;
+    CLOSED(2, "关闭"),;
 
     private int id;
     private String desc;

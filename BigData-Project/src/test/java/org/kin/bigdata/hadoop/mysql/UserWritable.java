@@ -14,7 +14,7 @@ import java.sql.SQLException;
 /**
  * Created by 健勤 on 2017/7/19.
  */
-public class UserWritable implements DBWritable, Writable{
+public class UserWritable implements DBWritable, Writable {
     private int id;
     private String name;
     private String description;

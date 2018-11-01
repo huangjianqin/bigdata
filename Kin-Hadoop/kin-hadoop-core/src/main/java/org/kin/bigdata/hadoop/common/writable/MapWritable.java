@@ -11,11 +11,11 @@ import java.util.*;
 /**
  * Created by huangjianqin on 2017/9/4.
  * 写入顺序size(int), [keyBytes, valueBytes].......
- *
+ * <p>
  * 不能写入null
  * equal hashcode是对比实例引用
  * compareTo以key类型和key实例为基准
- *
+ * <p>
  * 本质上是基类
  * Comparator实现需先根据map长度判断,再对比key
  */
@@ -35,22 +35,21 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
                        boolean isOverwrite) {
         this.keyClass = keyClass;
         this.valueClass = valueClass;
-        if(isOverwrite){
+        if (isOverwrite) {
             this.map = map;
-        }
-        else{
+        } else {
             putAll(map);
         }
     }
 
-    public String mkString(String separator){
-        if(separator == null || separator.equals("")){
+    public String mkString(String separator) {
+        if (separator == null || separator.equals("")) {
             separator = ",";
         }
 
-        if(map.size() > 0){
+        if (map.size() > 0) {
             StringBuilder sb = new StringBuilder();
-            for(Entry<K, V> entry: map.entrySet()){
+            for (Entry<K, V> entry : map.entrySet()) {
                 sb.append("(" + entry.getKey() + ", " + entry.getValue() + ")" + separator);
             }
             sb.replace(sb.length() - separator.length(), sb.length(), "");
@@ -61,24 +60,24 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
 
     @Override
     public int compareTo(MapWritable o) {
-        if(o == null){
+        if (o == null) {
             return 1;
         }
 
         Integer thisSize = map.size();
         Integer thatsize = o.map.size();
         Integer lCmd = thisSize.compareTo(thatsize);
-        if(lCmd != 0){
+        if (lCmd != 0) {
             return lCmd;
         }
 
         Iterator<K> thisIterator = map.keySet().iterator();
         Iterator<K> thatIterator = o.map.keySet().iterator();
-        while(thisIterator.hasNext() && thatIterator.hasNext()){
+        while (thisIterator.hasNext() && thatIterator.hasNext()) {
             K thisWC = thisIterator.next();
             K thatWC = thatIterator.next();
             Integer cmd = thisWC.compareTo(thatWC);
-            if(cmd != 0){
+            if (cmd != 0) {
                 return cmd;
             }
         }
@@ -90,7 +89,7 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
     @Override
     public void write(DataOutput dataOutput) throws IOException {
         dataOutput.writeInt(map.size());
-        for(Entry<K, V> entry: map.entrySet()){
+        for (Entry<K, V> entry : map.entrySet()) {
             entry.getKey().write(dataOutput);
             entry.getValue().write(dataOutput);
         }
@@ -99,7 +98,7 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
     @Override
     public void readFields(DataInput dataInput) throws IOException {
         int size = dataInput.readInt();
-        for(int i = 0; i < size; i++){
+        for (int i = 0; i < size; i++) {
             K key = ClassUtils.instance(keyClass);
             V value = ClassUtils.instance(valueClass);
             key.readFields(dataInput);
@@ -136,15 +135,15 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
 
     @Override
     public V getOrDefault(Object key, V defaultValue) {
-       if(map.containsKey(key)){
-           return (V) map.get(key);
-       }
-       return defaultValue;
+        if (map.containsKey(key)) {
+            return (V) map.get(key);
+        }
+        return defaultValue;
     }
 
     @Override
     public V put(K key, V value) {
-        if(key == null || value == null){
+        if (key == null || value == null) {
             throw new IllegalArgumentException("key or value can't be null");
         }
 
@@ -153,7 +152,7 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
 
     @Override
     public V putIfAbsent(K key, V value) {
-        if(!map.containsKey(key)){
+        if (!map.containsKey(key)) {
             map.put(key, value);
             return value;
         }
@@ -162,7 +161,7 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
 
     @Override
     public V remove(Object key) {
-        if(keyClass.isAssignableFrom(key.getClass())){
+        if (keyClass.isAssignableFrom(key.getClass())) {
             return (V) map.remove(key);
         }
 
@@ -171,7 +170,7 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
 
     @Override
     public void putAll(Map<? extends K, ? extends V> map) {
-        if(map.containsKey(null) || map.containsValue(null)){
+        if (map.containsKey(null) || map.containsValue(null)) {
             throw new IllegalArgumentException("key or value can't be null");
         }
         this.map.putAll(map);
@@ -195,7 +194,7 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
     @Override
     public Set<Entry<K, V>> entrySet() {
         Set<Entry<K, V>> result = new HashSet<>();
-        for(Entry<K, V> entry: map.entrySet()){
+        for (Entry<K, V> entry : map.entrySet()) {
             result.add((Entry<K, V>) entry);
         }
         return result;

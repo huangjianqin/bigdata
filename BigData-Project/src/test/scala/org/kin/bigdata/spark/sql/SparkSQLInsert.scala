@@ -31,6 +31,6 @@ object SparkSQLInsert {
   }
 }
 
-case class Person(name: String, age: Int){
+case class Person(name: String, age: Int) {
 
 }

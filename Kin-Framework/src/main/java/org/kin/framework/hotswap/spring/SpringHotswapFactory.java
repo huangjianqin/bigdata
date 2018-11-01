@@ -16,6 +16,7 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.ScannedGenericBeanDefinition;
 import org.springframework.context.event.ContextRefreshedEvent;
+
 import java.io.File;
 import java.lang.reflect.Field;
 import java.net.URL;
@@ -65,17 +66,16 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
         //加载最新的class
         ClassLoader old = Thread.currentThread().getContextClassLoader();
         DynamicClassLoader classLoader;
-        if(parent != null){
+        if (parent != null) {
             classLoader = new DynamicClassLoader(parent);
-        }
-        else{
+        } else {
             classLoader = new DynamicClassLoader(old);
         }
 
         Thread.currentThread().setContextClassLoader(classLoader);
 
         boolean isClassRedefineSuccess = true;
-        for(Path path: changedPath){
+        for (Path path : changedPath) {
             boolean isSuccess = false;
             Class<?> changedClass = null;
             try {
@@ -86,26 +86,22 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
             } catch (Exception e) {
                 isClassRedefineSuccess = false;
                 log.debug("hot swap class '" + changedClass.getName() + "' failure", e);
-            }
-            finally {
-                if(isSuccess){
+            } finally {
+                if (isSuccess) {
                     log.info("hot swap class '{}' success", changedClass.getName());
-                }
-                else{
+                } else {
                     log.info("hot swap class '{}' failure", changedClass.getName());
                 }
             }
         }
 
-        if(isClassRedefineSuccess){
-            try{
+        if (isClassRedefineSuccess) {
+            try {
                 injectNewBeans(changedClasses);
-            }
-            finally {
+            } finally {
                 parent = classLoader;
             }
-        }
-        else{
+        } else {
             //遇到异常, 回退
             Thread.currentThread().setContextClassLoader(old);
         }
@@ -113,16 +109,17 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
 
     /**
      * 热加载class
-     * @param changedClass  新Class
-     * @param parent    加载了changedClass的classloader
+     *
+     * @param changedClass 新Class
+     * @param parent       加载了changedClass的classloader
      */
     private DynamicClassLoader reload(Class<?> changedClass, DynamicClassLoader parent) {
         Collection<BeanDefinitionDetail> beanDefinitionDetails = beanDefinitionDetailsMap.get(changedClass.getName().hashCode());
-        if(beanDefinitionDetails.isEmpty()){
+        if (beanDefinitionDetails.isEmpty()) {
             return parent;
         }
 
-        for(BeanDefinitionDetail beanDefinitionDetail: beanDefinitionDetails){
+        for (BeanDefinitionDetail beanDefinitionDetail : beanDefinitionDetails) {
             //@Autowire的注入细节
             ScannedGenericBeanDefinition beanDefinition = (ScannedGenericBeanDefinition) beanDefinitionDetail.getBeanDefinition();
             beanDefinition.setBeanClass(changedClass);
@@ -142,7 +139,7 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
     private DynamicClassLoader reloadDependentBeans(BeanDefinitionDetail beanDefinitionDetail, Object newBean, DynamicClassLoader parent) {
         //获取依赖@param newBean的bean
         String[] dependentbeanNames = beanFactory.getDependentBeans(beanDefinitionDetail.getBeanName());
-        if(dependentbeanNames.length <= 0){
+        if (dependentbeanNames.length <= 0) {
             return parent;
         }
         DynamicClassLoader child = new DynamicClassLoader(parent);
@@ -164,9 +161,9 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
             for (Field field : ClassUtils.getAllFields(dependentBeanClass)) {
                 Class<?> type = field.getType();
 
-                if(type.isInstance(newBean)){
+                if (type.isInstance(newBean)) {
                     //成员变量类型与@param newBean类型符合
-                    for(InjectionMetadata.InjectedElement element: injectedElements){
+                    for (InjectionMetadata.InjectedElement element : injectedElements) {
                         Field injectedField = (Field) element.getMember();
                         if (injectedField.getType().getName().equals(type.getName())
                                 && field.getName().equals(injectedField.getName())) {
@@ -188,19 +185,19 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
     /**
      * 获取注入的InjectedElement(仅仅是@Autowired注入)
      */
-    private Collection<InjectionMetadata.InjectedElement> getAffectedInjectElements(String beanName){
+    private Collection<InjectionMetadata.InjectedElement> getAffectedInjectElements(String beanName) {
         BeanPostProcessor beanPostProcessor = getAutowiredAnnotationBeanPostProcessor();
-        if(beanPostProcessor != null){
+        if (beanPostProcessor != null) {
             Map<String, InjectionMetadata> injectionMetadataMap = ClassUtils.getFieldValue(beanPostProcessor, "injectionMetadataCache");
-            if(injectionMetadataMap != null && injectionMetadataMap.size() > 0){
+            if (injectionMetadataMap != null && injectionMetadataMap.size() > 0) {
                 InjectionMetadata injectionMetadata = injectionMetadataMap.get(beanName);
-                if(injectionMetadata != null){
+                if (injectionMetadata != null) {
                     Collection<InjectionMetadata.InjectedElement> elements = ClassUtils.getFieldValue(injectionMetadata, "checkedElements");
-                    if(elements == null){
+                    if (elements == null) {
                         elements = ClassUtils.getFieldValue(injectionMetadata, "injectedElements");
                     }
 
-                    if(elements != null){
+                    if (elements != null) {
                         return elements;
                     }
                 }
@@ -213,9 +210,9 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
     /**
      * 获取AutowiredAnnotationBeanPostProcessor
      */
-    private BeanPostProcessor getAutowiredAnnotationBeanPostProcessor(){
-        for(BeanPostProcessor beanPostProcessor: beanFactory.getBeanPostProcessors()){
-            if(beanPostProcessor instanceof AutowiredAnnotationBeanPostProcessor){
+    private BeanPostProcessor getAutowiredAnnotationBeanPostProcessor() {
+        for (BeanPostProcessor beanPostProcessor : beanFactory.getBeanPostProcessors()) {
+            if (beanPostProcessor instanceof AutowiredAnnotationBeanPostProcessor) {
                 return beanPostProcessor;
             }
         }
@@ -226,19 +223,19 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
     /**
      * 重新注入newBean引用
      */
-    private void injectNewBeans(List<Class<?>> changedClasses){
-        for(Class<?> changedClass: changedClasses){
-            try{
+    private void injectNewBeans(List<Class<?>> changedClasses) {
+        for (Class<?> changedClass : changedClasses) {
+            try {
                 Collection<BeanDefinitionDetail> beanDefinitionDetails = beanDefinitionDetailsMap.get(changedClass.getName().hashCode());
 
-                if(!beanDefinitionDetails.isEmpty()){
-                    for(BeanDefinitionDetail beanDefinitionDetail: beanDefinitionDetails){
+                if (!beanDefinitionDetails.isEmpty()) {
+                    for (BeanDefinitionDetail beanDefinitionDetail : beanDefinitionDetails) {
                         Object newBean = beanFactory.getBean(beanDefinitionDetail.getBeanName());
                         injectDependentBean(beanDefinitionDetail, newBean);
                     }
                     log.info("reinject new class '{}' reference success", changedClass.getName());
                 }
-            }catch (Exception e) {
+            } catch (Exception e) {
                 log.error("reinject new class '" + changedClass.getName() + "' reference failure", e);
             }
 
@@ -249,10 +246,10 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
     /**
      * 为依赖@param newBean的bean重新注入newBean
      */
-    private void injectDependentBean(BeanDefinitionDetail beanDefinitionDetail, Object newBean){
+    private void injectDependentBean(BeanDefinitionDetail beanDefinitionDetail, Object newBean) {
         //获取依赖@param newBean的bean
         String[] dependentbeanNames = beanFactory.getDependentBeans(beanDefinitionDetail.getBeanName());
-        if(dependentbeanNames.length <= 0){
+        if (dependentbeanNames.length <= 0) {
             return;
         }
 
@@ -269,9 +266,9 @@ public class SpringHotswapFactory extends HotswapFactory implements ApplicationL
             for (Field field : ClassUtils.getAllFields(dependentBeanClass)) {
                 Class<?> type = field.getType();
 
-                if(type.isInstance(newBean)){
+                if (type.isInstance(newBean)) {
                     //成员变量类型与@param newBean类型符合
-                    for(InjectionMetadata.InjectedElement element: injectedElements){
+                    for (InjectionMetadata.InjectedElement element : injectedElements) {
                         Field injectedField = (Field) element.getMember();
                         if (injectedField.getType().getName().equals(type.getName())
                                 && field.getName().equals(injectedField.getName())) {

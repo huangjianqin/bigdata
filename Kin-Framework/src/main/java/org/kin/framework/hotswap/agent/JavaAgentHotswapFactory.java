@@ -11,6 +11,7 @@ import org.kin.framework.utils.ClassUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.instrument.ClassDefinition;
@@ -63,7 +64,7 @@ public class JavaAgentHotswapFactory extends HotswapFactory {
 
     private static final JavaAgentHotswapFactory hotswapFactory = new JavaAgentHotswapFactory();
 
-    public static JavaAgentHotswapFactory instance(){
+    public static JavaAgentHotswapFactory instance() {
         return hotswapFactory;
     }
 
@@ -93,7 +94,7 @@ public class JavaAgentHotswapFactory extends HotswapFactory {
         return filePath;
     }
 
-    private void init(){
+    private void init() {
         //获取Instrumentation
         Instrumentation instrumentation = JavaDynamicAgent.getInstrumentation();
         Preconditions.checkNotNull(instrumentation, "initInstrumentation must not be null");
@@ -103,7 +104,7 @@ public class JavaAgentHotswapFactory extends HotswapFactory {
         }));
     }
 
-    private void destroy(){
+    private void destroy() {
         if (vm != null) {
             try {
                 vm.detach();
@@ -115,7 +116,7 @@ public class JavaAgentHotswapFactory extends HotswapFactory {
 
     @Override
     public void reload(List<Path> changedPaths) {
-        if(!isInited){
+        if (!isInited) {
             init();
             isInited = true;
         }
@@ -123,7 +124,7 @@ public class JavaAgentHotswapFactory extends HotswapFactory {
         try {
             //重新加载
             List<ClassDefinition> classDefList = new ArrayList<>();
-            for (Path changedPath: changedPaths) {
+            for (Path changedPath : changedPaths) {
                 String classPath = changedPath.toString();
                 String tmp = classPath.replaceAll("/", "\\.");
 

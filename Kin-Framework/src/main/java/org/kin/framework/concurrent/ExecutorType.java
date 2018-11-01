@@ -3,7 +3,6 @@ package org.kin.framework.concurrent;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ThreadFactory;
 
 /**
  * Created by huangjianqin on 2018/2/25.
@@ -29,9 +28,9 @@ public enum ExecutorType {
 
     public abstract ExecutorService getExecutor();
 
-    public static ExecutorType getByName(String name){
-        for(ExecutorType type: values()){
-            if(type.getName().toLowerCase().equals(name.toLowerCase())){
+    public static ExecutorType getByName(String name) {
+        for (ExecutorType type : values()) {
+            if (type.getName().toLowerCase().equals(name.toLowerCase())) {
                 return type;
             }
         }
@@ -43,7 +42,7 @@ public enum ExecutorType {
         return name;
     }
 
-    private static class UnknownExecutorTypeException extends RuntimeException{
+    private static class UnknownExecutorTypeException extends RuntimeException {
         public UnknownExecutorTypeException() {
         }
 

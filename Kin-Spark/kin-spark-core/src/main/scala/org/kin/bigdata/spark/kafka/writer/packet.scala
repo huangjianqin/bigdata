@@ -20,7 +20,10 @@ package object writer {
   )
 
   implicit def rdd2KafkaWriter[T: ClassTag](rdd: RDD[T]): KafkaWriter[T] = new RDDKafkaWriter[T](rdd)
+
   implicit def dstream2KafkaWriter[T: ClassTag](dstream: DStream[T]): KafkaWriter[T] = new DStreamKafkaWriter[T](dstream)
+
   implicit def dataset2KafkaWriter[T: ClassTag](dataset: Dataset[T]): KafkaWriter[T] = new DatasetKafkaWriter[T](dataset)
+
   implicit def dataframe2KafkaWriter(dataframe: DataFrame): KafkaWriter[Row] = new RDDKafkaWriter[Row](dataframe.rdd)
 }

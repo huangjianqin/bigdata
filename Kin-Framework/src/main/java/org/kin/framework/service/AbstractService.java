@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created by 健勤 on 2017/8/8.
  * 服务抽象
  */
-public abstract class AbstractService implements Service{
+public abstract class AbstractService implements Service {
     private final String serviceName;
     private final ServiceState state;
     private long startTime;
@@ -22,10 +22,9 @@ public abstract class AbstractService implements Service{
     private final AtomicBoolean terminationNotification = new AtomicBoolean(false);
 
     public AbstractService(String serviceName) {
-        if(serviceName != null && !serviceName.equals("")){
+        if (serviceName != null && !serviceName.equals("")) {
             this.serviceName = serviceName;
-        }
-        else{
+        } else {
             this.serviceName = getClass().getSimpleName();
         }
         //服务初始状态
@@ -34,13 +33,13 @@ public abstract class AbstractService implements Service{
 
     @Override
     public void init() {
-        if(isInState(State.INITED)){
+        if (isInState(State.INITED)) {
             return;
         }
 
-        synchronized (lock){
+        synchronized (lock) {
             State pre = state.enterState(State.INITED);
-            if(pre != State.INITED){
+            if (pre != State.INITED) {
                 serviceInit();
                 notifyAllListeners(pre);
 //                //再次判断
@@ -53,13 +52,13 @@ public abstract class AbstractService implements Service{
 
     @Override
     public void start() {
-        if(isInState(State.STARTED)){
+        if (isInState(State.STARTED)) {
             return;
         }
 
-        synchronized (lock){
+        synchronized (lock) {
             State pre = state.enterState(State.STARTED);
-            if(pre != State.STARTED){
+            if (pre != State.STARTED) {
                 startTime = System.currentTimeMillis();
                 serviceStart();
                 notifyAllListeners(pre);
@@ -78,18 +77,18 @@ public abstract class AbstractService implements Service{
 
     @Override
     public void stop() {
-        if(isInState(State.STOPPED)){
+        if (isInState(State.STOPPED)) {
             return;
         }
 
-        synchronized (lock){
+        synchronized (lock) {
             State pre = state.enterState(State.STOPPED);
-            if(pre != State.STOPPED){
+            if (pre != State.STOPPED) {
                 serviceStop();
                 notifyAllListeners(pre);
 
                 terminationNotification.set(true);
-                synchronized (terminationNotification){
+                synchronized (terminationNotification) {
                     terminationNotification.notifyAll();
                 }
             }
@@ -104,12 +103,12 @@ public abstract class AbstractService implements Service{
     @Override
     public final boolean waitForServiceToStop(long millis) {
         boolean isStopped = terminationNotification.get();
-        if(!isStopped){
+        if (!isStopped) {
             try {
-                synchronized (terminationNotification){
+                synchronized (terminationNotification) {
                     terminationNotification.wait(millis);
                 }
-            }catch (InterruptedException e) {
+            } catch (InterruptedException e) {
                 return terminationNotification.get();
             }
         }
@@ -147,17 +146,22 @@ public abstract class AbstractService implements Service{
         return startTime;
     }
 
-    protected void serviceInit(){}
-    protected void serviceStart(){}
-    protected void serviceStop(){}
+    protected void serviceInit() {
+    }
 
-    private void notifyAllListeners(State pre){
+    protected void serviceStart() {
+    }
+
+    protected void serviceStop() {
+    }
+
+    private void notifyAllListeners(State pre) {
         notifyListeners(listeners, pre);
         notifyListeners(globalListeners, pre);
     }
 
-    private void notifyListeners(Collection<ServiceStateChangeListener> listeners, State pre){
-        for(ServiceStateChangeListener listener: listeners){
+    private void notifyListeners(Collection<ServiceStateChangeListener> listeners, State pre) {
+        for (ServiceStateChangeListener listener : listeners) {
             listener.onStateChanged(this, pre);
         }
     }

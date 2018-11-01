@@ -12,7 +12,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 import java.net.InetSocketAddress;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by huangjianqin on 2018/8/17.
@@ -45,7 +44,7 @@ public class NginxService {
                                 @Override
                                 protected void channelRead0(ChannelHandlerContext channelHandlerContext, Object o) throws Exception {
                                     String rec = new String(ByteBufUtil.getBytes((ByteBuf) o));
-                                    System.out.println("服务(port=" + port  + ")接收消息(" + rec.toString() + ")成功");
+                                    System.out.println("服务(port=" + port + ")接收消息(" + rec.toString() + ")成功");
                                     if (rec.equals("end")) {
                                         channelHandlerContext.channel().close().sync();
                                     }
@@ -57,7 +56,7 @@ public class NginxService {
             ChannelFuture channelFuture = serverBootstrap.bind(new InetSocketAddress("10.9.0.64", port));
             channelFuture.addListener((ChannelFuture cf) -> {
                 if (cf.isSuccess()) {
-                    System.out.println("服务(port=" + port  + ")开启");
+                    System.out.println("服务(port=" + port + ")开启");
                 }
             });
             channelFuture.sync();
@@ -65,7 +64,7 @@ public class NginxService {
             ChannelFuture closeFuture = channelFuture.channel().closeFuture();
             closeFuture.addListener((ChannelFuture cf) -> {
                 if (cf.isSuccess()) {
-                    System.out.println("服务(port=" + port  + ")结束");
+                    System.out.println("服务(port=" + port + ")结束");
                     finalBoss.shutdownGracefully();
                     finalWorker.shutdownGracefully();
                 }

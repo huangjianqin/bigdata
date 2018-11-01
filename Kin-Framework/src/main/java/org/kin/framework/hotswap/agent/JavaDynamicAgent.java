@@ -16,8 +16,8 @@ public class JavaDynamicAgent {
      * 方法必须叫agentmain
      */
     public static void agentmain(String args, Instrumentation inst) {
-        synchronized(lockObject) {
-            if(instrumentation == null) {
+        synchronized (lockObject) {
+            if (instrumentation == null) {
                 instrumentation = inst;
                 System.out.println("0->" + inst);
             } else {

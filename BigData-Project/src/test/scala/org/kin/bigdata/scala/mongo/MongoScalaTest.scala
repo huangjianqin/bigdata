@@ -23,28 +23,28 @@ object MongoScalaTest {
     //.toFuture()可能调用了subscrbie
     val findFuture = personCollection.find().toFuture()
     Await.result(findFuture, 10 second)
-    findFuture.onSuccess{
+    findFuture.onSuccess {
       case seq => seq.foreach(println)
     }
 
     //插入或更新可以监听这个接口，然后实时监控流程，也可错误再重新调度
-//      .subscribe(new Observer[Document] {
-//      override def onError(throwable: Throwable): Unit = {
-//        throwable.printStackTrace()
-//      }
-//
-//      override def onComplete(): Unit = {
-//        println("complete")
-//      }
-//
-//      override def onNext(d: Document): Unit = {
-//        println(d.toString())
-//      }
-//
-//      override def onSubscribe(subscription: Subscription): Unit = {
-//
-//      }
-//    })
+    //      .subscribe(new Observer[Document] {
+    //      override def onError(throwable: Throwable): Unit = {
+    //        throwable.printStackTrace()
+    //      }
+    //
+    //      override def onComplete(): Unit = {
+    //        println("complete")
+    //      }
+    //
+    //      override def onNext(d: Document): Unit = {
+    //        println(d.toString())
+    //      }
+    //
+    //      override def onSubscribe(subscription: Subscription): Unit = {
+    //
+    //      }
+    //    })
 
     client.close()
   }

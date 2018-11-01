@@ -1,9 +1,9 @@
 package org.kin.framework.actor.impl;
 
 import org.kin.framework.actor.Message;
+import org.kin.framework.actor.Receive;
 import org.kin.framework.actor.domain.ActorPath;
 import org.kin.framework.actor.domain.PoisonPill;
-import org.kin.framework.actor.Receive;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,10 +15,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by huangjianqin on 2018/6/5.
- *
+ * <p>
  * 部分成员域, 在Actor 线程, lazy init
  */
-public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
+public class ActorContext<AA extends AbstractActor<AA>> implements Runnable {
     private static final Logger log = LoggerFactory.getLogger("Actor");
     private static final Logger profileLog = LoggerFactory.getLogger("ActorProfile");
 
@@ -46,7 +46,7 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
     /**
      * Actor 线程执行
      */
-    private void selfInit(){
+    private void selfInit() {
         self.preStart();
         receive = self.createReceiver();
         self.postStart();
@@ -57,14 +57,14 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
 
     @Override
     public void run() {
-        if(!isStarted){
+        if (!isStarted) {
             selfInit();
         }
         this.currentThread = Thread.currentThread();
 
-        while(isStarted && !isStopped && this.currentThread != null && !this.currentThread.isInterrupted()){
+        while (isStarted && !isStopped && this.currentThread != null && !this.currentThread.isInterrupted()) {
             Mail<AA> mail = mailBox.poll();
-            if(mail == null){
+            if (mail == null) {
                 break;
             }
 
@@ -74,7 +74,7 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
 
             profileLog.info("handle mail({}) cost {} ms", mail.name(), cost);
 
-            if(boxSize.decrementAndGet() <= 0){
+            if (boxSize.decrementAndGet() <= 0) {
                 break;
             }
         }
@@ -82,15 +82,16 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
     }
 
     //-----------------------------------------------------------------------------------------------
-    private interface Mail<AA extends AbstractActor<AA>>{
+    private interface Mail<AA extends AbstractActor<AA>> {
         void handle(AA applier);
+
         String name();
     }
 
     /**
      * 处理消息匹配
      */
-    private class ReceiveMailImpl<T> implements Mail<AA>{
+    private class ReceiveMailImpl<T> implements Mail<AA> {
         private T arg;
 
         private ReceiveMailImpl(T arg) {
@@ -100,7 +101,7 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
         @Override
         public void handle(AA applier) {
             receive.receive(applier, arg);
-            if(arg instanceof PoisonPill){
+            if (arg instanceof PoisonPill) {
                 //执行完开发者自定消息处理后, close
                 close();
             }
@@ -115,7 +116,7 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
     /**
      * 直接执行task
      */
-    private class MessageMailImpl implements Mail<AA>{
+    private class MessageMailImpl implements Mail<AA> {
         private Message<AA> message;
 
         public MessageMailImpl(Message<AA> message) {
@@ -134,19 +135,19 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
     }
 
     //-----------------------------------------------------------------------------------------------
-    private void tryRun(){
-        if(isStarted && !isStopped && boxSize.incrementAndGet() == 1){
+    private void tryRun() {
+        if (isStarted && !isStopped && boxSize.incrementAndGet() == 1) {
             actorSystem.getThreadManager().execute(this);
         }
     }
 
-    public <T> void receive(T arg){
+    public <T> void receive(T arg) {
         Mail<AA> mail = new ReceiveMailImpl<T>(arg);
         mailBox.add(mail);
         tryRun();
     }
 
-    public void receive(Message<AA> message){
+    public void receive(Message<AA> message) {
         Mail<AA> mail = new MessageMailImpl(message);
         mailBox.add(mail);
         tryRun();
@@ -171,7 +172,7 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
     /**
      * Actor线程执行
      */
-    public void close(){
+    public void close() {
         isStopped = true;
         actorSystem.remove(actorPath);
         self.preStop();
@@ -181,8 +182,7 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
             mailBox.clear();
             //help GC
             this.currentThread = null;
-        }
-        finally {
+        } finally {
             self.postStop();
         }
     }
@@ -191,10 +191,10 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
      * Actor线程执行
      * ps: 停止当前执行线程, 另外开
      */
-    public void closeNow(){
+    public void closeNow() {
         isStopped = true;
         actorSystem.remove(actorPath);
-        if(this.currentThread != null){
+        if (this.currentThread != null) {
             this.currentThread.interrupt();
             //help GC
             this.currentThread = null;
@@ -205,37 +205,36 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable{
                 clearFutures();
                 boxSize.set(0);
                 mailBox.clear();
-            }
-            finally {
+            } finally {
                 self.postStop();
             }
         });
     }
 
-    private void addFuture(Future<?> future){
+    private void addFuture(Future<?> future) {
         Queue<Future> queue;
-        while((queue = futures.putIfAbsent(this, new ConcurrentLinkedQueue<>())) == null)
-        queue.add(future);
+        while ((queue = futures.putIfAbsent(this, new ConcurrentLinkedQueue<>())) == null)
+            queue.add(future);
     }
 
-    private void clearFutures(){
+    private void clearFutures() {
         Queue<Future> old = futures.remove(this);
-        if(old != null){
-            for(Future future: old){
-                if(!future.isDone() || !future.isCancelled()){
+        if (old != null) {
+            for (Future future : old) {
+                if (!future.isDone() || !future.isCancelled()) {
                     future.cancel(true);
                 }
             }
         }
     }
 
-    private void clearFinishedFutures(){
+    private void clearFinishedFutures() {
         Queue<Future> old = futures.get(this);
-        if(old != null){
+        if (old != null) {
             Iterator<Future> iterator = old.iterator();
-            while(iterator.hasNext()){
+            while (iterator.hasNext()) {
                 Future future = iterator.next();
-                if(future.isDone()){
+                if (future.isDone()) {
                     iterator.remove();
                 }
             }

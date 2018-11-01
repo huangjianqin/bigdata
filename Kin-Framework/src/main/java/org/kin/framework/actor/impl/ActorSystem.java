@@ -5,6 +5,7 @@ import org.kin.framework.concurrent.ThreadManager;
 import org.kin.framework.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
@@ -33,7 +34,7 @@ public class ActorSystem {
 
     private ActorSystem(String name) {
         this.name = name;
-        if(name.toLowerCase().equals(DEFAULT_AS_NAME) && name2AS.containsKey(DEFAULT_AS_NAME)){
+        if (name.toLowerCase().equals(DEFAULT_AS_NAME) && name2AS.containsKey(DEFAULT_AS_NAME)) {
             throw new IllegalStateException("actor system named '" + name + "' has exists!!!");
         }
     }
@@ -43,27 +44,27 @@ public class ActorSystem {
         this.threadManager = threadManager;
     }
 
-    public static ActorSystem create(){
+    public static ActorSystem create() {
         return name2AS.get(DEFAULT_AS_NAME);
     }
 
-    public static ActorSystem create(String name){
+    public static ActorSystem create(String name) {
         return create(name, ThreadManager.DEFAULT);
     }
 
-    public static ActorSystem create(String name, ThreadManager threadManager){
+    public static ActorSystem create(String name, ThreadManager threadManager) {
         ActorSystem actorSystem = new ActorSystem(name, threadManager);
         name2AS.put(name, actorSystem);
         return actorSystem;
     }
 
-    public static ActorSystem getActorSystem(String name){
+    public static ActorSystem getActorSystem(String name) {
         return name2AS.get(name);
     }
 
-    public <AA extends AbstractActor<AA>> AA actorOf(Class<AA> claxx, String name){
+    public <AA extends AbstractActor<AA>> AA actorOf(Class<AA> claxx, String name) {
         ActorPath actorPath = ActorPath.as(name, this);
-        if(!path2Actors.containsKey(actorPath.getPath())){
+        if (!path2Actors.containsKey(actorPath.getPath())) {
             try {
                 Constructor<AA> constructor = claxx.getConstructor(ActorPath.class, ActorSystem.class);
                 AA actor = constructor.newInstance(actorPath, this);
@@ -73,40 +74,39 @@ public class ActorSystem {
                 ExceptionUtils.log(e);
                 return null;
             }
-        }
-        else {
+        } else {
             return (AA) path2Actors.get(actorPath.getPath());
         }
     }
 
-    public <AA extends AbstractActor<AA>> AA actorOf(ActorPath actorPath){
+    public <AA extends AbstractActor<AA>> AA actorOf(ActorPath actorPath) {
         return (AA) path2Actors.get(actorPath.getPath());
     }
 
-    public <AA extends AbstractActor<AA>> AA actorOf(String name){
+    public <AA extends AbstractActor<AA>> AA actorOf(String name) {
         ActorPath actorPath = ActorPath.as(name, this);
         return (AA) path2Actors.get(actorPath.getPath());
     }
 
-    public void add(ActorPath actorPath, AbstractActor aa){
-        if(!path2Actors.containsKey(actorPath.getPath())){
+    public void add(ActorPath actorPath, AbstractActor aa) {
+        if (!path2Actors.containsKey(actorPath.getPath())) {
             path2Actors.put(actorPath.getPath(), aa);
         }
         throw new IllegalStateException("actor of '" + actorPath.getPath() + "' has exists!!!");
     }
 
-    public void remove(ActorPath actorPath){
+    public void remove(ActorPath actorPath) {
         AbstractActor actor = path2Actors.remove(actorPath.getPath());
         actor.stop();
     }
 
-    public String getRoot(){
+    public String getRoot() {
         return name + "/";
     }
 
-    public void shutdown(){
+    public void shutdown() {
         name2AS.remove(name);
-        for(AbstractActor actor: path2Actors.values()){
+        for (AbstractActor actor : path2Actors.values()) {
             actor.stop();
         }
         //延迟1min关闭线程池

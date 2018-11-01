@@ -1,7 +1,6 @@
 package org.kin.bigdata.hadoop.airlineclientdiscovery;
 
 import com.opencsv.CSVParser;
-import com.opencsv.CSVWriter;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
@@ -19,7 +18,7 @@ public class PreparationMapper extends Mapper<LongWritable, Text, NullWritable, 
         CSVParser parser = new CSVParser();
         String[] values = parser.parseLine(value.toString());
 
-        if(filter(values)){
+        if (filter(values)) {
             String load_time = values[9];
             String ffp_data = values[1];
             String last_to_end = values[22];
@@ -42,19 +41,19 @@ public class PreparationMapper extends Mapper<LongWritable, Text, NullWritable, 
         }
     }
 
-    private boolean filter(String[] values){
+    private boolean filter(String[] values) {
         //票价为空
-        if(values[14] == null || values[14].equals("") || values[15] == null || values[15].equals("")){
+        if (values[14] == null || values[14].equals("") || values[15] == null || values[15].equals("")) {
             return false;
         }
         //票价为0, 平均折扣率!=0, 总飞行公里数>0
-        if(Double.valueOf(values[14]).equals(0) && Double.valueOf(values[15]).equals(0) && Double.valueOf(values[28]) != 0 && Double.valueOf(values[10]) > 0){
+        if (Double.valueOf(values[14]).equals(0) && Double.valueOf(values[15]).equals(0) && Double.valueOf(values[28]) != 0 && Double.valueOf(values[10]) > 0) {
             return false;
         }
         return true;
     }
 
-    private int getBetweenMonth(String first, String second){
+    private int getBetweenMonth(String first, String second) {
         String[] firsts = first.split("/");
         String[] seconds = second.split("/");
 
@@ -64,7 +63,7 @@ public class PreparationMapper extends Mapper<LongWritable, Text, NullWritable, 
         return (fCalendar.get(Calendar.MONTH) - sCalendar.get(Calendar.MONTH)) + (fCalendar.get(Calendar.YEAR) - sCalendar.get(Calendar.YEAR)) * 12;
     }
 
-    private Calendar getCalendar(String year, String month, String dayOfMonth){
+    private Calendar getCalendar(String year, String month, String dayOfMonth) {
         Calendar calendar = Calendar.getInstance();
         calendar.set(Calendar.YEAR, Integer.valueOf(year));
         calendar.set(Calendar.MONTH, Integer.valueOf(month));

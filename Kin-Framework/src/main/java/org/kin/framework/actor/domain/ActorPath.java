@@ -4,7 +4,7 @@ import org.kin.framework.actor.impl.ActorSystem;
 
 /**
  * Created by huangjianqin on 2018/6/5.
- *
+ * <p>
  * Actor的唯一标识
  */
 //TODO 自动生成url形式的path
@@ -17,12 +17,12 @@ public class ActorPath {
     private String host;
     private int port;
 
-    private ActorPath(String parent, String name){
+    private ActorPath(String parent, String name) {
         this.parent = parent;
         this.name = name;
     }
 
-    public static ActorPath as(String name, ActorSystem actorSystem){
+    public static ActorPath as(String name, ActorSystem actorSystem) {
         return new ActorPath(actorSystem.getRoot(), name);
     }
 

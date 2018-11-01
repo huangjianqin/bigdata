@@ -1,6 +1,6 @@
 package org.kin.bigdata.hadoop.common.writable;
 
-import org.apache.hadoop.io.*;
+import org.apache.hadoop.io.WritableComparable;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -35,8 +35,8 @@ public class PairWritable<FIRST extends WritableComparable, SECOND extends Writa
         return this.second;
     }
 
-    public void setPair(FIRST first, SECOND second){
-        if(first == null || second == null){
+    public void setPair(FIRST first, SECOND second) {
+        if (first == null || second == null) {
             throw new IllegalArgumentException("unsupport args is null");
         }
 
@@ -44,14 +44,14 @@ public class PairWritable<FIRST extends WritableComparable, SECOND extends Writa
         this.second = second;
     }
 
-    public WritableComparable[] getPair(){
+    public WritableComparable[] getPair() {
         return new WritableComparable[]{this.first, this.second};
     }
 
     @Override
     public int compareTo(PairWritable<FIRST, SECOND> o) {
         int cmdFirst = -1;
-        return ((cmdFirst = getFirst().compareTo(o.getFirst())) != 0)? cmdFirst : getSecond().compareTo(o.getSecond());
+        return ((cmdFirst = getFirst().compareTo(o.getFirst())) != 0) ? cmdFirst : getSecond().compareTo(o.getSecond());
     }
 
     @Override
@@ -73,8 +73,8 @@ public class PairWritable<FIRST extends WritableComparable, SECOND extends Writa
 
     @Override
     public boolean equals(Object obj) {
-        if(obj instanceof PairWritable){
-            PairWritable other = (PairWritable)obj;
+        if (obj instanceof PairWritable) {
+            PairWritable other = (PairWritable) obj;
             WritableComparable oFirst = other.getFirst();
             WritableComparable oSecond = other.getSecond();
 

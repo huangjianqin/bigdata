@@ -6,7 +6,7 @@ package org.kin.framework.utils;
 public class SysUtils {
     public static final int CPU_NUM = Runtime.getRuntime().availableProcessors();
 
-    public static int getSuitableThreadNum(){
+    public static int getSuitableThreadNum() {
         return CPU_NUM * 2 - 1;
     }
 }

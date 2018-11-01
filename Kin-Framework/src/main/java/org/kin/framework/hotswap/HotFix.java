@@ -21,7 +21,7 @@ public class HotFix extends ClassReloadable {
     private HotFix() {
     }
 
-    public static HotFix instance(){
+    public static HotFix instance() {
         return HOT_FIX;
     }
 
@@ -30,7 +30,7 @@ public class HotFix extends ClassReloadable {
         super.reload(changedClass, classLoader);
     }
 
-    public void fix(){
+    public void fix() {
         //延迟10s执行
         new Timer().schedule(new TimerTask() {
             @Override
@@ -40,14 +40,14 @@ public class HotFix extends ClassReloadable {
         }, 10 * 1000);
     }
 
-    public void fix0(){
-        if(oldVersion < version){
+    public void fix0() {
+        if (oldVersion < version) {
             log.info("hot fix start: {}", version);
-            try{
+            try {
                 /**
                  * 此处写逻辑
                  */
-            }finally {
+            } finally {
                 oldVersion = version;
                 version = 0;
                 log.info("hot fix finish: {}", oldVersion);

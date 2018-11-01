@@ -8,7 +8,7 @@ import java.util.TreeMap;
 /**
  * Created by huangjianqin on 2017/9/7.
  */
-public class Text2TextSortedMapWritable extends Text2TextMapWritable{
+public class Text2TextSortedMapWritable extends Text2TextMapWritable {
     public Text2TextSortedMapWritable() {
     }
 

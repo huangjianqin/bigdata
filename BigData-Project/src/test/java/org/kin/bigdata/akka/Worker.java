@@ -7,7 +7,7 @@ import akka.japi.pf.ReceiveBuilder;
 /**
  * Created by 健勤 on 2017/5/18.
  */
-public class Worker extends AbstractActor{
+public class Worker extends AbstractActor {
 
     @Override
     public Receive createReceive() {
@@ -17,7 +17,7 @@ public class Worker extends AbstractActor{
                     System.out.println(content);
                     getSender().tell("a", getSelf());
                 })
-                .match(PoisonPill.class, message ->{
+                .match(PoisonPill.class, message -> {
                     System.out.println("worker shutdown");
                 })
                 .build();

@@ -20,7 +20,7 @@ public class TestDispatcher {
     }
 }
 
-class FirstEventHandler implements EventHandler<FirstEvent>{
+class FirstEventHandler implements EventHandler<FirstEvent> {
 
     @Override
     public void handle(FirstEvent event) {
@@ -28,7 +28,7 @@ class FirstEventHandler implements EventHandler<FirstEvent>{
     }
 }
 
-class SecondEventHandler implements EventHandler<SecondEvent>{
+class SecondEventHandler implements EventHandler<SecondEvent> {
 
     @Override
     public void handle(SecondEvent event) {
@@ -36,7 +36,7 @@ class SecondEventHandler implements EventHandler<SecondEvent>{
     }
 }
 
-class ThirdEventHandler implements EventHandler<ThirdEvent>{
+class ThirdEventHandler implements EventHandler<ThirdEvent> {
 
     @Override
     public void handle(ThirdEvent event) {

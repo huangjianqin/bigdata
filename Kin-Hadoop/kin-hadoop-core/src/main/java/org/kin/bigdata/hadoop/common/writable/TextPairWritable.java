@@ -23,7 +23,7 @@ public class TextPairWritable extends PairWritable<Text, Text> {
         WritableComparator.define(TextPairWritable.class, new TextPairComparator());
     }
 
-    public static class TextPairComparator extends WritableComparator{
+    public static class TextPairComparator extends WritableComparator {
         public TextPairComparator() {
             super(TextPairWritable.class);
         }
@@ -36,7 +36,7 @@ public class TextPairWritable extends PairWritable<Text, Text> {
                 int firstL1 = firstL1S + readVInt(b1, s1);
                 int firstL2 = firstL2S + readVInt(b2, s2);
                 int cmd1 = compareBytes(b1, s1 + firstL1S, firstL1, b2, s2 + firstL2S, firstL2);
-                if(cmd1 != 0){
+                if (cmd1 != 0) {
                     return cmd1;
                 }
 

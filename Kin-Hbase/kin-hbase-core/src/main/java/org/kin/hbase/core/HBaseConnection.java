@@ -3,7 +3,7 @@ package org.kin.hbase.core;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
-import org.kin.hbase.core.HBasePool;
+
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
@@ -25,7 +25,7 @@ public class HBaseConnection implements Connection {
 
     @Override
     public Configuration getConfiguration() {
-        if(connection != null){
+        if (connection != null) {
             return connection.getConfiguration();
         }
 
@@ -34,7 +34,7 @@ public class HBaseConnection implements Connection {
 
     @Override
     public Table getTable(TableName tableName) throws IOException {
-        if(connection != null){
+        if (connection != null) {
             return connection.getTable(tableName);
         }
 
@@ -43,7 +43,7 @@ public class HBaseConnection implements Connection {
 
     @Override
     public Table getTable(TableName tableName, ExecutorService executorService) throws IOException {
-        if(connection != null){
+        if (connection != null) {
             return connection.getTable(tableName, executorService);
         }
 
@@ -52,7 +52,7 @@ public class HBaseConnection implements Connection {
 
     @Override
     public BufferedMutator getBufferedMutator(TableName tableName) throws IOException {
-        if(connection != null){
+        if (connection != null) {
             return connection.getBufferedMutator(tableName);
         }
 
@@ -61,7 +61,7 @@ public class HBaseConnection implements Connection {
 
     @Override
     public BufferedMutator getBufferedMutator(BufferedMutatorParams bufferedMutatorParams) throws IOException {
-        if(connection != null){
+        if (connection != null) {
             return connection.getBufferedMutator(bufferedMutatorParams);
         }
 
@@ -70,7 +70,7 @@ public class HBaseConnection implements Connection {
 
     @Override
     public RegionLocator getRegionLocator(TableName tableName) throws IOException {
-        if(connection != null){
+        if (connection != null) {
             return connection.getRegionLocator(tableName);
         }
 
@@ -79,7 +79,7 @@ public class HBaseConnection implements Connection {
 
     @Override
     public Admin getAdmin() throws IOException {
-        if(connection != null){
+        if (connection != null) {
             return connection.getAdmin();
         }
 
@@ -88,10 +88,9 @@ public class HBaseConnection implements Connection {
 
     @Override
     public void close() throws IOException {
-        if(pool != null){
+        if (pool != null) {
             pool.recycle(this);
-        }
-        else{
+        } else {
             connection.close();
         }
 
@@ -101,7 +100,7 @@ public class HBaseConnection implements Connection {
 
     @Override
     public boolean isClosed() {
-        if(connection != null){
+        if (connection != null) {
             return connection.isClosed();
         }
 
@@ -110,22 +109,22 @@ public class HBaseConnection implements Connection {
 
     @Override
     public void abort(String s, Throwable throwable) {
-        if(connection != null){
+        if (connection != null) {
             connection.abort(s, throwable);
         }
     }
 
     @Override
     public boolean isAborted() {
-        if(connection != null){
+        if (connection != null) {
             return connection.isAborted();
         }
 
         return true;
     }
 
-    public boolean isSamePool(HBasePool oPool){
-        if(connection != null && pool != null){
+    public boolean isSamePool(HBasePool oPool) {
+        if (connection != null && pool != null) {
             return pool == oPool;
         }
 

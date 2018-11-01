@@ -26,7 +26,7 @@ public class RabbitMQDemo {
         Channel channel1 = connection1.createChannel();
         channel1.queueDeclare("test", false, false, false, null);
 
-        Consumer consumer = new DefaultConsumer(channel1){
+        Consumer consumer = new DefaultConsumer(channel1) {
             @Override
             public void handleDelivery(String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) throws IOException {
                 System.out.println(new String(body, "utf-8"));

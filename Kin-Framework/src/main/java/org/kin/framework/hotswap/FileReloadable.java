@@ -1,6 +1,6 @@
 package org.kin.framework.hotswap;
 
-import java.io.*;
+import java.io.InputStream;
 
 /**
  * Created by huangjianqin on 2018/2/1.

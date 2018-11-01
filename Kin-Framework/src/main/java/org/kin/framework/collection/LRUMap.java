@@ -10,7 +10,7 @@ public class LRUMap<K, V> extends LinkedHashMap<K, V> {
     private int initItemNum;
     private final int MAX_ITEM_NUM;
 
-    public LRUMap(int maxItemNum){
+    public LRUMap(int maxItemNum) {
         this(2, maxItemNum);
     }
 

@@ -5,11 +5,15 @@ import org.kin.framework.utils.ClassUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Stream;
@@ -19,7 +23,7 @@ import java.util.stream.Stream;
  * 文件监听器   单例模式
  * 利用nio 新api监听文件变换
  * 该api底层本质上是监听了操作系统的文件系统触发的文件更改事件
- *
+ * <p>
  * 异步热加载文件 同步类热更新
  */
 public class FileMonitor extends Thread {
@@ -43,13 +47,13 @@ public class FileMonitor extends Thread {
     }
 
     public static FileMonitor instance() {
-        if(!isStarted){
+        if (!isStarted) {
             monitor.start();
         }
         return monitor;
     }
 
-    private void init(){
+    private void init() {
         try {
             watchService = FileSystems.getDefault().newWatchService();
         } catch (IOException e) {
@@ -58,14 +62,14 @@ public class FileMonitor extends Thread {
 
         monitorItems = new HashMap<>();
         locks = new Object[5];
-        for(int i = 0; i < locks.length; i++){
+        for (int i = 0; i < locks.length; i++) {
             locks[i] = new Object();
         }
-        if(hotswapFactory == null){
+        if (hotswapFactory == null) {
             //默认设置
             hotswapFactory = new CommonHotswapFactory();
         }
-        if(executorService == null){
+        if (executorService == null) {
             //默认设置
             executorService = Executors.newFixedThreadPool(
                     5,
@@ -77,7 +81,7 @@ public class FileMonitor extends Thread {
             );
         }
 
-        if(hotswapFactory instanceof CommonHotswapFactory || hotswapFactory instanceof JavaAgentHotswapFactory){
+        if (hotswapFactory instanceof CommonHotswapFactory || hotswapFactory instanceof JavaAgentHotswapFactory) {
             monitorClasspath();
         }
 
@@ -86,12 +90,12 @@ public class FileMonitor extends Thread {
         }));
     }
 
-    public FileMonitor hotswapFactory(HotswapFactory hotswapFactory){
+    public FileMonitor hotswapFactory(HotswapFactory hotswapFactory) {
         this.hotswapFactory = hotswapFactory;
         return this;
     }
 
-    public FileMonitor executor(ExecutorService executorService){
+    public FileMonitor executor(ExecutorService executorService) {
         this.executorService = executorService;
         return this;
     }
@@ -99,7 +103,7 @@ public class FileMonitor extends Thread {
     /**
      * 监听整个classpath
      */
-    private void monitorClasspath(){
+    private void monitorClasspath() {
         String classRoot = Thread.currentThread().getContextClassLoader().getResource("").getPath();
         Path classRootPath = Paths.get(classRoot);
         try {
@@ -125,7 +129,7 @@ public class FileMonitor extends Thread {
     @Override
     public void run() {
         log.info("file monitor start");
-        while(!isStopped && !Thread.currentThread().isInterrupted()){
+        while (!isStopped && !Thread.currentThread().isInterrupted()) {
             List<Path> changedClasses = new ArrayList<>();
             try {
                 WatchKey key = watchService.take();
@@ -141,18 +145,17 @@ public class FileMonitor extends Thread {
                     log.debug("'{}' changed", childPath.toString());
                     if (!Files.isDirectory(childPath)) {
                         //非文件夹
-                        if(itemName.endsWith(ClassUtils.CLASS_SUFFIX)){
+                        if (itemName.endsWith(ClassUtils.CLASS_SUFFIX)) {
                             //处理类热更新
                             changedClasses.add(childPath);
-                        }
-                        else{
-                            synchronized (getLock(hashKey)){
+                        } else {
+                            synchronized (getLock(hashKey)) {
                                 //处理文件热更新
                                 FileReloadable fileReloadable = monitorItems.get(hashKey);
-                                if(fileReloadable != null){
+                                if (fileReloadable != null) {
                                     executorService.execute(() -> {
                                         try {
-                                            try(InputStream is = new FileInputStream(childPath.toFile())){
+                                            try (InputStream is = new FileInputStream(childPath.toFile())) {
                                                 fileReloadable.reload(is);
                                             }
                                         } catch (IOException e) {
@@ -170,7 +173,7 @@ public class FileMonitor extends Thread {
                 ExceptionUtils.log(e);
             }
 
-            if(changedClasses.size() > 0){
+            if (changedClasses.size() > 0) {
                 //类热更新
                 executorService.execute(() -> hotswapFactory.reload(changedClasses));
                 HotFix.instance().fix();
@@ -182,11 +185,11 @@ public class FileMonitor extends Thread {
     /**
      * 获取分段锁
      */
-    private Object getLock(int key){
+    private Object getLock(int key) {
         return locks[key % locks.length];
     }
 
-    public void shutdown(){
+    public void shutdown() {
         checkStatus();
 
         isStopped = true;
@@ -206,30 +209,29 @@ public class FileMonitor extends Thread {
         interrupt();
     }
 
-    private void checkStatus(){
-        if(isStopped){
+    private void checkStatus() {
+        if (isStopped) {
             throw new IllegalStateException("file monitor has shutdowned");
         }
     }
 
     /**
-     *
      * @param classReloadable 监听该实例
      */
-    public void monitorObject(ClassReloadable classReloadable){
+    public void monitorObject(ClassReloadable classReloadable) {
         checkStatus();
-        if(hotswapFactory instanceof CommonHotswapFactory){
+        if (hotswapFactory instanceof CommonHotswapFactory) {
             ((CommonHotswapFactory) hotswapFactory).register(classReloadable);
         }
     }
 
-    public void monitorFile(String pathStr, FileReloadable fileReloadable){
+    public void monitorFile(String pathStr, FileReloadable fileReloadable) {
         checkStatus();
         Path path = Paths.get(pathStr);
         monitorFile(path, fileReloadable);
     }
 
-    public void monitorFile(Path path, FileReloadable fileReloadable){
+    public void monitorFile(Path path, FileReloadable fileReloadable) {
         checkStatus();
         monitorFile0(path.getParent(), path.getFileName().toString(), fileReloadable);
     }
@@ -237,7 +239,7 @@ public class FileMonitor extends Thread {
     /**
      * 监听文件变化
      */
-    private void monitorFile0(Path dir, String itemName, FileReloadable fileReloadable){
+    private void monitorFile0(Path dir, String itemName, FileReloadable fileReloadable) {
         try {
             dir.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
         } catch (IOException e) {
@@ -245,7 +247,7 @@ public class FileMonitor extends Thread {
         }
 
         int key = itemName.hashCode();
-        synchronized (getLock(key)){
+        synchronized (getLock(key)) {
             monitorItems.put(key, fileReloadable);
         }
     }

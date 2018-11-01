@@ -1,10 +1,11 @@
 package org.kin.framework.actor.impl;
 
-import org.kin.framework.actor.domain.PoisonPill;
 import org.kin.framework.actor.Receive;
+import org.kin.framework.actor.domain.PoisonPill;
 import org.kin.framework.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -12,7 +13,7 @@ import java.util.function.Predicate;
 
 /**
  * Created by huangjianqin on 2018/6/5.
- *
+ * <p>
  * 预定义方法匹配builder
  */
 public class ReceiveBuilder {
@@ -24,30 +25,30 @@ public class ReceiveBuilder {
     }
 
     //-----------------------------------------------------------------------------------------------
-    public static ReceiveBuilder create(){
+    public static ReceiveBuilder create() {
         return new ReceiveBuilder();
     }
 
-    public <AA extends AbstractActor<AA>, T> ReceiveBuilder match(Class<T> type, Receive.Func<AA, T> func){
+    public <AA extends AbstractActor<AA>, T> ReceiveBuilder match(Class<T> type, Receive.Func<AA, T> func) {
         funcWrappers.add(new TypeMatchFuncWrapper<>(type, func));
         return this;
     }
 
-    public <AA extends AbstractActor<AA>, T> ReceiveBuilder matchEqual(T t, Receive.Func<AA, T> func){
+    public <AA extends AbstractActor<AA>, T> ReceiveBuilder matchEqual(T t, Receive.Func<AA, T> func) {
         funcWrappers.add(new MatchEqualFuncWrapper<>(t, func));
         return this;
     }
 
-    public <AA extends AbstractActor<AA>> ReceiveBuilder matchAny(Receive.Func<AA, ?> func){
+    public <AA extends AbstractActor<AA>> ReceiveBuilder matchAny(Receive.Func<AA, ?> func) {
         funcWrappers.add(new MatchAnyFuncWrapper(func));
         return this;
     }
 
-    public <AA extends AbstractActor<AA>> ReceiveBuilder dead(Receive.Func<AA, PoisonPill> func){
+    public <AA extends AbstractActor<AA>> ReceiveBuilder dead(Receive.Func<AA, PoisonPill> func) {
         return match(PoisonPill.class, func);
     }
 
-    public Receive build(){
+    public Receive build() {
         Collections.sort(this.funcWrappers);
         return new InternalReceive(Collections.unmodifiableList(this.funcWrappers));
     }
@@ -58,15 +59,15 @@ public class ReceiveBuilder {
      * Predicate用于匹配message
      * Comparable用于排序方法
      */
-    private abstract class FuncWrapper<AA extends AbstractActor<AA>, T> implements Predicate, Comparable{
+    private abstract class FuncWrapper<AA extends AbstractActor<AA>, T> implements Predicate, Comparable {
         private final Receive.Func<AA, T> func;
 
         protected FuncWrapper(Receive.Func<AA, T> func) {
             this.func = func;
         }
 
-        void checkAndExecute(AA applier, Object oArg){
-            if(test(oArg)){
+        void checkAndExecute(AA applier, Object oArg) {
+            if (test(oArg)) {
                 try {
                     func.apply(applier, (T) oArg);
                 } catch (Exception e) {
@@ -76,7 +77,7 @@ public class ReceiveBuilder {
         }
     }
 
-    private class TypeMatchFuncWrapper<AA extends AbstractActor<AA>, T> extends FuncWrapper<AA, T>{
+    private class TypeMatchFuncWrapper<AA extends AbstractActor<AA>, T> extends FuncWrapper<AA, T> {
         private Class<T> type;
 
         private TypeMatchFuncWrapper(Class<T> type, Receive.Func<AA, T> func) {
@@ -95,7 +96,7 @@ public class ReceiveBuilder {
         }
     }
 
-    private class MatchEqualFuncWrapper<AA extends AbstractActor<AA>, T> extends FuncWrapper<AA, T>{
+    private class MatchEqualFuncWrapper<AA extends AbstractActor<AA>, T> extends FuncWrapper<AA, T> {
         private T t;
 
         protected MatchEqualFuncWrapper(T t, Receive.Func<AA, T> func) {
@@ -113,7 +114,8 @@ public class ReceiveBuilder {
             return t.equals(o);
         }
     }
-    private class MatchAnyFuncWrapper<AA extends AbstractActor<AA>, T> extends FuncWrapper<AA, T>{
+
+    private class MatchAnyFuncWrapper<AA extends AbstractActor<AA>, T> extends FuncWrapper<AA, T> {
 
         protected MatchAnyFuncWrapper(Receive.Func<AA, T> func) {
             super(func);
@@ -142,7 +144,7 @@ public class ReceiveBuilder {
 
         @Override
         public <AA extends AbstractActor<AA>, T> void receive(AA applier, T message) {
-            for(FuncWrapper funcWrapper: funcWrappers){
+            for (FuncWrapper funcWrapper : funcWrappers) {
                 //所有匹配的方法都会处理该条message
                 funcWrapper.checkAndExecute(applier, message);
             }

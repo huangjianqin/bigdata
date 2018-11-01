@@ -8,12 +8,12 @@ public class HotSwapMain {
         Test test = new Test();
         FileMonitor monitor = FileMonitor.instance();
         int i = 0;
-        while(true){
+        while (true) {
             try {
                 Thread.sleep(10000);
                 System.out.println(test.message());
                 i++;
-                if(i % 10 == 0){
+                if (i % 10 == 0) {
                     test = new Test();
                     System.out.println("new obj");
                 }

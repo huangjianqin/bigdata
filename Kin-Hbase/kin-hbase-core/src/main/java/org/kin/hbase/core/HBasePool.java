@@ -10,6 +10,7 @@ import org.kin.hbase.core.config.HBaseConfig;
 import org.kin.hbase.core.domain.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.*;
@@ -18,7 +19,7 @@ import java.util.concurrent.*;
 /**
  * Created by huangjianqin on 2018/5/25.
  */
-public class HBasePool implements Closeable{
+public class HBasePool implements Closeable {
     private static final Logger log = LoggerFactory.getLogger(Constants.HBASE_LOGGER);
     private static final HBasePool common;
 
@@ -39,14 +40,14 @@ public class HBasePool implements Closeable{
     private List<Connection> connections;
     private boolean isHooked = false;
 
-    public void initializeConnections(HBaseConfig... hbaseConfigs){
+    public void initializeConnections(HBaseConfig... hbaseConfigs) {
         initializeConnections(Arrays.asList(hbaseConfigs));
     }
 
     /**
      * 每次都会重置
      */
-    public void initializeConnections(List<HBaseConfig> hbaseConfigs){
+    public void initializeConnections(List<HBaseConfig> hbaseConfigs) {
         if (hbaseConfigs == null || hbaseConfigs.size() <= 0) {
             return;
         }
@@ -57,7 +58,7 @@ public class HBasePool implements Closeable{
         addConnections(hbaseConfigs);
     }
 
-    public void addConnections(Collection<HBaseConfig> hbaseConfigs){
+    public void addConnections(Collection<HBaseConfig> hbaseConfigs) {
         for (HBaseConfig config : hbaseConfigs) {
             try {
                 Configuration configuration = HBaseConfiguration.create();
@@ -75,11 +76,11 @@ public class HBasePool implements Closeable{
         hook();
     }
 
-    private void cancelAllConnections(){
-        if(initedConnections != null){
-            for(Connection connection: initedConnections){
+    private void cancelAllConnections() {
+        if (initedConnections != null) {
+            for (Connection connection : initedConnections) {
                 try {
-                    if(!connection.isClosed()){
+                    if (!connection.isClosed()) {
                         connection.close();
                     }
                 } catch (IOException e) {
@@ -93,8 +94,8 @@ public class HBasePool implements Closeable{
         }
     }
 
-    private void hook(){
-        if(!isHooked){
+    private void hook() {
+        if (!isHooked) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 cancelAllConnections();
             }));
@@ -106,7 +107,7 @@ public class HBasePool implements Closeable{
      * 当池中没有hbase连接时，阻塞
      */
     public Connection getConnection() {
-        while(connections.size() <= 0){
+        while (connections.size() <= 0) {
             try {
                 Thread.sleep(200);
             } catch (InterruptedException e) {
@@ -130,17 +131,17 @@ public class HBasePool implements Closeable{
     /**
      * 回收HBase连接
      */
-    public void recycle(Connection connection){
-        if(connection instanceof HBaseConnection){
+    public void recycle(Connection connection) {
+        if (connection instanceof HBaseConnection) {
             HBaseConnection hbaseConnection = (HBaseConnection) connection;
-            if(hbaseConnection.isSamePool(this)){
+            if (hbaseConnection.isSamePool(this)) {
                 connections.add(hbaseConnection.getConnection());
                 return;
             }
         }
 
         try {
-            if(!connection.isClosed()){
+            if (!connection.isClosed()) {
                 connection.close();
             }
         } catch (IOException e) {

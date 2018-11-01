@@ -17,9 +17,9 @@ public class TestStateMachine {
         Impl impl = new Impl();
         StateMachineFactory<Impl, NumberState, FirstEventType, FirstEvent> factory
                 = new StateMachineFactory<Impl, NumberState, FirstEventType, FirstEvent>(NumberState.ONE)
-                    .addTransition(NumberState.ONE, NumberState.TWO, FirstEventType.O, new NumberTransition())
-                    .addTransition(NumberState.TWO, EnumSet.of(NumberState.THREE, NumberState.FOUR, NumberState.FIVE), FirstEventType.N, new NumberMoreTransition())
-                    .installTopology();
+                .addTransition(NumberState.ONE, NumberState.TWO, FirstEventType.O, new NumberTransition())
+                .addTransition(NumberState.TWO, EnumSet.of(NumberState.THREE, NumberState.FOUR, NumberState.FIVE), FirstEventType.N, new NumberMoreTransition())
+                .installTopology();
         StateMachine<NumberState, FirstEventType, FirstEvent> stateMachine = factory.make(impl);
         System.out.println(stateMachine.getCurrentState());
         stateMachine.doTransition(FirstEventType.O, new FirstEvent(FirstEventType.O));
@@ -30,7 +30,7 @@ public class TestStateMachine {
     }
 }
 
-class NumberMoreTransition implements MultipleArcTransition<Impl, FirstEvent, NumberState>{
+class NumberMoreTransition implements MultipleArcTransition<Impl, FirstEvent, NumberState> {
 
     @Override
     public NumberState transition(Impl impl, FirstEvent firstEvent) {
@@ -38,7 +38,7 @@ class NumberMoreTransition implements MultipleArcTransition<Impl, FirstEvent, Nu
     }
 }
 
-class NumberTransition implements SingleArcTransition<Impl, FirstEvent>{
+class NumberTransition implements SingleArcTransition<Impl, FirstEvent> {
 
     @Override
     public void transition(Impl impl, FirstEvent firstEvent) {
@@ -66,12 +66,12 @@ class Impl implements EventHandler<FirstEvent> {
         return (NumberState) EnumSet.of(NumberState.THREE, NumberState.FOUR, NumberState.FIVE).toArray()[new Random().nextInt(3)];
     }
 
-    public void close(){
+    public void close() {
         dispatcher.stop();
     }
 }
 
-class FirstEventHandler implements EventHandler<FirstEvent>{
+class FirstEventHandler implements EventHandler<FirstEvent> {
 
     @Override
     public void handle(FirstEvent event) {

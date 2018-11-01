@@ -9,6 +9,7 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.kin.hbase.core.HBasePool;
 import org.kin.hbase.core.op.QueryOp;
 import org.kin.hbase.core.utils.HBaseUtils;
+
 import java.io.IOException;
 
 /**
@@ -30,7 +31,7 @@ public class GetOp extends QueryOp<GetOp> {
     }
 
     private Result one() {
-        try(Connection connection = HBasePool.common().getConnection()){
+        try (Connection connection = HBasePool.common().getConnection()) {
             Table table = connection.getTable(TableName.valueOf(getTableName()));
             Get get = new Get(Bytes.toBytes(getRowKey()));
 

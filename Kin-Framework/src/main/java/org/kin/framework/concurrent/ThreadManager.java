@@ -12,15 +12,15 @@ import java.util.concurrent.*;
 /**
  * Created by huangjianqin on 2018/1/24.
  */
-public class ThreadManager implements ScheduledExecutorService{
+public class ThreadManager implements ScheduledExecutorService {
     public static ThreadManager DEFAULT;
+
     static {
         String executorTypeStr = System.getenv(Constants.DEFAULT_EXECUTOR);
-        if(!Strings.isNullOrEmpty(executorTypeStr)){
+        if (!Strings.isNullOrEmpty(executorTypeStr)) {
             ExecutorType executorType = ExecutorType.getByName(executorTypeStr);
             DEFAULT = new ThreadManager(executorType.getExecutor());
-        }
-        else{
+        } else {
             DEFAULT = new ThreadManager();
         }
     }
@@ -50,9 +50,9 @@ public class ThreadManager implements ScheduledExecutorService{
         this.scheduleExecutor = scheduleExecutor;
     }
 
-    private void hook(){
+    private void hook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            if(!isShutdown()){
+            if (!isShutdown()) {
                 shutdownNow();
             }
         }));

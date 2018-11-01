@@ -1,13 +1,14 @@
 package org.kin.hbase.core.utils;
 
 import org.apache.hadoop.hbase.client.*;
-import org.apache.hadoop.hbase.filter.*;
+import org.apache.hadoop.hbase.filter.Filter;
+import org.apache.hadoop.hbase.filter.FilterList;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.kin.framework.utils.StringUtils;
-import org.kin.hbase.core.annotation.HBaseEntity;
-import org.kin.hbase.core.domain.QueryInfo;
 import org.kin.hbase.core.annotation.Column;
+import org.kin.hbase.core.annotation.HBaseEntity;
 import org.kin.hbase.core.annotation.RowKey;
+import org.kin.hbase.core.domain.QueryInfo;
 import org.kin.hbase.core.exception.HBaseEntityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,9 +22,11 @@ import java.util.*;
  */
 public class HBaseUtils {
     private static final Logger log = LoggerFactory.getLogger("HBaseUtils");
+
     public static <T> List<Put> convert2Puts(T... entities) {
         return convert2Puts(Arrays.asList(entities));
     }
+
     /**
      * 将@HBaseEntity标识的类解析成Put实例
      */
@@ -36,9 +39,9 @@ public class HBaseUtils {
 
         for (T entity : entities) {
             //有@HBaseEntity注解才解析
-            if(entity.getClass().isAnnotationPresent(HBaseEntity.class)){
+            if (entity.getClass().isAnnotationPresent(HBaseEntity.class)) {
                 //如果是HBaseEntity实现类,需先序列化
-                if(entity instanceof org.kin.hbase.core.entity.HBaseEntity){
+                if (entity instanceof org.kin.hbase.core.entity.HBaseEntity) {
                     ((org.kin.hbase.core.entity.HBaseEntity) entity).serialize();
                 }
 
@@ -59,9 +62,9 @@ public class HBaseUtils {
                 }
 
                 //再找出qualifier的成员域
-                for(Field f : fields){
+                for (Field f : fields) {
                     Column hbaseColumn = f.getAnnotation(Column.class);
-                    if(hbaseColumn != null){
+                    if (hbaseColumn != null) {
                         byte[] value = getFieldValue(f, entity);
                         if (value != null) {
                             String vStr = Bytes.toString(value);
@@ -78,8 +81,7 @@ public class HBaseUtils {
                     }
                 }
                 puts.add(put);
-            }
-            else{
+            } else {
                 throw new HBaseEntityException("hbase entity must be annotated with @HBaseEntity");
             }
         }
@@ -89,17 +91,16 @@ public class HBaseUtils {
     /**
      * 如果还需要其他的类型请自己做扩展
      */
-    private static byte[] getFieldValue(Field field, Object object){
-        try{
+    private static byte[] getFieldValue(Field field, Object object) {
+        try {
             if (field.getGenericType().toString().equals("class java.lang.String")) {
                 Method m = object.getClass().getMethod(getterMethodName(field.getName()));
 
                 String val;
-                if(m != null){
+                if (m != null) {
                     // 调用getter方法获取属性值
                     val = (String) m.invoke(object);
-                }
-                else{
+                } else {
                     val = field.get(object).toString();
                 }
 
@@ -111,10 +112,9 @@ public class HBaseUtils {
                 Method m = object.getClass().getMethod(getterMethodName(field.getName()));
 
                 int val;
-                if(m != null){
+                if (m != null) {
                     val = (int) m.invoke(object);
-                }
-                else{
+                } else {
                     val = field.getInt(object);
                 }
 
@@ -126,10 +126,9 @@ public class HBaseUtils {
                 Method m = object.getClass().getMethod(getterMethodName(field.getName()));
 
                 double val;
-                if(m != null){
+                if (m != null) {
                     val = (double) m.invoke(object);
-                }
-                else{
+                } else {
                     val = field.getDouble(object);
                 }
 
@@ -141,10 +140,9 @@ public class HBaseUtils {
                 Method m = object.getClass().getMethod(getterMethodName(field.getName()));
 
                 long val;
-                if(m != null){
+                if (m != null) {
                     val = (long) m.invoke(object);
-                }
-                else{
+                } else {
                     val = field.getLong(object);
                 }
 
@@ -156,16 +154,15 @@ public class HBaseUtils {
                 Method m = object.getClass().getMethod(getterMethodName(field.getName()));
 
                 byte val;
-                if(m != null){
+                if (m != null) {
                     val = (byte) m.invoke(object);
-                }
-                else {
+                } else {
                     val = field.getByte(object);
                 }
 
                 return Bytes.toBytes(val);
             }
-        }catch (Exception ex){
+        } catch (Exception ex) {
             log.error("", ex);
         }
 
@@ -175,16 +172,15 @@ public class HBaseUtils {
     /**
      * 如果还需要其他的类型请自己做扩展
      */
-    private static <H, T> void setFieldValue(Field field, H instance, T value){
-        if(value == null){
+    private static <H, T> void setFieldValue(Field field, H instance, T value) {
+        if (value == null) {
             return;
         }
         try {
             Method m = instance.getClass().getMethod(setterMethodName(field.getName()), value.getClass());
-            if(m != null){
+            if (m != null) {
                 m.invoke(instance, value);
-            }
-            else {
+            } else {
                 field.set(instance, value);
             }
 
@@ -266,8 +262,8 @@ public class HBaseUtils {
     /**
      * 解析注解，注入数据
      */
-    public static <T> T convert2HBaseEntity(Class<T> clazz, Result result){
-        if(clazz == null || result == null){
+    public static <T> T convert2HBaseEntity(Class<T> clazz, Result result) {
+        if (clazz == null || result == null) {
             return null;
         }
 
@@ -275,7 +271,7 @@ public class HBaseUtils {
         T instance = null;
         try {
             //检查是否有@HBaseEntity注解
-            if(clazz.isAnnotationPresent(HBaseEntity.class)){
+            if (clazz.isAnnotationPresent(HBaseEntity.class)) {
                 instance = clazz.newInstance();
                 for (Field field : fields) {
                     field.setAccessible(true);
@@ -290,11 +286,11 @@ public class HBaseUtils {
                             String family = column.family();
                             String qualifier = column.qualifier();
 
-                            if(StringUtils.isBlank(qualifier)){
+                            if (StringUtils.isBlank(qualifier)) {
                                 qualifier = field.getName();
                             }
 
-                            if(StringUtils.isBlank(family)){
+                            if (StringUtils.isBlank(family)) {
                                 throw new RuntimeException("@Column 's qualifier family must be not blank");
                             }
 
@@ -304,7 +300,7 @@ public class HBaseUtils {
                 }
 
                 //如果是HBaseEntity实现类,需反序列化
-                if(instance instanceof org.kin.hbase.core.entity.HBaseEntity){
+                if (instance instanceof org.kin.hbase.core.entity.HBaseEntity) {
                     ((org.kin.hbase.core.entity.HBaseEntity) instance).deserialize();
                 }
             }
@@ -312,8 +308,7 @@ public class HBaseUtils {
             log.error("", e);
         } catch (IllegalAccessException e) {
             log.error("", e);
-        }
-        finally {
+        } finally {
             for (Field field : fields) {
                 field.setAccessible(false);
             }
@@ -327,19 +322,18 @@ public class HBaseUtils {
      */
     public static void setColumnAndFilter(OperationWithAttributes operation, List<QueryInfo> queryInfos, List<Filter> filters) {
         FilterList filterList = new FilterList(FilterList.Operator.MUST_PASS_ALL);
-        if(queryInfos != null && queryInfos.size() > 0){
-            for(QueryInfo queryInfo: queryInfos){
+        if (queryInfos != null && queryInfos.size() > 0) {
+            for (QueryInfo queryInfo : queryInfos) {
                 String family = queryInfo.getFamily();
                 String qualifier = queryInfo.getQualifier();
 
-                if(StringUtils.isBlank(qualifier)){
+                if (StringUtils.isBlank(qualifier)) {
                     if (operation instanceof Scan) {
                         ((Scan) operation).addFamily(Bytes.toBytes(family));
                     } else if (operation instanceof Get) {
                         ((Get) operation).addFamily(Bytes.toBytes(family));
                     }
-                }
-                else{
+                } else {
                     if (operation instanceof Scan) {
                         ((Scan) operation).addColumn(Bytes.toBytes(family), Bytes.toBytes(qualifier));
                     } else if (operation instanceof Get) {
@@ -349,8 +343,8 @@ public class HBaseUtils {
             }
         }
 
-        if(filters != null && filters.size() > 0){
-            for(Filter filter: filters){
+        if (filters != null && filters.size() > 0) {
+            for (Filter filter : filters) {
                 filterList.addFilter(filter);
             }
 
@@ -362,8 +356,8 @@ public class HBaseUtils {
         }
     }
 
-    public static <T> byte[] getRowKeyBytes(T entity){
-        if(entity.getClass().isAnnotationPresent(HBaseEntity.class)) {
+    public static <T> byte[] getRowKeyBytes(T entity) {
+        if (entity.getClass().isAnnotationPresent(HBaseEntity.class)) {
             Field[] fields = entity.getClass().getDeclaredFields();
             for (Field f : fields) {
                 RowKey rowkey = f.getAnnotation(RowKey.class);

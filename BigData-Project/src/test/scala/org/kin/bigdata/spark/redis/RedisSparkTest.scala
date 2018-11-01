@@ -5,8 +5,8 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 import org.apache.spark.{SparkConf, SparkContext}
 
 /**
- * Created by 健勤 on 2017/8/2.
- */
+  * Created by 健勤 on 2017/8/2.
+  */
 object RedisSparkTest {
   def main(args: Array[String]) {
     val conf = new SparkConf()
@@ -14,7 +14,7 @@ object RedisSparkTest {
       .setMaster("local[4]")
       .set("redis.host", "192.168.40.128")
       .set("redis.port", "6379")
-//      .set("redis.auth", "")
+    //      .set("redis.auth", "")
     val sc = new SparkContext(conf)
 
     import com.redislabs.provider.redis._

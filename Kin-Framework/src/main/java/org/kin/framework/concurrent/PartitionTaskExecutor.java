@@ -42,7 +42,6 @@ public class PartitionTaskExecutor<K> {
     }
 
     /**
-     *
      * @param threadPool 如果最小线程数 < @param partitionNum, 则真实的@param partitionNum=@param threadPool的最大线程数
      */
     public PartitionTaskExecutor(int partitionNum, Partitioner<K> partitioner, ThreadPoolExecutor threadPool) {
@@ -52,7 +51,7 @@ public class PartitionTaskExecutor<K> {
         this.partitionTasks = new PartitionTaskExecutor.PartitionTask[this.partitionNum];
     }
 
-    private PartitionTask getOrCreatePartitionTask(int partition){
+    private PartitionTask getOrCreatePartitionTask(int partition) {
         if (0 < partition && partition < partitionTasks.length) {
             PartitionTask partitionTask = partitionTasks[partition];
             if (partitionTask == null) {
@@ -67,52 +66,49 @@ public class PartitionTaskExecutor<K> {
         }
     }
 
-    public Future<?> execute(K key, Runnable task){
+    public Future<?> execute(K key, Runnable task) {
         PartitionTask partitionTask = getOrCreatePartitionTask(partitioner.toPartition(key, partitionNum));
-        if(partitionTask != null){
+        if (partitionTask != null) {
             FutureTask futureTask = new FutureTask(task, null);
 
             partitionTask.execute(new Task(key, futureTask));
 
             return futureTask;
-        }
-        else{
+        } else {
             return null;
         }
     }
 
-    public <T> Future<T> execute(K key, Runnable task, T value){
+    public <T> Future<T> execute(K key, Runnable task, T value) {
         PartitionTask partitionTask = getOrCreatePartitionTask(partitioner.toPartition(key, partitionNum));
-        if(partitionTask != null){
+        if (partitionTask != null) {
             FutureTask futureTask = new FutureTask(task, value);
 
             partitionTask.execute(new Task(key, futureTask));
 
             return futureTask;
-        }
-        else{
+        } else {
             return null;
         }
     }
 
-    public <T> Future<T> execute(K key, Callable<T> task){
+    public <T> Future<T> execute(K key, Callable<T> task) {
         PartitionTask partitionTask = getOrCreatePartitionTask(partitioner.toPartition(key, partitionNum));
-        if(partitionTask != null){
+        if (partitionTask != null) {
             FutureTask<T> futureTask = new FutureTask(task);
 
             partitionTask.execute(new Task(key, futureTask));
 
             return futureTask;
-        }
-        else{
+        } else {
             return null;
         }
     }
 
-    public void shutdown(){
+    public void shutdown() {
         //先关闭执行线程实例再关闭线程池
         //关闭并移除分区执行线程实例,且缓存
-        for(PartitionTask task: partitionTasks){
+        for (PartitionTask task : partitionTasks) {
             task.close();
         }
         threadPool.shutdown();
@@ -122,10 +118,10 @@ public class PartitionTaskExecutor<K> {
         partitioner = null;
     }
 
-    public void shutdownNow(){
+    public void shutdownNow() {
         //先关闭执行线程实例再关闭线程池
         //关闭并移除分区执行线程实例,且缓存
-        for(PartitionTask task: partitionTasks){
+        for (PartitionTask task : partitionTasks) {
             task.close();
         }
         threadPool.shutdownNow();
@@ -135,35 +131,35 @@ public class PartitionTaskExecutor<K> {
         partitioner = null;
     }
 
-    public void expandTo(int newPartitionNum){
+    public void expandTo(int newPartitionNum) {
         Preconditions.checkArgument(newPartitionNum > partitionNum, "param newPartitionNum '{}' must be greater than maxPartition '{}'", newPartitionNum, partitionNum);
 
         //对partitionTasks加锁并扩容, 然后更新numPartition
         //这样能保证一致性, 并且不会发生IndexOutOfBound
-        synchronized (partitionTasks){
+        synchronized (partitionTasks) {
             partitionTasks = Arrays.copyOf(partitionTasks, newPartitionNum);
             partitionNum = newPartitionNum;
             threadPool.setCorePoolSize(partitionNum);
         }
     }
 
-    public void expand(int addPartitionNum){
+    public void expand(int addPartitionNum) {
         int newPartitionNum = partitionNum + addPartitionNum;
         expandTo(newPartitionNum);
     }
 
-    public void shrink(int reducePartitionNum){
+    public void shrink(int reducePartitionNum) {
         int newPartitionNum = partitionNum - reducePartitionNum;
         shrinkTo(newPartitionNum);
     }
 
-    private void shutdownTask(int num){
+    private void shutdownTask(int num) {
         Preconditions.checkArgument(num > 0, "the number of tasks need to be shutdowned must be positive");
         List<PartitionTask> removedPartitionTasks = new ArrayList<>();
         //关闭并移除分区执行线程实例,且缓存
-        for(int i = partitionTasks.length - num; i < partitionTasks.length; i++){
+        for (int i = partitionTasks.length - num; i < partitionTasks.length; i++) {
             PartitionTask task = partitionTasks[i];
-            if(task != null){
+            if (task != null) {
                 partitionTasks[i] = null;
                 task.close();
                 removedPartitionTasks.add(task);
@@ -171,9 +167,9 @@ public class PartitionTaskExecutor<K> {
         }
 
         //Executors doesn't shutdown
-        if(!removedPartitionTasks.isEmpty()){
-            for(PartitionTask partitionTask: removedPartitionTasks){
-                while (!partitionTask.isTerminated){
+        if (!removedPartitionTasks.isEmpty()) {
+            for (PartitionTask partitionTask : removedPartitionTasks) {
+                while (!partitionTask.isTerminated) {
                     try {
                         Thread.sleep(200);
                     } catch (InterruptedException e) {
@@ -181,7 +177,7 @@ public class PartitionTaskExecutor<K> {
                     }
                 }
                 //重新执行被移除线程但还没执行的tasks
-                for(Task queuedTask: partitionTask.queue) {
+                for (Task queuedTask : partitionTask.queue) {
                     execute(queuedTask.key, queuedTask.target);
                 }
 
@@ -189,7 +185,7 @@ public class PartitionTaskExecutor<K> {
         }
     }
 
-    public void shrinkTo(int newPartitionNum){
+    public void shrinkTo(int newPartitionNum) {
         Preconditions.checkArgument(newPartitionNum > 0, "param newPartitionNum '{}' can't be zero or negative", newPartitionNum);
         Preconditions.checkArgument(newPartitionNum < partitionNum, "param newPartitionNum '{}' must be lower than nowPartitionNum '{}'", newPartitionNum, partitionNum);
 
@@ -204,7 +200,7 @@ public class PartitionTaskExecutor<K> {
         }
     }
 
-    private class Task implements Runnable{
+    private class Task implements Runnable {
         //缓存分区key,以便重分区时获取分区key
         private final K key;
         private final Runnable target;
@@ -223,7 +219,7 @@ public class PartitionTaskExecutor<K> {
     /**
      * task 执行
      */
-    private class PartitionTask implements Runnable{
+    private class PartitionTask implements Runnable {
         //任务队列
         private BlockingQueue<Task> queue = new LinkedBlockingQueue<>();
         //绑定的线程
@@ -240,16 +236,16 @@ public class PartitionTaskExecutor<K> {
             }
         }
 
-        public void close(){
+        public void close() {
             isStopped = true;
-            if(bind != null){
+            if (bind != null) {
                 bind.interrupt();
             }
         }
 
         public void run() {
             bind = Thread.currentThread();
-            while(!isStopped && !Thread.currentThread().isInterrupted()){
+            while (!isStopped && !Thread.currentThread().isInterrupted()) {
                 Task task = null;
                 try {
                     task = queue.take();

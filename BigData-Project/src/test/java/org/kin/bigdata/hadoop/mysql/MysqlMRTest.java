@@ -33,7 +33,7 @@ public class MysqlMRTest extends Configured implements Tool {
         job.setMapperClass(DBMppaer.class);
         job.setReducerClass(DBReducer.class);
         job.waitForCompletion(true);
-        return job.isSuccessful()? 1:-1;
+        return job.isSuccessful() ? 1 : -1;
     }
 
     public static void main(String[] args) throws Exception {

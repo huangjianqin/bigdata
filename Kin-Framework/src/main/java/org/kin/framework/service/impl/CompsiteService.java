@@ -24,11 +24,10 @@ public class CompsiteService extends AbstractService {
 
     @Override
     protected void serviceInit() {
-        for(Service service: services){
-            if(service.getCurrentState() == State.NOTINITED){
+        for (Service service : services) {
+            if (service.getCurrentState() == State.NOTINITED) {
                 service.init();
-            }
-            else{
+            } else {
                 log.warn(service.toString() + " state is " + service.getCurrentState());
             }
         }
@@ -38,11 +37,10 @@ public class CompsiteService extends AbstractService {
 
     @Override
     protected void serviceStart() {
-        for(Service service: services){
-            if(service.getCurrentState() == State.INITED){
+        for (Service service : services) {
+            if (service.getCurrentState() == State.INITED) {
                 service.start();
-            }
-            else{
+            } else {
                 log.warn(service.toString() + " state is " + service.getCurrentState());
             }
         }
@@ -52,36 +50,34 @@ public class CompsiteService extends AbstractService {
 
     @Override
     protected void serviceStop() {
-        for(Service service: services){
+        for (Service service : services) {
             //初始化或启动后的服务就可以关闭
-            if(service.getCurrentState() == State.INITED || service.getCurrentState() == State.STARTED){
+            if (service.getCurrentState() == State.INITED || service.getCurrentState() == State.STARTED) {
                 service.stop();
-            }
-            else{
+            } else {
                 log.warn(service.toString() + " state is " + service.getCurrentState());
             }
         }
         super.serviceStop();
     }
 
-    public void addService(@Nonnull Service service){
-        synchronized (services){
+    public void addService(@Nonnull Service service) {
+        synchronized (services) {
             services.add(service);
         }
     }
 
-    public boolean addIfService(Object mayBeService){
-        if(mayBeService instanceof Service){
-            addService((Service)mayBeService);
+    public boolean addIfService(Object mayBeService) {
+        if (mayBeService instanceof Service) {
+            addService((Service) mayBeService);
             return true;
-        }
-        else{
+        } else {
             return false;
         }
     }
 
-    public boolean removeService(@Nonnull Service service){
-        synchronized (services){
+    public boolean removeService(@Nonnull Service service) {
+        synchronized (services) {
             return services.remove(service);
         }
     }

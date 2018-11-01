@@ -4,8 +4,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.WritableComparator;
 import org.apache.hadoop.io.WritableUtils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.Map;
 
@@ -29,7 +27,7 @@ public class Text2TextMapWritable extends MapWritable<Text, Text> {
         WritableComparator.define(Text2TextMapWritable.class, new Text2TextMapComparator());
     }
 
-    public static class Text2TextMapComparator extends WritableComparator{
+    public static class Text2TextMapComparator extends WritableComparator {
         public Text2TextMapComparator() {
             super(Text2TextMapWritable.class);
         }
@@ -39,7 +37,7 @@ public class Text2TextMapWritable extends MapWritable<Text, Text> {
             Integer b1L = readInt(b1, s1);
             Integer b2L = readInt(b2, s2);
             Integer lCMD = b1L.compareTo(b2L);
-            if(lCMD != 0){
+            if (lCMD != 0) {
                 return lCMD;
             }
             // same size
@@ -49,7 +47,7 @@ public class Text2TextMapWritable extends MapWritable<Text, Text> {
 
             //Text底层bytes组成是vint+valueBytes
             //按key排序
-            for(int i = 0; i < b1L; i++){
+            for (int i = 0; i < b1L; i++) {
                 try {
                     Integer VIntSize1 = WritableUtils.decodeVIntSize(b1[b1RealS]);
                     Integer VIntSize2 = WritableUtils.decodeVIntSize(b2[b2RealS]);
@@ -58,19 +56,18 @@ public class Text2TextMapWritable extends MapWritable<Text, Text> {
 
 
                     Integer cmd = Integer.MAX_VALUE;
-                    if(i < b1L - 1){
+                    if (i < b1L - 1) {
                         cmd = compareBytes(b1, b1RealS + VIntSize1, valueL1, b2, b2RealS + VIntSize2, valueL2);
-                    }
-                    else if(i == b1L - 1) {
+                    } else if (i == b1L - 1) {
                         //the last
                         cmd = compareBytes(b1, b1RealS + VIntSize1, valueL1 - 1, b2, b2RealS + VIntSize2, valueL2 - 1);
                     }
 
-                    if(cmd == Integer.MAX_VALUE){
+                    if (cmd == Integer.MAX_VALUE) {
                         throw new IllegalStateException("something wrong");
                     }
 
-                    if(cmd != 0){
+                    if (cmd != 0) {
                         return cmd;
                     }
                     //更新下一个value item的起点

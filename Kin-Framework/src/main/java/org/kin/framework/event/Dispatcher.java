@@ -7,15 +7,19 @@ package org.kin.framework.event;
 public interface Dispatcher {
     /**
      * 内部将事件进队的事件处理器
+     *
      * @return
      */
     EventHandler getEventHandler();
+
     /**
      * 注册事件处理器
+     *
      * @param eventType
      * @param handler
      */
     void register(Class<? extends Enum> eventType, EventHandler handler);
+
     /**
      * 根据事件类型分发给对应的事件处理器
      */

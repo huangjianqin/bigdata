@@ -1,6 +1,7 @@
 package org.kin.framework.utils;
 
 import com.google.common.collect.Sets;
+
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -27,8 +28,8 @@ public class ClassUtils {
     /**
      * 通过无参构造器实例化类
      */
-    public static <T> T instance(Class<T> claxx){
-        if(claxx == null){
+    public static <T> T instance(Class<T> claxx) {
+        if (claxx == null) {
             return null;
         }
         try {
@@ -39,8 +40,8 @@ public class ClassUtils {
         return null;
     }
 
-    public static <T> T instance(String classStr){
-        if(classStr == null || classStr.equals("")){
+    public static <T> T instance(String classStr) {
+        if (classStr == null || classStr.equals("")) {
             return null;
         }
         try {
@@ -55,13 +56,13 @@ public class ClassUtils {
     /**
      * 根据参数调用构造器实例化类
      */
-    public static <T> T instance(Class<T> claxx, Object... args){
-        if(claxx == null){
+    public static <T> T instance(Class<T> claxx, Object... args) {
+        if (claxx == null) {
             return null;
         }
         try {
             List<Class> argClasses = new ArrayList<>();
-            for(Object arg: args){
+            for (Object arg : args) {
                 argClasses.add(arg.getClass());
             }
             Constructor<T> constructor = claxx.getDeclaredConstructor(argClasses.toArray(new Class[1]));
@@ -74,8 +75,8 @@ public class ClassUtils {
         return null;
     }
 
-    public static Class getClass(String className){
-        if(className == null || className.equals("")){
+    public static Class getClass(String className) {
+        if (className == null || className.equals("")) {
             return null;
         }
         try {
@@ -151,15 +152,14 @@ public class ClassUtils {
      * 从子类往父类遍历,获取成员变量实例
      */
     public static <T> T getFieldValue(Object target, String fieldName) {
-        for(Field field: getAllFields(target.getClass())){
-            if(field.getName().equals(fieldName)){
+        for (Field field : getAllFields(target.getClass())) {
+            if (field.getName().equals(fieldName)) {
                 field.setAccessible(true);
                 try {
-                    return (T)field.get(target);
+                    return (T) field.get(target);
                 } catch (IllegalAccessException e) {
                     ExceptionUtils.log(e);
-                }
-                finally {
+                } finally {
                     field.setAccessible(false);
                 }
             }
@@ -169,15 +169,14 @@ public class ClassUtils {
     }
 
     public static void setFieldValue(Object target, String fieldName, Object newValue) {
-        for(Field field: getAllFields(target.getClass())){
-            if(field.getName().equals(fieldName)){
+        for (Field field : getAllFields(target.getClass())) {
+            if (field.getName().equals(fieldName)) {
                 field.setAccessible(true);
                 try {
                     field.set(target, newValue);
                 } catch (IllegalAccessException e) {
                     ExceptionUtils.log(e);
-                }
-                finally {
+                } finally {
                     field.setAccessible(false);
                 }
             }
@@ -186,7 +185,7 @@ public class ClassUtils {
 
     public static void setFieldValue(Object target, Field field, Object newValue) {
         Set<Field> fields = getAllFields(target.getClass());
-        if(fields.contains(field)){
+        if (fields.contains(field)) {
             try {
                 field.set(target, newValue);
             } catch (IllegalAccessException e) {
@@ -195,20 +194,20 @@ public class ClassUtils {
         }
     }
 
-    public static Set<Field> getAllFields(Class<?> claxx){
+    public static Set<Field> getAllFields(Class<?> claxx) {
         return getFields(claxx, Object.class);
     }
 
     /**
      * 获取claxx -> parent的所有field
      */
-    public static Set<Field> getFields(Class<?> claxx, Class<?> parent){
-        if(parent.isAssignableFrom(claxx)){
+    public static Set<Field> getFields(Class<?> claxx, Class<?> parent) {
+        if (parent.isAssignableFrom(claxx)) {
             throw new IllegalStateException(String.format("%s is not super class of %s", parent.getName(), claxx.getName()));
         }
         Set<Field> fields = new HashSet<>();
-        while(!claxx.equals(parent)){
-            for(Field field: claxx.getDeclaredFields()){
+        while (!claxx.equals(parent)) {
+            for (Field field : claxx.getDeclaredFields()) {
                 fields.add(field);
             }
             claxx = claxx.getSuperclass();
@@ -216,19 +215,19 @@ public class ClassUtils {
         return fields;
     }
 
-    public static Set<Class<?>> getAllClasses(Class<?> claxx){
+    public static Set<Class<?>> getAllClasses(Class<?> claxx) {
         return getClasses(claxx, Object.class);
     }
 
     /**
      * 获取claxx -> parent的所有class
      */
-    public static Set<Class<?>> getClasses(Class<?> claxx, Class<?> parent){
-        if(parent.isAssignableFrom(claxx)){
+    public static Set<Class<?>> getClasses(Class<?> claxx, Class<?> parent) {
+        if (parent.isAssignableFrom(claxx)) {
             throw new IllegalStateException(String.format("%s is not super class of %s", parent.getName(), claxx.getName()));
         }
         Set<Class<?>> classes = new HashSet<>();
-        while(!claxx.equals(parent)){
+        while (!claxx.equals(parent)) {
             classes.add(claxx);
             claxx = claxx.getSuperclass();
         }

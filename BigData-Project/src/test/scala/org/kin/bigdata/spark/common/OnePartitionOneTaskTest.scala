@@ -14,16 +14,16 @@ object OnePartitionOneTaskTest {
     val conf = new SparkConf().setAppName("testSortByKey").setMaster("local[2]")
     val sc = new SparkContext(conf)
 
-    def randomProduceTupleSeq(): immutable.IndexedSeq[(Int, Int)] ={
-      return for(i <- Range(1, 100)) yield (Random.nextInt(i), Random.nextInt(i))
+    def randomProduceTupleSeq(): immutable.IndexedSeq[(Int, Int)] = {
+      return for (i <- Range(1, 100)) yield (Random.nextInt(i), Random.nextInt(i))
     }
 
     var rdd = sc.parallelize(randomProduceTupleSeq(), 2)
     rdd = rdd.sortByKey(numPartitions = 2)
-    rdd.foreachPartition{iterator =>
+    rdd.foreachPartition { iterator =>
       val sb = new StringBuilder()
       sb.append("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<" + System.lineSeparator())
-      for((t1, t2) <- iterator){
+      for ((t1, t2) <- iterator) {
         sb.append("%s->%s".format(t1, t2) + System.lineSeparator())
       }
       sb.append(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>" + System.lineSeparator())

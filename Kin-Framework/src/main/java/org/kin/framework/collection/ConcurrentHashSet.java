@@ -1,7 +1,6 @@
 package org.kin.framework.collection;
 
 import java.util.AbstractSet;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.concurrent.ConcurrentHashMap;

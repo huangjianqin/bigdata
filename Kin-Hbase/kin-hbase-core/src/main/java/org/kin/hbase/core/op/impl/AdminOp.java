@@ -7,6 +7,7 @@ import org.apache.hadoop.hbase.client.Admin;
 import org.apache.hadoop.hbase.client.Connection;
 import org.kin.hbase.core.HBasePool;
 import org.kin.hbase.core.op.AbstractHBaseOp;
+
 import java.io.IOException;
 
 /**
@@ -17,8 +18,8 @@ public class AdminOp extends AbstractHBaseOp<AdminOp> {
         super(tableName);
     }
 
-    public void dropTable(){
-        try(Connection connection = HBasePool.common().getConnection()){
+    public void dropTable() {
+        try (Connection connection = HBasePool.common().getConnection()) {
             Admin admin = connection.getAdmin();
             TableName tableName = TableName.valueOf(getTableName());
 
@@ -31,8 +32,8 @@ public class AdminOp extends AbstractHBaseOp<AdminOp> {
         }
     }
 
-    public void disable(){
-        try(Connection connection = HBasePool.common().getConnection()){
+    public void disable() {
+        try (Connection connection = HBasePool.common().getConnection()) {
             Admin admin = connection.getAdmin();
             TableName tableName = TableName.valueOf(getTableName());
 
@@ -44,13 +45,13 @@ public class AdminOp extends AbstractHBaseOp<AdminOp> {
         }
     }
 
-    public void create(HColumnDescriptor... families){
-        try(Connection connection = HBasePool.common().getConnection()){
+    public void create(HColumnDescriptor... families) {
+        try (Connection connection = HBasePool.common().getConnection()) {
             Admin admin = connection.getAdmin();
             TableName tableName = TableName.valueOf(getTableName());
             HTableDescriptor descriptor = new HTableDescriptor(tableName);
-            if(families.length > 0){
-                for(HColumnDescriptor columnDescriptor: families){
+            if (families.length > 0) {
+                for (HColumnDescriptor columnDescriptor : families) {
                     descriptor.addFamily(columnDescriptor);
                 }
             }
@@ -63,8 +64,8 @@ public class AdminOp extends AbstractHBaseOp<AdminOp> {
         }
     }
 
-    public void enableTable(){
-        try(Connection connection = HBasePool.common().getConnection()){
+    public void enableTable() {
+        try (Connection connection = HBasePool.common().getConnection()) {
             Admin admin = connection.getAdmin();
             TableName tableName = TableName.valueOf(getTableName());
 
@@ -76,8 +77,8 @@ public class AdminOp extends AbstractHBaseOp<AdminOp> {
         }
     }
 
-    public void enableTableAsync(){
-        try(Connection connection = HBasePool.common().getConnection()){
+    public void enableTableAsync() {
+        try (Connection connection = HBasePool.common().getConnection()) {
             Admin admin = connection.getAdmin();
             TableName tableName = TableName.valueOf(getTableName());
 
@@ -89,9 +90,9 @@ public class AdminOp extends AbstractHBaseOp<AdminOp> {
         }
     }
 
-    public boolean tableExists(){
+    public boolean tableExists() {
         boolean result = false;
-        try(Connection connection = HBasePool.common().getConnection()){
+        try (Connection connection = HBasePool.common().getConnection()) {
             Admin admin = connection.getAdmin();
             TableName tableName = TableName.valueOf(getTableName());
 

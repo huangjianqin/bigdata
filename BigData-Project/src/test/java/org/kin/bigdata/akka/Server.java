@@ -1,6 +1,9 @@
 package org.kin.bigdata.akka;
 
-import akka.actor.*;
+import akka.actor.AbstractActor;
+import akka.actor.ActorRef;
+import akka.actor.PoisonPill;
+import akka.actor.Props;
 import akka.japi.pf.ReceiveBuilder;
 
 /**
@@ -28,9 +31,9 @@ public class Server extends AbstractActor {
                 .match(String.class, message -> {
                     String content = message.toString();
                     System.out.println(content);
-                    if(content.equals("a")){
+                    if (content.equals("a")) {
                         getContext().actorSelection("akka://akkaTest/user/client").tell("success", self());
-                    }else{
+                    } else {
                         worker.tell(message, self());
                     }
                 })

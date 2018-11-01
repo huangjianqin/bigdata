@@ -3,6 +3,7 @@ package org.kin.framework.statemachine;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.TypeVariable;
 import java.util.*;
 
@@ -10,13 +11,13 @@ import java.util.*;
  * Created by 健勤 on 2017/8/9.
  * 状态机工厂类
  * 延迟构造状态拓扑图
- *
+ * <p>
  * OPERAND 该状态机的状态转换处理实例
  * STATE 该状态机的状态类型
  * EVENTTYPE 触发该状态机状态转换的事件类型
  * EVENT 触发该状态机状态转换的事件类
  */
-public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE extends Enum<EVENTTYPE>, EVENT>{
+public class StateMachineFactory<OPERAND, STATE extends Enum<STATE>, EVENTTYPE extends Enum<EVENTTYPE>, EVENT> {
     private static Logger log = LoggerFactory.getLogger(StateMachine.class);
 
     //拓扑
@@ -62,14 +63,14 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
     /**
      * 生成状态图的接口
      */
-    private interface ApplicableTransition<OPERAND, STATE extends Enum<STATE>, EVENTTYPE extends Enum<EVENTTYPE>, EVENT>{
+    private interface ApplicableTransition<OPERAND, STATE extends Enum<STATE>, EVENTTYPE extends Enum<EVENTTYPE>, EVENT> {
         void apply(StateMachineFactory<OPERAND, STATE, EVENTTYPE, EVENT> subject);
     }
 
     /**
      * 状态表节点,最后表现成状态表的链表形式
      */
-    private class TransitionsListNode{
+    private class TransitionsListNode {
         private final ApplicableTransition<OPERAND, STATE, EVENTTYPE, EVENT> transition;
         private final TransitionsListNode next;
 
@@ -83,13 +84,13 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
      * 存储链表每个节点具体生成拓扑的逻辑
      */
     private static class ApplicableSingleOrMultipleTransition<OPERAND, STATE extends Enum<STATE>, EVENTTYPE
-            extends Enum<EVENTTYPE>, EVENT> implements ApplicableTransition<OPERAND, STATE, EVENTTYPE, EVENT >{
+            extends Enum<EVENTTYPE>, EVENT> implements ApplicableTransition<OPERAND, STATE, EVENTTYPE, EVENT> {
         //前驱状态
         private final STATE pre;
         //触发事件
         private final EVENTTYPE eventType;
         //具体事件处理
-        private final Transition<OPERAND, STATE, EVENTTYPE, EVENT > transition;
+        private final Transition<OPERAND, STATE, EVENTTYPE, EVENT> transition;
 
         public ApplicableSingleOrMultipleTransition(STATE pre, EVENTTYPE eventType, Transition<OPERAND, STATE, EVENTTYPE, EVENT> transition) {
             this.pre = pre;
@@ -103,7 +104,7 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
         @Override
         public void apply(StateMachineFactory<OPERAND, STATE, EVENTTYPE, EVENT> subject) {
             Map<EVENTTYPE, Transition<OPERAND, STATE, EVENTTYPE, EVENT>> transitionMap = subject.stateMachineTable.get(pre);
-            if(transitionMap == null){
+            if (transitionMap == null) {
                 //用HashMap性能更好
                 transitionMap = subject.stateMachineTable.putIfAbsent(pre, Maps.newHashMap());
             }
@@ -113,13 +114,15 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
 
     /**
      * 内部状态转换逻辑抽象
+     *
      * @param <OPERAND>
      * @param <STATE>
      * @param <EVENTTYPE>
      * @param <EVENT>
      */
-    private interface Transition <OPERAND, STATE extends Enum<STATE>, EVENTTYPE extends Enum<EVENTTYPE>, EVENT>{
+    private interface Transition<OPERAND, STATE extends Enum<STATE>, EVENTTYPE extends Enum<EVENTTYPE>, EVENT> {
         STATE doTransition(OPERAND operand, STATE oldState, EVENT event, EVENTTYPE eventType);
+
         Set<STATE> getPostStates();
     }
 
@@ -128,7 +131,7 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
      * 本质上是对真正处理状态转换的实例进行再一层封装
      * 无需校验最后状态是否合法
      */
-    private class SingleInternalArc implements Transition<OPERAND, STATE, EVENTTYPE, EVENT>{
+    private class SingleInternalArc implements Transition<OPERAND, STATE, EVENTTYPE, EVENT> {
         private STATE postState;
         private SingleArcTransition<OPERAND, EVENT> hook;
 
@@ -139,7 +142,7 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
 
         @Override
         public STATE doTransition(OPERAND operand, STATE oldState, EVENT event, EVENTTYPE eventType) {
-            if(hook != null){
+            if (hook != null) {
                 hook.transition(operand, event);
             }
             log.info("state transition from {} to {}", oldState, postState);
@@ -156,7 +159,7 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
      * 内部一对多状态转换抽象
      * 本质上是对真正处理状态转换的实例进行再一层封装
      */
-    private class MultipleInternalArc implements Transition<OPERAND, STATE, EVENTTYPE, EVENT>{
+    private class MultipleInternalArc implements Transition<OPERAND, STATE, EVENTTYPE, EVENT> {
         private Set<STATE> validPostStates;
         private MultipleArcTransition<OPERAND, EVENT, STATE> hook;
 
@@ -172,7 +175,7 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
         public STATE doTransition(OPERAND operand, STATE oldState, EVENT event, EVENTTYPE eventType) {
             STATE postState = hook.transition(operand, event);
 
-            if(!validPostStates.contains(postState)){
+            if (!validPostStates.contains(postState)) {
                 throw new IllegalStateException("invalid state: " + postState + " transitioned from event " + event);
             }
             log.info("state transition from {} to {}", oldState, postState);
@@ -189,7 +192,7 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
      * 内部状态机接口的实现
      * 构造时自动初始化factory的状态图
      */
-    private class InternalStateMachine implements StateMachine<STATE, EVENTTYPE, EVENT>{
+    private class InternalStateMachine implements StateMachine<STATE, EVENTTYPE, EVENT> {
         private final OPERAND operand;
         private STATE currentState;
 
@@ -204,7 +207,6 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
         }
 
         /**
-         *
          * @return 转换后的状态
          */
         @Override
@@ -217,7 +219,7 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
     /**
      * 状态直接转换
      */
-    public StateMachineFactory<OPERAND, STATE, EVENTTYPE, EVENT> addTransition(STATE pre, STATE post, EVENTTYPE eventType){
+    public StateMachineFactory<OPERAND, STATE, EVENTTYPE, EVENT> addTransition(STATE pre, STATE post, EVENTTYPE eventType) {
         return addTransition(pre, post, eventType, null);
     }
 
@@ -225,7 +227,7 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
      * 一对一状态转换
      */
     public StateMachineFactory<OPERAND, STATE, EVENTTYPE, EVENT> addTransition(STATE pre, STATE post, EVENTTYPE eventType,
-                                                                               SingleArcTransition<OPERAND, EVENT> hook){
+                                                                               SingleArcTransition<OPERAND, EVENT> hook) {
         return new StateMachineFactory<>(this, new ApplicableSingleOrMultipleTransition<>(pre, eventType, new SingleInternalArc(post, hook)));
     }
 
@@ -233,13 +235,12 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
      * 多个事件可触发同一的一对一状态转换
      */
     public StateMachineFactory<OPERAND, STATE, EVENTTYPE, EVENT> addTransition(STATE pre, STATE post, Set<EVENTTYPE> eventTypes,
-                                                                               SingleArcTransition<OPERAND, EVENT> hook){
+                                                                               SingleArcTransition<OPERAND, EVENT> hook) {
         StateMachineFactory<OPERAND, STATE, EVENTTYPE, EVENT> factory = null;
-        for(EVENTTYPE eventType: eventTypes){
-            if(factory == null){
+        for (EVENTTYPE eventType : eventTypes) {
+            if (factory == null) {
                 factory = addTransition(pre, post, eventType, hook);
-            }
-            else{
+            } else {
                 factory = factory.addTransition(pre, post, eventType, hook);
             }
         }
@@ -249,7 +250,7 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
     /**
      * 多个事件可触发同一状态直接转换
      */
-    public StateMachineFactory<OPERAND, STATE, EVENTTYPE, EVENT> addTransition(STATE pre, STATE post, Set<EVENTTYPE> eventTypes){
+    public StateMachineFactory<OPERAND, STATE, EVENTTYPE, EVENT> addTransition(STATE pre, STATE post, Set<EVENTTYPE> eventTypes) {
         return addTransition(pre, post, eventTypes, null);
     }
 
@@ -257,26 +258,26 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
      * 一对多状态转换
      */
     public StateMachineFactory<OPERAND, STATE, EVENTTYPE, EVENT> addTransition(STATE pre, Set<STATE> posts, EVENTTYPE eventType,
-                                                                               MultipleArcTransition<OPERAND, EVENT, STATE> hook){
-       return new StateMachineFactory<>(this, new ApplicableSingleOrMultipleTransition<>(pre, eventType, new MultipleInternalArc(posts, hook)));
+                                                                               MultipleArcTransition<OPERAND, EVENT, STATE> hook) {
+        return new StateMachineFactory<>(this, new ApplicableSingleOrMultipleTransition<>(pre, eventType, new MultipleInternalArc(posts, hook)));
     }
 
     /**
      * 利用状态表链表构造状态图
      */
-    public StateMachineFactory<OPERAND, STATE, EVENTTYPE, EVENT> installTopology(){
+    public StateMachineFactory<OPERAND, STATE, EVENTTYPE, EVENT> installTopology() {
         return new StateMachineFactory<>(this);
     }
 
     /**
      * 状态转换逻辑处理细节
      */
-    private STATE doTransition(OPERAND operand, STATE old, EVENTTYPE eventType, EVENT event){
+    private STATE doTransition(OPERAND operand, STATE old, EVENTTYPE eventType, EVENT event) {
         Map<EVENTTYPE, Transition<OPERAND, STATE, EVENTTYPE, EVENT>> transitionMap = stateMachineTable.get(old);
-        if(transitionMap != null){
+        if (transitionMap != null) {
             //本质上两个内部类
             Transition<OPERAND, STATE, EVENTTYPE, EVENT> transition = transitionMap.get(eventType);
-            if(transition != null){
+            if (transition != null) {
                 //其真正调用的是MultipleArcTransition和SingleARCTransition接口
                 return transition.doTransition(operand, old, event, eventType);
             }
@@ -288,7 +289,7 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
     /**
      * 构造状态图
      */
-    private void constructStateMachineTable(){
+    private void constructStateMachineTable() {
         Stack<ApplicableTransition<OPERAND, STATE, EVENTTYPE, EVENT>> stack = new Stack<>();
         Map<STATE, Map<EVENTTYPE, Transition<OPERAND, STATE, EVENTTYPE, EVENT>>> prototype = new HashMap<>();
         prototype.put(defaultInitialState, null);
@@ -297,11 +298,11 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
 
         //按方法调用顺序构建拓扑
         //ps:因为这里的链表构建类似栈
-        for(TransitionsListNode cursor = node; cursor != null; cursor = cursor.next){
+        for (TransitionsListNode cursor = node; cursor != null; cursor = cursor.next) {
             stack.push(cursor.transition);
         }
 
-        while(!stack.empty()){
+        while (!stack.empty()) {
             stack.pop().apply(this);
         }
     }
@@ -309,29 +310,29 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
     /**
      * 根据OPERAND operand, STATE initialState构造状态机
      */
-    public StateMachine<STATE, EVENTTYPE, EVENT> make(OPERAND operand, STATE initialState){
+    public StateMachine<STATE, EVENTTYPE, EVENT> make(OPERAND operand, STATE initialState) {
         return new InternalStateMachine(operand, initialState);
     }
 
-    public StateMachine<STATE, EVENTTYPE, EVENT> make(OPERAND operand){
+    public StateMachine<STATE, EVENTTYPE, EVENT> make(OPERAND operand) {
         return make(operand, defaultInitialState);
     }
 
     /**
      * 生成可视化图
      */
-    public void generateStateGraph(){
-        if(stateGraph == null || stateGraph.equals("")){
+    public void generateStateGraph() {
+        if (stateGraph == null || stateGraph.equals("")) {
             StringBuilder sb = new StringBuilder();
             sb.append("@@@@@@@@@ state  machine @@@@@@@@@").append(System.lineSeparator());
             sb.append("InitialState: ").append(defaultInitialState);
             sb.append("handler: ").append(getClass().getTypeParameters()[0].getName());
-            for(Map.Entry<STATE, Map<EVENTTYPE, Transition<OPERAND, STATE, EVENTTYPE, EVENT>>> entry1: stateMachineTable.entrySet()){
+            for (Map.Entry<STATE, Map<EVENTTYPE, Transition<OPERAND, STATE, EVENTTYPE, EVENT>>> entry1 : stateMachineTable.entrySet()) {
                 STATE pre = entry1.getKey();
                 Map<EVENTTYPE, Transition<OPERAND, STATE, EVENTTYPE, EVENT>> value = entry1.getValue();
 
                 sb.append(String.format("######from state '%s'######", pre)).append(System.lineSeparator());
-                for(Map.Entry<EVENTTYPE, Transition<OPERAND, STATE, EVENTTYPE, EVENT>> entry2: value.entrySet()){
+                for (Map.Entry<EVENTTYPE, Transition<OPERAND, STATE, EVENTTYPE, EVENT>> entry2 : value.entrySet()) {
                     EVENTTYPE eventtype = entry2.getKey();
                     Transition<OPERAND, STATE, EVENTTYPE, EVENT> transition = entry2.getValue();
 
@@ -340,7 +341,7 @@ public class StateMachineFactory <OPERAND, STATE extends Enum<STATE>, EVENTTYPE 
                     sb.append(String.format("trigger eventType: '%s'", eventtype)).append(System.lineSeparator());
                     sb.append(String.format("trigger event: '%s'", typeParameter[3].getName())).append(System.lineSeparator());
                     sb.append("to state: ");
-                    for(STATE postState: transition.getPostStates()){
+                    for (STATE postState : transition.getPostStates()) {
                         sb.append(postState).append(",");
                     }
                     sb.append(System.lineSeparator());

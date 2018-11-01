@@ -1,7 +1,6 @@
 package org.kin.bigdata.hadoop.common.writable;
 
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableComparable;
 
 import java.util.Collection;
 import java.util.TreeSet;
