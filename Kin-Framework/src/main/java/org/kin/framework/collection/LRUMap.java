@@ -8,7 +8,7 @@ import java.util.Map;
  */
 public class LRUMap<K, V> extends LinkedHashMap<K, V> {
     private int initItemNum;
-    private final int _maxItemNum;
+    private final int MAX_ITEM_NUM;
 
     public LRUMap(int maxItemNum){
         this(2, maxItemNum);
@@ -17,11 +17,11 @@ public class LRUMap<K, V> extends LinkedHashMap<K, V> {
     public LRUMap(int initItemNum, int maxItemNum) {
         super(initItemNum, 0.8f, true);
         this.initItemNum = initItemNum;
-        this._maxItemNum = maxItemNum;
+        this.MAX_ITEM_NUM = maxItemNum;
     }
 
     @Override
     protected boolean removeEldestEntry(Map.Entry<K, V> eldest) {
-        return size() > _maxItemNum;
+        return size() > MAX_ITEM_NUM;
     }
 }
