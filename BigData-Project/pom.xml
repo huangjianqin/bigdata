@@ -143,8 +143,8 @@
 
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-streaming-kafka_${scala.version.head}</artifactId>
-            <version>1.6.2</version>
+            <artifactId>spark-streaming-kafka-0-10_${scala.version.head}</artifactId>
+            <version>${spark.version}</version>
             <scope>provided</scope>
         </dependency>
 
