@@ -74,6 +74,7 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- 不能再引用其他kafka client依赖, 避免引起冲突 -->
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-streaming-kafka_${scala.version.head}</artifactId>
