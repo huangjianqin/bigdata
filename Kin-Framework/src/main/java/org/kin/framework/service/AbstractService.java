@@ -21,6 +21,10 @@ public abstract class AbstractService implements Service {
     private final Object lock = new Object();
     private final AtomicBoolean terminationNotification = new AtomicBoolean(false);
 
+    public AbstractService() {
+        this("");
+    }
+
     public AbstractService(String serviceName) {
         if (serviceName != null && !serviceName.equals("")) {
             this.serviceName = serviceName;
