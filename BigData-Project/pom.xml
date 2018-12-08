@@ -27,6 +27,7 @@
         <hbase.version>1.2.4</hbase.version>
         <hive.version>1.2.1</hive.version>
         <mongo.version>3.2.2</mongo.version>
+        <flink.version>1.7.0</flink.version>
     </properties>
 
     <dependencies>
@@ -169,6 +170,31 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- flink -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-scala_${scala.version.head}</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-streaming-scala_${scala.version.head}</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-clients_${scala.version.head}</artifactId>
+            <version>${flink.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-table_${scala.version.head}</artifactId>
+            <version>${flink.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- kin -->
         <dependency>
             <groupId>org.kin</groupId>
@@ -197,6 +223,12 @@
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kin-spark-core</artifactId>
+            <version>0.1.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.kin</groupId>
+            <artifactId>kin-flink-core</artifactId>
             <version>0.1.0.0</version>
         </dependency>
 

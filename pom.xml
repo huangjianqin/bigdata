@@ -15,6 +15,7 @@
         <module>Kin-Hadoop</module>
         <module>Kin-Hive</module>
         <module>Kin-Spark</module>
+        <module>Kin-Flink</module>
     </modules>
 
     <properties>
