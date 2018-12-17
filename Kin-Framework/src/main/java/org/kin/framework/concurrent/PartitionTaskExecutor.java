@@ -12,6 +12,8 @@ import java.util.concurrent.*;
 /**
  * Created by huangjianqin on 2017/10/26.
  * 利用Task的某种属性将task分区,从而达到统一类的task按submit/execute顺序在同一线程执行
+ *
+ * 对于需要 严格 保证task顺序执行的Executor, 则不能扩大或减少Executor的Parallism(不支持重排序)
  */
 public class PartitionTaskExecutor<K> {
     //分区数
