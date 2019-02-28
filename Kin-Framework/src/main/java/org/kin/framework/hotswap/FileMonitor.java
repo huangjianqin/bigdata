@@ -1,5 +1,6 @@
 package org.kin.framework.hotswap;
 
+import org.kin.framework.Closeable;
 import org.kin.framework.hotswap.agent.JavaAgentHotswapFactory;
 import org.kin.framework.utils.ClassUtils;
 import org.kin.framework.utils.ExceptionUtils;
@@ -26,7 +27,7 @@ import java.util.stream.Stream;
  * <p>
  * 异步热加载文件 同步类热更新
  */
-public class FileMonitor extends Thread {
+public class FileMonitor extends Thread implements Closeable{
     private static final Logger log = LoggerFactory.getLogger("FileMonitor");
     //默认实现
     private static final FileMonitor monitor = new FileMonitor();
@@ -250,5 +251,10 @@ public class FileMonitor extends Thread {
         synchronized (getLock(key)) {
             monitorItems.put(key, fileReloadable);
         }
+    }
+
+    @Override
+    public void close() {
+        shutdown();
     }
 }

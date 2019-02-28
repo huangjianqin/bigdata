@@ -1,6 +1,6 @@
 package org.kin.framework.service;
 
-import java.io.Closeable;
+import org.kin.framework.Closeable;
 
 /**
  * Created by 健勤 on 2017/8/8.

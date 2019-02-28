@@ -100,7 +100,7 @@ public abstract class AbstractService implements Service {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         stop();
     }
 
