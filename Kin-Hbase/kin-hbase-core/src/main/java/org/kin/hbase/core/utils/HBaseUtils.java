@@ -8,6 +8,7 @@ import org.kin.framework.utils.StringUtils;
 import org.kin.hbase.core.annotation.Column;
 import org.kin.hbase.core.annotation.HBaseEntity;
 import org.kin.hbase.core.annotation.RowKey;
+import org.kin.hbase.core.domain.HBaseConstants;
 import org.kin.hbase.core.domain.QueryInfo;
 import org.kin.hbase.core.exception.HBaseEntityException;
 import org.slf4j.Logger;
@@ -21,7 +22,7 @@ import java.util.*;
  * Created by huangjianqin on 2018/5/25.
  */
 public class HBaseUtils {
-    private static final Logger log = LoggerFactory.getLogger("HBaseUtils");
+    private static final Logger log = LoggerFactory.getLogger(HBaseConstants.HBASE_LOGGER);
 
     public static <T> List<Put> convert2Puts(T... entities) {
         return convert2Puts(Arrays.asList(entities));

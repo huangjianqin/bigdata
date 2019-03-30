@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 部分成员域, 在Actor 线程, lazy init
  */
 public class ActorContext<AA extends AbstractActor<AA>> implements Runnable {
-    private static final Logger log = LoggerFactory.getLogger("Actor");
-    private static final Logger profileLog = LoggerFactory.getLogger("ActorProfile");
+    private static final Logger log = LoggerFactory.getLogger("actor");
+    private static final Logger profileLog = LoggerFactory.getLogger("actorProfile");
 
     //唯一标识该ActorSystem下的这个Actor
     private final ActorPath actorPath;

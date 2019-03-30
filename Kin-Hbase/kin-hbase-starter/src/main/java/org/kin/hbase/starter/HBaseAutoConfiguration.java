@@ -3,7 +3,7 @@ package org.kin.hbase.starter;
 import org.kin.framework.utils.StringUtils;
 import org.kin.hbase.core.HBasePool;
 import org.kin.hbase.core.config.HBaseConfig;
-import org.kin.hbase.core.domain.Constants;
+import org.kin.hbase.core.domain.HBaseConstants;
 import org.kin.hbase.starter.config.SpringBootHBaseConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -30,7 +30,7 @@ public class HBaseAutoConfiguration {
             HBaseConfig config = new HBaseConfig();
             config.setZookeeperQuorum(config.getZookeeperQuorum());
             config.setZookeeperClientPort(
-                    StringUtils.isBlank(config.getZookeeperClientPort()) ? Constants.DEFAULT_HBASE_PORT :
+                    StringUtils.isBlank(config.getZookeeperClientPort()) ? HBaseConstants.DEFAULT_HBASE_PORT :
                             config.getZookeeperClientPort());
 
             defaultPool.initializeConnections(config);

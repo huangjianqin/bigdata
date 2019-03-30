@@ -34,6 +34,48 @@
         </rollingPolicy>
     </appender>
 
+    <appender name="hotSwap" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+        <Append>true</Append>
+        <encoder>
+            <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/%d{yyyy-MM-dd}/hotSwap.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <!--<maxHistory>30</maxHistory>-->
+        </rollingPolicy>
+    </appender>
+
+    <appender name="actor" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+        <Append>true</Append>
+        <encoder>
+            <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/%d{yyyy-MM-dd}/actor.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <!--<maxHistory>30</maxHistory>-->
+        </rollingPolicy>
+    </appender>
+
+    <appender name="actorProfile" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+        <Append>true</Append>
+        <encoder>
+            <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/%d{yyyy-MM-dd}/actorProfile.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <!--<maxHistory>30</maxHistory>-->
+        </rollingPolicy>
+    </appender>
+
     <appender name="asyncSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="STDOUT"/>
     </appender>
@@ -42,12 +84,26 @@
         <appender-ref ref="ERROR"/>
     </appender>
 
+    <appender name="asyncHotSwap" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="hotSwap"/>
+    </appender>
+
+    <appender name="asyncActor" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="actor"/>
+    </appender>
+
+    <appender name="asyncActorProfile" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="actorProfile"/>
+    </appender>
 
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="asyncSTDOUT"/>
         <appender-ref ref="asyncERROR"/>
+        <appender-ref ref="asyncHotSwap"/>
+        <appender-ref ref="asyncActor"/>
+        <appender-ref ref="asyncActorProfile"/>
     </root>
 
     <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->

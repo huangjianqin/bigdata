@@ -11,7 +11,7 @@ import java.util.List;
  * Created by huangjianqin on 2018/2/2.
  */
 public class CommonHotswapFactory extends HotswapFactory {
-    private static final Logger log = LoggerFactory.getLogger("hot-fix-class");
+    private static final Logger log = LoggerFactory.getLogger("hotSwap");
     private List<ClassReloadable> monitoredClassReferences = new ArrayList<>();
 
     /**

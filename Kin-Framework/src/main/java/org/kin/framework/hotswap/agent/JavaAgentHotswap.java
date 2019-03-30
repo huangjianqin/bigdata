@@ -30,7 +30,7 @@ import java.util.*;
  * 单例模式
  */
 public final class JavaAgentHotswap implements JavaAgentHotswapMBean{
-    private static final Logger log = LoggerFactory.getLogger("hot-fix-class");
+    private static final Logger log = LoggerFactory.getLogger("hotSwap");
     //热更class文件放另外一个目录
     //开发者指定, 也可以走配置
     private static final String classesPath = "hotswap/classes";

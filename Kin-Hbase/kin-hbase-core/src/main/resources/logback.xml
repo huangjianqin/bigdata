@@ -34,6 +34,20 @@
         </rollingPolicy>
     </appender>
 
+    <appender name="hbase" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+        <Append>true</Append>
+        <encoder>
+            <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>ERROR</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/%d{yyyy-MM-dd}/hbase.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <!--<maxHistory>30</maxHistory>-->
+        </rollingPolicy>
+    </appender>
+
     <appender name="asyncSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="STDOUT"/>
     </appender>
@@ -42,10 +56,15 @@
         <appender-ref ref="ERROR"/>
     </appender>
 
+    <appender name="asyncHbase" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="hbase"/>
+    </appender>
+
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="asyncSTDOUT"/>
         <appender-ref ref="asyncERROR"/>
+        <appender-ref ref="asyncHbase"/>
     </root>
 
     <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->

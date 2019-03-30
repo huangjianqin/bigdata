@@ -8,7 +8,7 @@ import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.kin.framework.Closeable;
 import org.kin.framework.utils.StringUtils;
 import org.kin.hbase.core.config.HBaseConfig;
-import org.kin.hbase.core.domain.Constants;
+import org.kin.hbase.core.domain.HBaseConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +20,7 @@ import java.util.concurrent.*;
  * Created by huangjianqin on 2018/5/25.
  */
 public class HBasePool implements Closeable {
-    private static final Logger log = LoggerFactory.getLogger(Constants.HBASE_LOGGER);
+    private static final Logger log = LoggerFactory.getLogger(HBaseConstants.HBASE_LOGGER);
     private static final HBasePool common;
 
     static {
@@ -67,7 +67,7 @@ public class HBasePool implements Closeable {
             try {
                 Configuration configuration = HBaseConfiguration.create();
                 configuration.set(HConstants.ZOOKEEPER_QUORUM, config.getZookeeperQuorum());
-                configuration.set(HConstants.ZOOKEEPER_CLIENT_PORT, StringUtils.isBlank(config.getZookeeperClientPort()) ? Constants.DEFAULT_HBASE_PORT : config.getZookeeperClientPort());
+                configuration.set(HConstants.ZOOKEEPER_CLIENT_PORT, StringUtils.isBlank(config.getZookeeperClientPort()) ? HBaseConstants.DEFAULT_HBASE_PORT : config.getZookeeperClientPort());
                 Connection connection = ConnectionFactory.createConnection();
 
                 connections.add(connection);

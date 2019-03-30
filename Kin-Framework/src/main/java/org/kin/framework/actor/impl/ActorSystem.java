@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by huangjianqin on 2018/6/5.
  */
 public class ActorSystem {
-    private static final Logger log = LoggerFactory.getLogger("Actor");
+    private static final Logger log = LoggerFactory.getLogger("actor");
     private static final Map<String, ActorSystem> name2AS = new ConcurrentHashMap<>();
     private static final String DEFAULT_AS_NAME = "default";
 

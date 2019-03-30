@@ -30,7 +30,7 @@ import java.util.*;
  */
 @Component
 public class SpringHotswapFactory extends HotswapFactory implements ApplicationListener<ContextRefreshedEvent> {
-    private static final Logger log = LoggerFactory.getLogger("hot-fix-class");
+    private static final Logger log = LoggerFactory.getLogger("hotSwap");
     private DefaultListableBeanFactory beanFactory;
     //缓存所有BeanDefinition
     //hash(class name) -> set(BeanDefinitionDetail)
