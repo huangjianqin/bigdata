@@ -1,4 +1,4 @@
-package org.kin.framework.event.simplelistenertest;
+package org.kin.framework.event.simplelistener;
 
 import org.kin.framework.event.Listener;
 import org.springframework.stereotype.Component;

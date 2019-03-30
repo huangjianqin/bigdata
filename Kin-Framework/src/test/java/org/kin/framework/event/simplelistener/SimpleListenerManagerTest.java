@@ -1,4 +1,4 @@
-package org.kin.framework.event.simplelistenertest;
+package org.kin.framework.event.simplelistener;
 
 import org.kin.framework.event.SimpleListenerManager;
 import org.springframework.beans.factory.annotation.Autowired;
