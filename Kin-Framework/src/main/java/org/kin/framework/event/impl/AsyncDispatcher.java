@@ -127,9 +127,16 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
      * 检查处理器处理的事件类型与@param eventType是否一致
      */
     public static boolean check(Class<? extends Enum> eventType, EventHandler handler) {
-        //要实例化后才能获取
-        Type eventHandlerInterfaceType = handler.getClass().getGenericInterfaces()[0];
-        return checkEventClass(eventType, ((ParameterizedType) eventHandlerInterfaceType).getActualTypeArguments()[0]);
+        if(handler instanceof SpringAsyncDispatcher.MethodAnnotationEventHandler){
+            //无法从MethodAnnotationEventHandler获取到eventType类型
+            SpringAsyncDispatcher.MethodAnnotationEventHandler methodAnnotationEventHandler = (SpringAsyncDispatcher.MethodAnnotationEventHandler) handler;
+            return checkEventClass(eventType, methodAnnotationEventHandler.getEventClass());
+        }
+        else{
+            //要实例化后才能获取
+            Type eventHandlerInterfaceType = handler.getClass().getGenericInterfaces()[0];
+            return checkEventClass(eventType, ((ParameterizedType) eventHandlerInterfaceType).getActualTypeArguments()[0]);
+        }
     }
 
     @Override

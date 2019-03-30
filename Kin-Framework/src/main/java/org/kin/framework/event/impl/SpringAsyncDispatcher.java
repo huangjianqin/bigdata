@@ -2,6 +2,7 @@ package org.kin.framework.event.impl;
 
 import org.kin.framework.event.Event;
 import org.kin.framework.event.EventHandler;
+import org.kin.framework.event.EventHandlerAOT;
 import org.kin.framework.event.HandleEvent;
 import org.kin.framework.utils.ExceptionUtils;
 import org.springframework.beans.BeansException;
@@ -9,6 +10,11 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
+import org.springframework.context.event.ContextClosedEvent;
+import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.context.event.ContextStartedEvent;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.InvocationTargetException;
@@ -19,7 +25,7 @@ import java.util.Map;
  * Created by huangjianqin on 2019/3/1.
  */
 @Component
-public class SpringAsyncDispatcher extends AsyncDispatcher implements InitializingBean, ApplicationContextAware {
+public class SpringAsyncDispatcher extends AsyncDispatcher implements InitializingBean, ApplicationContextAware, ApplicationListener {
     private static SpringAsyncDispatcher defalut;
 
     private ApplicationContext context;
@@ -41,34 +47,30 @@ public class SpringAsyncDispatcher extends AsyncDispatcher implements Initializi
      */
     @Override
     public void afterPropertiesSet() throws Exception {
-        Map<String, Object> beans = context.getBeansWithAnnotation(HandleEvent.class);
+        Map<String, Object> beans = context.getBeansWithAnnotation(EventHandlerAOT.class);
         for (Object bean : beans.values()) {
             Class claxx = bean.getClass();
+            boolean isFindFromMethod = false;
             if (claxx.isAnnotationPresent(HandleEvent.class)) {
                 HandleEvent handleEvent = (HandleEvent) claxx.getAnnotation(HandleEvent.class);
                 Class eventType = handleEvent.type();
                 if (eventType.isEnum()) {
                     //注解在类定义
-                    if (claxx.isAssignableFrom(EventHandler.class)) {
+                    if (EventHandler.class.isAssignableFrom(claxx)) {
                         EventHandler eventHandler = (EventHandler) bean;
                         register(eventType, eventHandler);
                     } else {
-                        //在所有  public  方法中寻找一个匹配的方法作为事件处理方法
-                        for (Method method : claxx.getMethods()) {
-                            Class[] paramClasses = method.getParameterTypes();
-                            if (paramClasses.length == 1) {
-                                Class paramClass = paramClasses[0];
-                                if (paramClass.isAssignableFrom(Event.class) && checkEventClass(eventType, paramClass)) {
-                                    //满足条件
-                                    register(eventType, new MethodAnnotationEventHandler(bean, method));
-                                }
-                            }
-                        }
+                        isFindFromMethod = true;
                     }
                 } else {
                     throw new IllegalStateException("事件类型必须是枚举");
                 }
-            } else {
+            }
+            else{
+                isFindFromMethod = true;
+            }
+
+            if(isFindFromMethod){
                 //注解在方法
                 //在所有  public & 有注解的  方法中寻找一个匹配的方法作为事件处理方法
                 for (Method method : claxx.getMethods()) {
@@ -78,9 +80,9 @@ public class SpringAsyncDispatcher extends AsyncDispatcher implements Initializi
                         Class[] paramClasses = method.getParameterTypes();
                         if (paramClasses.length == 1) {
                             Class paramClass = paramClasses[0];
-                            if (paramClass.isAssignableFrom(Event.class) && checkEventClass(eventType, paramClass)) {
+                            if (Event.class.isAssignableFrom(paramClass) && checkEventClass(eventType, paramClass)) {
                                 //满足条件
-                                register(eventType, new MethodAnnotationEventHandler(bean, method));
+                                register(eventType, new MethodAnnotationEventHandler(bean, method, paramClass));
                             }
                         }
                     }
@@ -94,18 +96,31 @@ public class SpringAsyncDispatcher extends AsyncDispatcher implements Initializi
         this.context = applicationContext;
     }
 
+    @Override
+    public void onApplicationEvent(ApplicationEvent applicationEvent) {
+        if(applicationEvent instanceof ContextStartedEvent || applicationEvent instanceof ContextRefreshedEvent){
+            serviceInit();
+            serviceStart();
+        }
+        if(applicationEvent instanceof ContextClosedEvent){
+            serviceStop();
+        }
+    }
+
     //------------------------------------------------------------------------------------------------------------------
-    class MethodAnnotationEventHandler implements EventHandler<Event> {
+    class MethodAnnotationEventHandler<T extends Event> implements EventHandler<T> {
         private Object invoker;
         private Method method;
+        private Class<T> eventClass;
 
-        public MethodAnnotationEventHandler(Object invoker, Method method) {
+        public MethodAnnotationEventHandler(Object invoker, Method method, Class<T> eventClass) {
             this.invoker = invoker;
             this.method = method;
+            this.eventClass = eventClass;
         }
 
         @Override
-        public void handle(Event event) {
+        public void handle(T event) {
             method.setAccessible(true);
             try {
                 method.invoke(invoker, event);
@@ -114,6 +129,18 @@ public class SpringAsyncDispatcher extends AsyncDispatcher implements Initializi
             } finally {
                 method.setAccessible(false);
             }
+        }
+
+        public Object getInvoker() {
+            return invoker;
+        }
+
+        public Method getMethod() {
+            return method;
+        }
+
+        public Class<T> getEventClass() {
+            return eventClass;
         }
     }
 }
