@@ -124,10 +124,18 @@
             <scope>provided</scope>
         </dependency>
 
+        <!--自家 java agent 依赖-->
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kin-java-agent</artifactId>
             <version>0.1.0.0</version>
+        </dependency>
+
+        <!--java运行时元数据分析工具-->
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>0.9.11</version>
         </dependency>
 
     </dependencies>
