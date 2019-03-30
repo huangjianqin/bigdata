@@ -19,11 +19,11 @@ public class SimpleListenerManager implements InitializingBean, ApplicationConte
     private ApplicationContext context;
     private Map<Class<?>, List<Object>> listeners = new HashMap<>();
 
-    //setter && getter
     public static SimpleListenerManager instance() {
         return defalut;
     }
 
+    //setter && getter
     @Autowired
     public void setDefalut(SimpleListenerManager defalut) {
         SimpleListenerManager.defalut = defalut;
@@ -45,6 +45,11 @@ public class SimpleListenerManager implements InitializingBean, ApplicationConte
             }
             claxx = claxx.getSuperclass();
         }
+    }
+
+    public void register(Object bean) {
+        register0(bean);
+        sortAll();
     }
 
     @Override
@@ -76,7 +81,7 @@ public class SimpleListenerManager implements InitializingBean, ApplicationConte
         List<Object> list = listeners.get(key);
         if (list != null && !list.isEmpty()) {
             list = new ArrayList<>(list);
-            list.sort(Comparator.comparingInt(o -> getOrder(key, o)));
+            list.sort(Comparator.comparingInt(o -> -getOrder(key, o)));
             listeners.put(key, list);
         }
     }
@@ -88,17 +93,14 @@ public class SimpleListenerManager implements InitializingBean, ApplicationConte
         }
     }
 
-    public void register(Object bean) {
-        register0(bean);
-        sortAll();
-    }
-
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         this.context = applicationContext;
     }
 
-    private <T> List<T> getListener(Class<T> listenerClass) {
-        return (List<T>) listeners.getOrDefault(listenerClass.getClass(), Collections.emptyList());
+    public  <T> List<T> getListener(Class<T> listenerClass) {
+        return (List<T>) listeners.getOrDefault(listenerClass, Collections.emptyList());
     }
+
+    //------------------------------------------------------------------------------------------------------------------
 }
