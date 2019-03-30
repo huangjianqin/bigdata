@@ -1,7 +1,6 @@
 package org.kin.bigdata.hadoop.common;
 
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.WritableComparable;
 import org.kin.bigdata.hadoop.common.writable.MapWritable;
 import org.kin.bigdata.hadoop.common.writable.Text2TextMapWritable;
 

@@ -1,8 +1,8 @@
 package org.kin.bigdata.flink.sql
 
+import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.table.api.TableEnvironment
-import org.apache.flink.api.scala._
 import org.apache.flink.table.api.scala._
 
 /**

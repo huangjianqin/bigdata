@@ -1,9 +1,11 @@
 package org.kin.bigdata.hadoop.common;
 // == WritableTestBase
 // == WritableTestBase-Deserialize
-import java.io.*;
+
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.StringUtils;
+
+import java.io.*;
 
 public class WritableTestBase {
   
