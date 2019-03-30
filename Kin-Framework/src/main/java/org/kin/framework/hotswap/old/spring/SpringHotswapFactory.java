@@ -28,7 +28,7 @@ import java.util.*;
  * Created by huangjianqin on 2018/1/31.
  * 目前仅仅支持AutoWired注解的bean
  */
-@Component
+//@Component
 public class SpringHotswapFactory extends HotswapFactory implements ApplicationListener<ContextRefreshedEvent> {
     private static final Logger log = LoggerFactory.getLogger("hotSwap");
     private DefaultListableBeanFactory beanFactory;

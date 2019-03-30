@@ -14,20 +14,16 @@ import java.util.concurrent.*;
  */
 public class ThreadManager implements ScheduledExecutorService {
     public static ThreadManager DEFAULT;
+    public static final ExecutorType DEFAULT_EXECUTOR_TYPE;
 
     static {
         String executorTypeStr = System.getenv(Constants.DEFAULT_EXECUTOR);
         if (StringUtils.isNotBlank(executorTypeStr)) {
-            ExecutorType executorType = ExecutorType.getByName(executorTypeStr);
-            DEFAULT = new ThreadManager(
-                    executorType.getExecutor(),
-                    Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum())
-            );
+            DEFAULT_EXECUTOR_TYPE = ExecutorType.getByName(executorTypeStr);
+            DEFAULT = new ThreadManager(DEFAULT_EXECUTOR_TYPE.getExecutor(), getDefaultScheduledExecutor());
         } else {
-            DEFAULT = new ThreadManager(
-                    ExecutorType.THREADPOOL.getExecutor(),
-                    Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum())
-            );
+            DEFAULT_EXECUTOR_TYPE = ExecutorType.THREADPOOL;
+            DEFAULT = new ThreadManager(DEFAULT_EXECUTOR_TYPE.getExecutor(), getDefaultScheduledExecutor());
         }
     }
 
@@ -40,17 +36,14 @@ public class ThreadManager implements ScheduledExecutorService {
     }
 
     public ThreadManager(ExecutorService executor) {
-        this();
-        this.executor = executor;
+        this(executor, getDefaultScheduledExecutor());
     }
 
     public ThreadManager(ScheduledExecutorService scheduleExecutor) {
-        this();
-        this.scheduleExecutor = scheduleExecutor;
+        this(DEFAULT_EXECUTOR_TYPE.getExecutor(), scheduleExecutor);
     }
 
     public ThreadManager(ExecutorService executor, ScheduledExecutorService scheduleExecutor) {
-        this();
         this.executor = executor;
         this.scheduleExecutor = scheduleExecutor;
     }
@@ -101,12 +94,8 @@ public class ThreadManager implements ScheduledExecutorService {
 
     @Override
     public void shutdown() {
-        if(executor != null){
-            executor.shutdown();
-        }
-        if(scheduleExecutor != null){
-            scheduleExecutor.shutdown();
-        }
+        executor.shutdown();
+        scheduleExecutor.shutdown();
     }
 
     @Override
@@ -213,5 +202,9 @@ public class ThreadManager implements ScheduledExecutorService {
                 super(message);
             }
         }
+    }
+
+    static ScheduledExecutorService getDefaultScheduledExecutor(){
+        return Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum());
     }
 }
