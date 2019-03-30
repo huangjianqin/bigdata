@@ -16,6 +16,7 @@
         <module>Kin-Hive</module>
         <module>Kin-Spark</module>
         <module>Kin-Flink</module>
+        <module>Kin-Java-Agent</module>
     </modules>
 
     <properties>

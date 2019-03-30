@@ -19,11 +19,7 @@ public class JavaDynamicAgent {
         synchronized (lockObject) {
             if (instrumentation == null) {
                 instrumentation = inst;
-                System.out.println("0->" + inst);
-            } else {
-                System.out.println("1->" + inst);
             }
-
         }
     }
 

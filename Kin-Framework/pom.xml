@@ -124,8 +124,13 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.kin</groupId>
+            <artifactId>kin-java-agent</artifactId>
+            <version>0.1.0.0</version>
+        </dependency>
 
-</dependencies>
+    </dependencies>
 
     <build>
         <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
@@ -216,11 +221,19 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.5.5</version>
                 <configuration>
-                    <!--<archive>-->
-                    <!--<manifest>-->
-                    <!--<mainClass></mainClass>-->
-                    <!--</manifest>-->
-                    <!--</archive>-->
+                    <archive>
+                        <manifest>
+                            <!--<addClasspath>true</addClasspath>-->
+                            <!--<mainClass></mainClass>-->
+                        </manifest>
+                        <manifestEntries>
+                            <!--<Agent-Class>-->
+                                <!--org.kin.framework.hotswap.agent.JavaDynamicAgent-->
+                            <!--</Agent-Class>-->
+                            <!--<Can-Redefine-Classes>true</Can-Redefine-Classes>-->
+                            <!--<Can-Retransform-Classes>true</Can-Retransform-Classes>-->
+                        </manifestEntries>
+                    </archive>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>

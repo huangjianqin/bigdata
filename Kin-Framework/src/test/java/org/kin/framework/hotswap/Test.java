@@ -5,6 +5,6 @@ package org.kin.framework.hotswap;
  */
 public class Test {
     public String message() {
-        return "111";
+        return "222";
     }
 }
