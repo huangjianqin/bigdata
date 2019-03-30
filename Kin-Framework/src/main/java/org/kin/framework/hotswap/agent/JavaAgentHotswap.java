@@ -34,7 +34,7 @@ public final class JavaAgentHotswap implements JavaAgentHotswapMBean{
     //热更class文件放另外一个目录
     //开发者指定, 也可以走配置
     private static final String classesPath = "hotswap/classes";
-    private static final String jarPath = "hotswap/JavaDynamicAgent.jar";
+    private static final String jarPath = "hotswap/KinJavaAgent.jar";
     private volatile boolean isInit;
     private volatile Map<String, ClassFileInfo> filePath2ClassFileInfo = new HashMap<>();
 
@@ -188,6 +188,7 @@ public final class JavaAgentHotswap implements JavaAgentHotswapMBean{
 
     @Override
     public List<ClassFileInfo> getClassFileInfo() {
-        return Collections.emptyList();
+        List<ClassFileInfo> classFileInfos = new ArrayList<>(filePath2ClassFileInfo.values());
+        return classFileInfos;
     }
 }
