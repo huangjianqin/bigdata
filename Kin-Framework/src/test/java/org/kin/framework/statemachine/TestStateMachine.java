@@ -2,8 +2,8 @@ package org.kin.framework.statemachine;
 
 
 import org.kin.framework.event.EventHandler;
-import org.kin.framework.event.FirstEvent;
-import org.kin.framework.event.FirstEventType;
+import org.kin.framework.event.dispatcher.FirstEvent;
+import org.kin.framework.event.dispatcher.FirstEventType;
 import org.kin.framework.event.impl.AsyncDispatcher;
 
 import java.util.EnumSet;
