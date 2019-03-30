@@ -13,6 +13,10 @@ public class ExceptionUtils {
         log.error("", throwable);
     }
 
+    public static void log(Throwable throwable, String msg, Object... params) {
+        log.error(String.format(msg, params), throwable);
+    }
+
     public static void log(String msg, Object... params) {
         log.error(msg, params);
     }

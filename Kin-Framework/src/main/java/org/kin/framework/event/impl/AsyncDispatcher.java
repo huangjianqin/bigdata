@@ -1,19 +1,25 @@
 package org.kin.framework.event.impl;
 
-
+import org.kin.framework.concurrent.SimpleThreadFactory;
+import org.kin.framework.concurrent.ThreadManager;
 import org.kin.framework.event.Dispatcher;
 import org.kin.framework.event.Event;
 import org.kin.framework.event.EventHandler;
 import org.kin.framework.service.AbstractService;
+import org.kin.framework.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by 健勤 on 2017/8/8.
@@ -26,7 +32,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
     //缓存所有待分发的时间
     private final BlockingQueue<Event> eventQueue;
     //负责分发事件的线程
-    private final ThreadPoolExecutor pool;
+    private final ThreadManager threadManager;
     //存储事件与其对应的事件处理器的映射
     protected final Map<Class<? extends Enum>, EventHandler> event2Dispatcher;
 
@@ -41,6 +47,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
     private boolean optimized = false;
     //lock
     private final Object lock = new Object();
+
 
     public AsyncDispatcher() {
         this(new LinkedBlockingQueue<>(), Integer.MAX_VALUE, true);
@@ -64,8 +71,22 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
         event2Dispatcher = new HashMap<>();
         this.optimized = optimized;
         this.THREADS_LIMIT = maxThreads;
-        pool = new ThreadPoolExecutor(1, this.THREADS_LIMIT, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new InnerThreadFactory());
+
+        if (optimized && THREADS_LIMIT <= 1) {
+            throw new IllegalStateException("开启优化, 线程数必须大于1");
+        }
+
+        ThreadPoolExecutor pool = new ThreadPoolExecutor(
+                1,
+                this.THREADS_LIMIT,
+                60L,
+                TimeUnit.SECONDS,
+                new LinkedBlockingQueue<>(),
+                new SimpleThreadFactory("AsyncDispatcher$event-handler-"));
+        threadManager = new ThreadManager(pool);
     }
+
+    //------------------------------------------------------------------------------------------------------------------
 
     /**
      * 通过该方法获得eventhandler并handle event,本质上是添加进队列
@@ -75,22 +96,62 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
         return innerHandler;
     }
 
+    protected static boolean checkEventClass(Class<? extends Enum> eventType, Type eventClass) {
+        while (eventClass != null) {
+            if (eventClass instanceof Class) {
+                for (Type interfaceType : ((Class) eventClass).getGenericInterfaces()) {
+                    if (interfaceType instanceof ParameterizedType) {
+                        Type[] types = ((ParameterizedType) interfaceType).getActualTypeArguments();
+                        for (Type type : types) {
+                            if (type instanceof Class) {
+                                return eventType.equals(type);
+                            }
+                        }
+                    }
+                }
+                eventClass = ((Class) eventClass).getGenericSuperclass();
+            } else if (eventClass instanceof ParameterizedType) {
+                for (Type type : ((ParameterizedType) eventClass).getActualTypeArguments()) {
+                    if (type instanceof Class) {
+                        return eventType.equals(type);
+                    }
+                }
+                eventClass = ((Class) ((ParameterizedType) eventClass).getRawType()).getGenericSuperclass();
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * 检查处理器处理的事件类型与@param eventType是否一致
+     */
+    public static boolean check(Class<? extends Enum> eventType, EventHandler handler) {
+        //要实例化后才能获取
+        Type eventHandlerInterfaceType = handler.getClass().getGenericInterfaces()[0];
+        return checkEventClass(eventType, ((ParameterizedType) eventHandlerInterfaceType).getActualTypeArguments()[0]);
+    }
 
     @Override
     public void register(Class<? extends Enum> eventType, EventHandler handler) {
-        //event2Dispatcher需同步,防止多写的情况
-        synchronized (event2Dispatcher) {
-            EventHandler<Event> registered = event2Dispatcher.get(eventType);
-            if (registered == null) {
-                event2Dispatcher.put(eventType, handler);
-            } else if (!(registered instanceof MultiListenerHandler)) {
-                MultiListenerHandler multiHandler = new MultiListenerHandler();
-                multiHandler.addHandler(registered);
-                multiHandler.addHandler(handler);
-                event2Dispatcher.put(eventType, multiHandler);
-            } else {
-                ((MultiListenerHandler) registered).addHandler(handler);
+        //运行时检查, 无法做到在编译器检查
+        if (check(eventType, handler)) {
+            //event2Dispatcher需同步,防止多写的情况
+            synchronized (event2Dispatcher) {
+                EventHandler<Event> registered = event2Dispatcher.get(eventType);
+                if (registered == null) {
+                    event2Dispatcher.put(eventType, handler);
+                } else if (!(registered instanceof MultiListenerHandler)) {
+                    MultiListenerHandler multiHandler = new MultiListenerHandler();
+                    multiHandler.addHandler(registered);
+                    multiHandler.addHandler(handler);
+                    event2Dispatcher.put(eventType, multiHandler);
+                } else {
+                    ((MultiListenerHandler) registered).addHandler(handler);
+                }
             }
+        } else {
+            throw new IllegalStateException("处理器事件类型不一致");
         }
     }
 
@@ -123,7 +184,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
     public void serviceStop() {
         shutdownNEventHandlerThread(eventHandlerThreads.size());
         //用shutdownNow是为了强制中断阻塞在BlockingQueue.take()的线程
-        pool.shutdownNow();
+        threadManager.shutdownNow();
 
         super.serviceStop();
     }
@@ -137,7 +198,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
             for (int i = 0; i < size; i++) {
                 EventHandlerThread thread = newThread();
                 eventHandlerThreads.add(thread);
-                pool.submit(thread);
+                threadManager.submit(thread);
             }
         }
     }
@@ -149,6 +210,8 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
             }
         }
     }
+
+    //------------------------------------------------------------------------------------------------------------------
 
     /**
      * 事件处理线程,主要逻辑是从事件队列获得事件并分派出去
@@ -190,19 +253,6 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
     }
 
     /**
-     * 内置线程创建工厂,主要改变线程本身的一些属性
-     */
-    private final class InnerThreadFactory implements ThreadFactory {
-
-        @Override
-        public Thread newThread(@Nonnull Runnable r) {
-            Thread now = new Thread(r);
-            now.setName("AsyncDispatcher$event_handler-" + (pool.getCorePoolSize() - 1));
-            return now;
-        }
-    }
-
-    /**
      * 主要用于接受事件并放入事件队列,等待分发线程分派该事件
      * 支持动态改变线程数来满足事件及时分派的场景
      */
@@ -225,12 +275,11 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
                 if (optimized) {
                     //如果event-queue大小过大,多开线程进行处理
                     if (size > 0) {
-                        int coreSize = pool.getCorePoolSize();
+                        int coreSize = eventHandlerThreads.size();
                         //理想是每条线程处理1000个事件
                         int expectedSize = size % 1000 == 0 ? (size / 1000) : (size / 1000 + 1);
                         int finalSize;
                         finalSize = expectedSize <= THREADS_LIMIT ? expectedSize : THREADS_LIMIT;
-                        pool.setCorePoolSize(finalSize);
                         if (finalSize >= coreSize) {
                             runNEventHandlerThread(finalSize - coreSize);
                         } else {
@@ -242,7 +291,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
 
                 eventQueue.put(event);
             } catch (InterruptedException e) {
-                log.error("", e);
+                ExceptionUtils.log(e);
             }
         }
     }
@@ -251,7 +300,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
      * 一事件对应多个事件处理器的场景
      */
     class MultiListenerHandler implements EventHandler<Event> {
-        List<EventHandler<Event>> handlers;
+        private List<EventHandler<Event>> handlers;
 
         public MultiListenerHandler() {
             this.handlers = new LinkedList<>();
@@ -260,7 +309,11 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
         @Override
         public void handle(Event event) {
             for (EventHandler<Event> handler : handlers) {
-                handler.handle(event);
+                try {
+                    handler.handle(event);
+                } catch (Exception e) {
+                    ExceptionUtils.log(e);
+                }
             }
         }
 

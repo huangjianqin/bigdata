@@ -1,4 +1,4 @@
-package org.kin.framework.hotswap;
+package org.kin.framework.hotswap.old;
 
 import java.io.File;
 import java.io.FileInputStream;

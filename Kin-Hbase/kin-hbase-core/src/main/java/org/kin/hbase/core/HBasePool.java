@@ -5,13 +5,13 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.kin.framework.Closeable;
 import org.kin.framework.utils.StringUtils;
 import org.kin.hbase.core.config.HBaseConfig;
 import org.kin.hbase.core.domain.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.*;
@@ -28,6 +28,9 @@ public class HBasePool implements Closeable {
     }
 
     public HBasePool() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            cancelAllConnections();
+        }));
     }
 
     public static HBasePool common() {
@@ -38,7 +41,8 @@ public class HBasePool implements Closeable {
     private List<Connection> initedConnections;
 
     private List<Connection> connections;
-    private boolean isHooked = false;
+
+
 
     public void initializeConnections(HBaseConfig... hbaseConfigs) {
         initializeConnections(Arrays.asList(hbaseConfigs));
@@ -73,7 +77,6 @@ public class HBasePool implements Closeable {
                 log.error("", e);
             }
         }
-        hook();
     }
 
     private void cancelAllConnections() {
@@ -91,15 +94,6 @@ public class HBasePool implements Closeable {
             connections.clear();
             initedConnections.clear();
             log.info("all HBase connections closed");
-        }
-    }
-
-    private void hook() {
-        if (!isHooked) {
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                cancelAllConnections();
-            }));
-            isHooked = true;
         }
     }
 
@@ -150,7 +144,7 @@ public class HBasePool implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         cancelAllConnections();
     }
 }

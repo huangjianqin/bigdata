@@ -1,4 +1,4 @@
-package org.kin.framework.hotswap;
+package org.kin.framework.hotswap.old;
 
 import java.nio.file.Path;
 import java.util.List;

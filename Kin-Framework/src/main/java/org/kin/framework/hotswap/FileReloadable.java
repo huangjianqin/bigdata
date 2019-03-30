@@ -1,5 +1,7 @@
 package org.kin.framework.hotswap;
 
+import org.kin.framework.hotswap.old.Reloadable;
+
 import java.io.InputStream;
 
 /**

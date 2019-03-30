@@ -17,7 +17,7 @@ import java.util.Map;
 
 /**
  * Created by huangjianqin on 2019/2/28.
- *
+ * <p>
  * 用于控制jvm close时, close一些使用spring IOC容器管理的对象(主要是释放占用资源)
  */
 @Component
@@ -30,7 +30,7 @@ public class JvmClosingCleaner implements ApplicationListener<ContextRefreshedEv
     public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
         //等spring容器完全初始化后执行
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            for(Closeable closeable : closeables){
+            for (Closeable closeable : closeables) {
                 long startTime = System.currentTimeMillis();
                 closeable.close();
                 long endTime = System.currentTimeMillis();
@@ -44,7 +44,7 @@ public class JvmClosingCleaner implements ApplicationListener<ContextRefreshedEv
         closeables = new ArrayList<>();
 
         Map<String, Closeable> beanMap = applicationContext.getBeansOfType(Closeable.class);
-        for(Closeable bean: beanMap.values()){
+        for (Closeable bean : beanMap.values()) {
             closeables.add(bean);
         }
     }

@@ -20,7 +20,7 @@ package org.kin.framework.hotswap;
 
             该实现方式更适合用于实现热隔离(一个版本一个自定义classloader)
         2.Java Agent(已实现):
-            通过连接jvm,以agent形式通知jvm加载新的class并替换旧的
+            通过连接jvm,以agent形式通知jvm加载新的class并替换旧的, 只适用于方法体变化
             ps:据说有性能损失
 
         3.改造底层JVM行为(如阿里的sandbox jvm,需要很深入了解jvm):

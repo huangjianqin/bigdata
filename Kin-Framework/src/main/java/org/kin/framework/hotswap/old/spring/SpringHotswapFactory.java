@@ -1,9 +1,9 @@
-package org.kin.framework.hotswap.spring;
+package org.kin.framework.hotswap.old.spring;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import org.kin.framework.hotswap.DynamicClassLoader;
-import org.kin.framework.hotswap.HotswapFactory;
+import org.kin.framework.hotswap.old.DynamicClassLoader;
+import org.kin.framework.hotswap.old.HotswapFactory;
 import org.kin.framework.utils.ClassUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.slf4j.Logger;
@@ -16,6 +16,7 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.ScannedGenericBeanDefinition;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.lang.reflect.Field;
@@ -27,6 +28,7 @@ import java.util.*;
  * Created by huangjianqin on 2018/1/31.
  * 目前仅仅支持AutoWired注解的bean
  */
+@Component
 public class SpringHotswapFactory extends HotswapFactory implements ApplicationListener<ContextRefreshedEvent> {
     private static final Logger log = LoggerFactory.getLogger("hot-fix-class");
     private DefaultListableBeanFactory beanFactory;

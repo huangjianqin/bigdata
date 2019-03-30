@@ -3,8 +3,18 @@ package org.kin.framework.event;
 /**
  * Created by 健勤 on 2017/8/9.
  */
-public class SecondEvent extends AbstractEvent<SecondEventType> {
+public class SecondEvent implements Event<SecondEventType> {
     public SecondEvent(SecondEventType secondEventType) {
-        super(secondEventType);
+
+    }
+
+    @Override
+    public SecondEventType getType() {
+        return SecondEventType.S;
+    }
+
+    @Override
+    public long getTimestamp() {
+        return 0;
     }
 }

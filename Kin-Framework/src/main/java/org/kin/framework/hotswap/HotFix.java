@@ -10,24 +10,15 @@ import java.util.TimerTask;
  * Created by huangjianqin on 2018/10/31.
  * 单例模式 每次热更后, 都会检查版本号, 执行开发者自定义逻辑
  */
-public class HotFix extends ClassReloadable {
+public class HotFix {
     private static HotFix HOT_FIX = new HotFix();
-    private static final Logger log = LoggerFactory.getLogger("hot-fix-class");
-
-    //记录上次更新的版本号, 此处仅仅缓存, 以后可选择保存在数据库或文件
-    private int oldVersion;
-    private int version;
+    private static final Logger log = LoggerFactory.getLogger(HotFix.class);
 
     private HotFix() {
     }
 
     public static HotFix instance() {
         return HOT_FIX;
-    }
-
-    @Override
-    void reload(Class<?> changedClass, DynamicClassLoader classLoader) {
-        super.reload(changedClass, classLoader);
     }
 
     public void fix() {
@@ -41,6 +32,9 @@ public class HotFix extends ClassReloadable {
     }
 
     public void fix0() {
+        //最好存储在堆外(比如数据库), static也行, 因为热更后, 该类的成员域全部刷新成init时的值
+        int oldVersion = 0;
+        int version = 1;
         if (oldVersion < version) {
             log.info("hot fix start: {}", version);
             try {

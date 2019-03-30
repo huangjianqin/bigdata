@@ -42,6 +42,8 @@
         <appender-ref ref="ERROR"/>
     </appender>
 
+
+
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="asyncSTDOUT"/>

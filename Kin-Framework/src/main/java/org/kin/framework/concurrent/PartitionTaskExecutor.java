@@ -12,7 +12,7 @@ import java.util.concurrent.*;
 /**
  * Created by huangjianqin on 2017/10/26.
  * 利用Task的某种属性将task分区,从而达到统一类的task按submit/execute顺序在同一线程执行
- *
+ * <p>
  * 对于需要 严格 保证task顺序执行的Executor, 则不能扩大或减少Executor的Parallism(不支持重排序)
  */
 public class PartitionTaskExecutor<K> {
@@ -22,13 +22,13 @@ public class PartitionTaskExecutor<K> {
     //分区算法
     private Partitioner<K> partitioner;
     //执行线程池
-    private ThreadPoolExecutor threadPool;
+    private ThreadManager threadManager;
     //所有分区执行线程实例
     //lazy init
     private volatile PartitionTask[] partitionTasks;
 
     public PartitionTaskExecutor() {
-        this(10);
+        this(5);
     }
 
     public PartitionTaskExecutor(int partitionNum) {
@@ -36,9 +36,14 @@ public class PartitionTaskExecutor<K> {
     }
 
     public PartitionTaskExecutor(int partitionNum, Partitioner<K> partitioner) {
+        this(partitionNum, partitioner, new SimpleThreadFactory("default-partition-task"));
+    }
+
+    public PartitionTaskExecutor(int partitionNum, Partitioner<K> partitioner, ThreadFactory threadFactory) {
         this.partitionNum = partitionNum;
-        this.threadPool = new ThreadPoolExecutor(partitionNum, Integer.MAX_VALUE, 5, TimeUnit.SECONDS, new LinkedBlockingQueue<>());
-        this.threadPool.allowCoreThreadTimeOut(true);
+
+        this.threadManager = new ThreadManager(Executors.newCachedThreadPool(threadFactory));
+
         this.partitioner = partitioner;
         this.partitionTasks = new PartitionTaskExecutor.PartitionTask[this.partitionNum];
     }
@@ -49,17 +54,18 @@ public class PartitionTaskExecutor<K> {
     public PartitionTaskExecutor(int partitionNum, Partitioner<K> partitioner, ThreadPoolExecutor threadPool) {
         this.partitionNum = partitionNum;
         this.partitioner = partitioner;
-        this.threadPool = threadPool;
+        this.threadManager = new ThreadManager(threadPool);
         this.partitionTasks = new PartitionTaskExecutor.PartitionTask[this.partitionNum];
     }
 
+    //------------------------------------------------------------------------------------------------------------------
     private PartitionTask getOrCreatePartitionTask(int partition) {
         if (0 < partition && partition < partitionTasks.length) {
             PartitionTask partitionTask = partitionTasks[partition];
             if (partitionTask == null) {
                 partitionTask = new PartitionTask();
                 partitionTasks[partition] = partitionTask;
-                threadPool.execute(partitionTask);
+                threadManager.execute(partitionTask);
             }
 
             return partitionTask;
@@ -113,10 +119,10 @@ public class PartitionTaskExecutor<K> {
         for (PartitionTask task : partitionTasks) {
             task.close();
         }
-        threadPool.shutdown();
+        threadManager.shutdown();
         //help gc
         partitionTasks = null;
-        threadPool = null;
+        threadManager = null;
         partitioner = null;
     }
 
@@ -126,10 +132,10 @@ public class PartitionTaskExecutor<K> {
         for (PartitionTask task : partitionTasks) {
             task.close();
         }
-        threadPool.shutdownNow();
+        threadManager.shutdownNow();
         //help gc
         partitionTasks = null;
-        threadPool = null;
+        threadManager = null;
         partitioner = null;
     }
 
@@ -141,7 +147,6 @@ public class PartitionTaskExecutor<K> {
         synchronized (partitionTasks) {
             partitionTasks = Arrays.copyOf(partitionTasks, newPartitionNum);
             partitionNum = newPartitionNum;
-            threadPool.setCorePoolSize(partitionNum);
         }
     }
 
@@ -198,7 +203,6 @@ public class PartitionTaskExecutor<K> {
             partitionNum = newPartitionNum;
             shutdownTask(originPartitionNum - partitionNum);
             partitionTasks = Arrays.copyOf(partitionTasks, partitionNum);
-            threadPool.setCorePoolSize(newPartitionNum);
         }
     }
 
@@ -217,6 +221,8 @@ public class PartitionTaskExecutor<K> {
             target.run();
         }
     }
+
+    //------------------------------------------------------------------------------------------------------------------
 
     /**
      * task 执行

@@ -14,7 +14,7 @@ public abstract class AbstractEvent<TYPE extends Enum<TYPE>> implements Event<TY
     }
 
     @Override
-    public TYPE getType() {
+    public final TYPE getType() {
         return type;
     }
 

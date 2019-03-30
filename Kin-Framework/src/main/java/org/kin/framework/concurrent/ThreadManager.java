@@ -1,8 +1,8 @@
 package org.kin.framework.concurrent;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import org.kin.framework.utils.Constants;
+import org.kin.framework.utils.StringUtils;
 import org.kin.framework.utils.SysUtils;
 
 import java.util.Collection;
@@ -17,21 +17,26 @@ public class ThreadManager implements ScheduledExecutorService {
 
     static {
         String executorTypeStr = System.getenv(Constants.DEFAULT_EXECUTOR);
-        if (!Strings.isNullOrEmpty(executorTypeStr)) {
+        if (StringUtils.isNotBlank(executorTypeStr)) {
             ExecutorType executorType = ExecutorType.getByName(executorTypeStr);
-            DEFAULT = new ThreadManager(executorType.getExecutor());
+            DEFAULT = new ThreadManager(
+                    executorType.getExecutor(),
+                    Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum())
+            );
         } else {
-            DEFAULT = new ThreadManager();
+            DEFAULT = new ThreadManager(
+                    ExecutorType.THREADPOOL.getExecutor(),
+                    Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum())
+            );
         }
     }
 
     //执行线程
-    private ExecutorService executor = ExecutorType.THREADPOOL.getExecutor();
+    private ExecutorService executor;
     //调度线程
-    private ScheduledExecutorService scheduleExecutor = Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum());
+    private ScheduledExecutorService scheduleExecutor;
 
     private ThreadManager() {
-        hook();
     }
 
     public ThreadManager(ExecutorService executor) {
@@ -50,13 +55,29 @@ public class ThreadManager implements ScheduledExecutorService {
         this.scheduleExecutor = scheduleExecutor;
     }
 
-    private void hook() {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            if (!isShutdown()) {
-                shutdownNow();
-            }
-        }));
+    public static ThreadManager forkJoinPoolThreadManager() {
+        return new ThreadManager(ExecutorType.FORKJOIN.getExecutor());
     }
+
+    public static ThreadManager forkJoinPoolThreadManagerWithScheduled() {
+        return new ThreadManager(
+                ExecutorType.FORKJOIN.getExecutor(),
+                Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum())
+        );
+    }
+
+    public static ThreadManager CommonThreadManager() {
+        return new ThreadManager(ExecutorType.THREADPOOL.getExecutor());
+    }
+
+    public static ThreadManager CommonThreadManagerWithScheduled() {
+        return new ThreadManager(
+                ExecutorType.THREADPOOL.getExecutor(),
+                Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum())
+        );
+    }
+
+    //--------------------------------------------------------------------------------------------
 
     @Override
     public ScheduledFuture<?> schedule(Runnable command, long delay, TimeUnit unit) {
@@ -80,8 +101,12 @@ public class ThreadManager implements ScheduledExecutorService {
 
     @Override
     public void shutdown() {
-        executor.shutdown();
-        scheduleExecutor.shutdown();
+        if(executor != null){
+            executor.shutdown();
+        }
+        if(scheduleExecutor != null){
+            scheduleExecutor.shutdown();
+        }
     }
 
     @Override
@@ -145,5 +170,48 @@ public class ThreadManager implements ScheduledExecutorService {
     @Override
     public void execute(Runnable command) {
         executor.execute(command);
+    }
+
+    //--------------------------------------------------------------------------------------------
+    private enum ExecutorType {
+        FORKJOIN("ForkJoin") {
+            @Override
+            public ExecutorService getExecutor() {
+                return new ForkJoinPool();
+            }
+        },
+        THREADPOOL("ThreadPool") {
+            @Override
+            public ExecutorService getExecutor() {
+                return Executors.newFixedThreadPool(SysUtils.getSuitableThreadNum(), new SimpleThreadFactory("default-thread-manager"));
+            }
+        };
+        private String name;
+
+        ExecutorType(String name) {
+            this.name = name;
+        }
+
+        public abstract ExecutorService getExecutor();
+
+        public static ExecutorType getByName(String name) {
+            for (ExecutorType type : values()) {
+                if (type.getName().toLowerCase().equals(name.toLowerCase())) {
+                    return type;
+                }
+            }
+
+            throw new UnknownExecutorTypeException("unknown executor type '" + name + "'");
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        private static class UnknownExecutorTypeException extends RuntimeException {
+            public UnknownExecutorTypeException(String message) {
+                super(message);
+            }
+        }
     }
 }

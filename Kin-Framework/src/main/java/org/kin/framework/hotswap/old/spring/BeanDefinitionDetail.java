@@ -1,4 +1,4 @@
-package org.kin.framework.hotswap.spring;
+package org.kin.framework.hotswap.old.spring;
 
 import org.springframework.beans.factory.config.BeanDefinition;
 

@@ -1,4 +1,4 @@
-package org.kin.framework.hotswap;
+package org.kin.framework.hotswap.old;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

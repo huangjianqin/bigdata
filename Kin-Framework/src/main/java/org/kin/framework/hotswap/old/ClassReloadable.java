@@ -1,4 +1,4 @@
-package org.kin.framework.hotswap;
+package org.kin.framework.hotswap.old;
 
 import org.kin.framework.utils.ClassUtils;
 import org.kin.framework.utils.ExceptionUtils;
