@@ -68,7 +68,7 @@ public class HBasePool implements Closeable {
                 Configuration configuration = HBaseConfiguration.create();
                 configuration.set(HConstants.ZOOKEEPER_QUORUM, config.getZookeeperQuorum());
                 configuration.set(HConstants.ZOOKEEPER_CLIENT_PORT, StringUtils.isBlank(config.getZookeeperClientPort()) ? HBaseConstants.DEFAULT_HBASE_PORT : config.getZookeeperClientPort());
-                Connection connection = ConnectionFactory.createConnection();
+                Connection connection = ConnectionFactory.createConnection(configuration);
 
                 connections.add(connection);
                 initedConnections.add(connection);
