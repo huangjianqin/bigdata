@@ -134,9 +134,24 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
         }
         else{
             //要实例化后才能获取
-            Type eventHandlerInterfaceType = handler.getClass().getGenericInterfaces()[0];
-            return checkEventClass(eventType, ((ParameterizedType) eventHandlerInterfaceType).getActualTypeArguments()[0]);
+            Type eventHandlerInterfaceType = null;
+            for(Type type: handler.getClass().getGenericInterfaces()){
+                if(type instanceof ParameterizedType && ((ParameterizedType)type).getRawType().equals(EventHandler.class)){
+                    eventHandlerInterfaceType = type;
+                    break;
+                }
+                if(type instanceof Class && type.equals(EventHandler.class)){
+                    eventHandlerInterfaceType = type;
+                    break;
+                }
+            }
+
+            if(eventHandlerInterfaceType != null){
+                return checkEventClass(eventType, ((ParameterizedType) eventHandlerInterfaceType).getActualTypeArguments()[0]);
+            }
         }
+
+        return false;
     }
 
     @Override
