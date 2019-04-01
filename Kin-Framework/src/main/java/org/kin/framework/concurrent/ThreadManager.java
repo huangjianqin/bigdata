@@ -13,6 +13,7 @@ import java.util.concurrent.*;
  * Created by huangjianqin on 2018/1/24.
  */
 public class ThreadManager implements ScheduledExecutorService {
+    //其线程池可能会被共享
     public static ThreadManager DEFAULT;
     public static final ExecutorType DEFAULT_EXECUTOR_TYPE;
 
@@ -36,11 +37,11 @@ public class ThreadManager implements ScheduledExecutorService {
     }
 
     public ThreadManager(ExecutorService executor) {
-        this(executor, getDefaultScheduledExecutor());
+        this(executor, DEFAULT.getScheduleExecutor());
     }
 
     public ThreadManager(ScheduledExecutorService scheduleExecutor) {
-        this(DEFAULT_EXECUTOR_TYPE.getExecutor(), scheduleExecutor);
+        this(DEFAULT.getExecutor(), scheduleExecutor);
     }
 
     public ThreadManager(ExecutorService executor, ScheduledExecutorService scheduleExecutor) {
@@ -206,5 +207,14 @@ public class ThreadManager implements ScheduledExecutorService {
 
     static ScheduledExecutorService getDefaultScheduledExecutor(){
         return Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum());
+    }
+
+    //getter
+    public ExecutorService getExecutor() {
+        return executor;
+    }
+
+    public ScheduledExecutorService getScheduleExecutor() {
+        return scheduleExecutor;
     }
 }
