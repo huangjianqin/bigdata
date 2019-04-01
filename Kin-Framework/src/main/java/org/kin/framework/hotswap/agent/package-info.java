@@ -19,4 +19,9 @@ package org.kin.framework.hotswap.agent;
      1.项目中引用 jdk/lib/tools.jar,否则无法使用VirtualMachine类
      2.项目中引用 JavaDynamicAgent.jar,它提供了agentmain接口
      3.代码实现动态增加JDK代理
+
+
+    不适用的情况:
+        1.方法签名修改(增删方法, 参数数量或类型改变)
+        2.lambda里面增加lambda
  */
