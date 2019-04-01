@@ -1,8 +1,10 @@
 package org.kin.framework.actor.impl;
 
 import org.kin.framework.actor.domain.ActorPath;
+import org.kin.framework.concurrent.SimpleThreadFactory;
 import org.kin.framework.concurrent.ThreadManager;
 import org.kin.framework.utils.ExceptionUtils;
+import org.kin.framework.utils.SysUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +14,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 
 /**
  * Created by huangjianqin on 2018/6/5.
@@ -30,13 +33,16 @@ public class ActorSystem {
     //该actor system下的actor
     private Map<String, AbstractActor> path2Actors = new ConcurrentHashMap<>();
     //每个actor system绑定一个线程池，并且该actor system下的actor使用该线程池
-    private ThreadManager threadManager = ThreadManager.DEFAULT;
+    private ThreadManager threadManager;
 
     private ActorSystem(String name) {
         this.name = name;
         if (name.toLowerCase().equals(DEFAULT_AS_NAME) && name2AS.containsKey(DEFAULT_AS_NAME)) {
             throw new IllegalStateException("actor system named '" + name + "' has exists!!!");
         }
+        this.threadManager = new ThreadManager(
+                Executors.newCachedThreadPool(new SimpleThreadFactory("actor-system-executor" + name)),
+                Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum(), new SimpleThreadFactory("actor-system-schedule" + name)));
     }
 
     private ActorSystem(String name, ThreadManager threadManager) {
@@ -49,7 +55,7 @@ public class ActorSystem {
     }
 
     public static ActorSystem create(String name) {
-        return create(name, ThreadManager.DEFAULT);
+        return create(name);
     }
 
     public static ActorSystem create(String name, ThreadManager threadManager) {
