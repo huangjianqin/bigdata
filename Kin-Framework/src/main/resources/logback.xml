@@ -76,6 +76,20 @@
         </rollingPolicy>
     </appender>
 
+    <appender name="asyncDB" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+        <Append>true</Append>
+        <encoder>
+            <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/%d{yyyy-MM-dd}/asyncDB.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <!--<maxHistory>30</maxHistory>-->
+        </rollingPolicy>
+    </appender>
+
     <appender name="asyncSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="STDOUT"/>
     </appender>
@@ -96,6 +110,10 @@
         <appender-ref ref="actorProfile"/>
     </appender>
 
+    <appender name="asyncDBAppender" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="asyncDB"/>
+    </appender>
+
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
@@ -104,6 +122,7 @@
         <appender-ref ref="asyncHotSwap"/>
         <appender-ref ref="asyncActor"/>
         <appender-ref ref="asyncActorProfile"/>
+        <appender-ref ref="asyncDBAppender"/>
     </root>
 
     <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->
