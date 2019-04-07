@@ -90,7 +90,6 @@ public class AsyncDBService implements ApplicationContextAware, Closeable{
                 //校验通过
                 class2Persistent.put(claxx, DBSynchronzier);
             }
-            s
         }
     }
 
