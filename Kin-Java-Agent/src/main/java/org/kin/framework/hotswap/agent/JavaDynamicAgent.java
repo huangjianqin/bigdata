@@ -26,4 +26,8 @@ public class JavaDynamicAgent {
     public static Instrumentation getInstrumentation() {
         return instrumentation;
     }
+
+    public static long getObjectSize(Object o) {
+        return instrumentation.getObjectSize(o);
+    }
 }
