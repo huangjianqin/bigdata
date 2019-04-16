@@ -14,7 +14,10 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.partition.TotalOrderPartitioner
 import org.apache.spark.Partitioner
 import org.apache.spark.rdd.RDD
+import org.kin.hbase.core.entity.HBaseEntity
+import org.kin.hbase.core.utils.HBaseUtils
 import org.kin.spark.hbase.rdd.HFileMethods._
+
 import scala.collection.JavaConversions._
 import scala.reflect.ClassTag
 //want to use specify implicit, must import this package or add compiler option language:implicitConversions
@@ -22,8 +25,24 @@ import scala.language.implicitConversions
 
 /**
   * Created by huangjianqin on 2019/3/31.
+  *
+  * 导入大量数据, 直接写HFILE比写大量PUT要高效
+  *
+  * 使用MapReduce作业以HBase内部数据格式输出表格数据，然后直接将生成的StoreFiles加载到正在运行的集群中
+  * 利用HBase数据按照HFile格式存储在HDFS的原理，使用Mapreduce直接生成HFile格式文件后，RegionServers再将HFile文件移动到相应的Region目录下
+  * 优点:
+  * 1.导入过程不占用Region资源
+  * 2.快速导入海量的数据
+  * 3.减少CPU网络内存资源消耗
+  *
+	* !!!!!在这种情况下,我们不用自己写reduce过程,但是会使用Hbase给我们提供的reduce,也就是说,无论你怎么设置reduce数量,都是无效的
+  * !!!!!在建表的时候进行合理的预分区!!!预分区的数目会决定你的reduce过程的数目!简单来说,在一定的范围内,进行合适预分区的话,reduce的数量增加多少,效率就提高多少倍!!! ===> SPLITS
+  * !!!!!如果hdfs地址没有写端口，会认为是两个不同文件系统，所以要copy，而如果当是同一文件系统时，则是move
+	* !!!!!由于BulkLoad是绕过了Write to WAL，Write to MemStore及Flush to disk的过程，所以并不能通过WAL来进行一些复制数据的操作
+  *
   */
 trait HFileSupport {
+  //隐式引用, 用于Spark分区内排序
   implicit lazy val cellKeyOrdering = new CellKeyOrdering
   implicit lazy val cellKeyTSOrdering = new CellKeyTSOrdering
 
@@ -45,6 +64,8 @@ trait HFileSupport {
   implicit def toHFileRDDTS[K: Writer, Q: Writer, A: ClassTag](rdd: RDD[(K, Map[String, Map[Q, (A, Long)]])])(implicit writer: Writer[A]): HFileRDD[K, Q, CellKeyTS, (A, Long), A] =
     new HFileRDD[K, Q, CellKeyTS, (A, Long), A](rdd, gc[A], kvft[A])
 
+  implicit def toHEntityRDD[E <: HBaseEntity](entityRdd: RDD[E]): HBaseEntityHFileRDD[E, CellKey] =
+    new HBaseEntityHFileRDD[E, CellKey](entityRdd, rowGC, rowKVF)
 }
 
 private[hbase] object HFileMethods {
@@ -54,20 +75,27 @@ private[hbase] object HFileMethods {
 
   type GetCellKey[C, A, V] = (CellKey, A) => (C, V)
   type KeyValueWrapper[C, V] = (C, V) => (ImmutableBytesWritable, KeyValue)
+  //参数是列族
   type KeyValueWrapperF[C, V] = (Array[Byte]) => KeyValueWrapper[C, V]
 
   // GetCellKey
   def gc[A](c: CellKey, v: A): (CellKey, A) = (c, v)
+  def rowGC(c: CellKey, vb: Array[Byte]): (CellKey, Array[Byte]) = (c, vb)
 
   def gc[A](c: CellKey, v: (A, Long)): (CellKeyTS, A) = ((c, v._2), v._1)
 
+  //获取(ImmutableBytesWritable, KeyValue)
   // KeyValueWrapperF
   def kvf[A](f: Array[Byte])(c: CellKey, v: A)(implicit writer: Writer[A]): (ImmutableBytesWritable, KeyValue) =
     (new ImmutableBytesWritable(c._1), new KeyValue(c._1, f, c._2, writer.write(v)))
 
+  def rowKVF(f: Array[Byte])(c: CellKey, vb: Array[Byte]): (ImmutableBytesWritable, KeyValue) =
+    (new ImmutableBytesWritable(c._1), new KeyValue(c._1, f, c._2, vb))
+
   def kvft[A](f: Array[Byte])(c: CellKeyTS, v: A)(implicit writer: Writer[A]): (ImmutableBytesWritable, KeyValue) =
     (new ImmutableBytesWritable(c._1._1), new KeyValue(c._1._1, f, c._1._2, c._2, writer.write(v)))
 
+  //用于Spark分区内排序
   class CellKeyOrdering extends Ordering[CellKey] {
     override def compare(a: CellKey, b: CellKey): Int = {
       val (ak, aq) = a
@@ -79,6 +107,7 @@ private[hbase] object HFileMethods {
     }
   }
 
+  //用于Spark分区内排序
   class CellKeyTSOrdering extends Ordering[CellKeyTS] {
     val cellKeyOrdering = new CellKeyOrdering
 
@@ -102,26 +131,28 @@ sealed abstract class HFileRDDHelper extends Serializable {
 
   private object HFilePartitioner {
     def apply(conf: Configuration, splits: Array[Array[Byte]], numFilesPerRegionPerFamily: Int): HFilePartitioner = {
-      if (numFilesPerRegionPerFamily == 1)
-        new SingleHFilePartitioner(splits)
-      else {
-        val fraction = 1 max numFilesPerRegionPerFamily min conf.getInt(LoadIncrementalHFiles.MAX_FILES_PER_REGION_PER_FAMILY, 32)
-        new MultiHFilePartitioner(splits, fraction)
-      }
+      //每个region的HFile不允许超过LoadIncrementalHFiles.MAX_FILES_PER_REGION_PER_FAMILY(默认32), 否则会写入失败
+      val fraction = 1 max numFilesPerRegionPerFamily min conf.getInt(LoadIncrementalHFiles.MAX_FILES_PER_REGION_PER_FAMILY, 32)
+      new HFilePartitioner(splits, fraction)
     }
   }
 
-  protected abstract class HFilePartitioner extends Partitioner {
+  protected class HFilePartitioner(splits: Array[Array[Byte]], fraction: Int) extends Partitioner {
+    /**
+      * 提取rowkey
+      */
     def extractKey(n: Any): Array[Byte] = n match {
       case (k: Array[Byte], _) => k // CellKey
       case ((k: Array[Byte], _), _) => k //CellKeyTS
     }
-  }
 
-  private class MultiHFilePartitioner(splits: Array[Array[Byte]], fraction: Int) extends HFilePartitioner {
+    /**
+      * 按每个region n(fraction)个HFile分区
+      * 同一region 按rowkey的hashcode来决定写入哪个HFile
+      */
     override def getPartition(key: Any): Int = {
       val k = extractKey(key)
-      val h = (k.hashCode() & Int.MaxValue) % fraction
+      var h = if (fraction > 0) (k.hashCode() & Int.MaxValue) % fraction else 0
       for (i <- 1 until splits.length)
         if (Bytes.compareTo(k, splits(i)) < 0) return (i - 1) * fraction + h
 
@@ -129,18 +160,6 @@ sealed abstract class HFileRDDHelper extends Serializable {
     }
 
     override def numPartitions: Int = splits.length * fraction
-  }
-
-  private class SingleHFilePartitioner(splits: Array[Array[Byte]]) extends HFilePartitioner {
-    override def getPartition(key: Any): Int = {
-      val k = extractKey(key)
-      for (i <- 1 until splits.length)
-        if (Bytes.compareTo(k, splits(i)) < 0) return i - 1
-
-      splits.length - 1
-    }
-
-    override def numPartitions: Int = splits.length
   }
 
   protected def getPartitioner(regionLocator: RegionLocator, numFilesPerRegionPerFamily: Int)(implicit config: HBaseConfig) =
@@ -162,17 +181,19 @@ sealed abstract class HFileRDDHelper extends Serializable {
 
     // prepare path for HFiles output
     val fs = FileSystem.get(conf)
-    val hFilePath = new Path("/tmp", table.getName.getQualifierAsString + "_" + UUID.randomUUID())
-    fs.makeQualified(hFilePath)
+    val HFilePath = new Path("/tmp", table.getName.getQualifierAsString/*获取唯一名*/ + "_" + UUID.randomUUID())
+    //
+    HFilePath.makeQualified(fs.getUri, fs.getWorkingDirectory)
 
     try {
       rdd
-        .saveAsNewAPIHadoopFile(hFilePath.toString, classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat2], job.getConfiguration)
+        .saveAsNewAPIHadoopFile(HFilePath.toString, classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat2], job.getConfiguration)
 
       // prepare HFiles for incremental load
       // set folders permissions read/write/exec for all
       val rwx = new FsPermission("777")
 
+      //不断递归设置文件权限
       def setRecursivePermission(path: Path): Unit = {
         val listFiles = fs.listStatus(path)
         listFiles foreach { f =>
@@ -188,19 +209,17 @@ sealed abstract class HFileRDDHelper extends Serializable {
           }
         }
       }
+      setRecursivePermission(HFilePath)
 
-      setRecursivePermission(hFilePath)
-
+      //批量导入
       val lih = new LoadIncrementalHFiles(conf)
-      // deprecated method still available in hbase 1.0.0, to be replaced with the method below since hbase 1.1.0
-      lih.doBulkLoad(hFilePath, new HTable(conf, table.getName))
-      // this is available since hbase 1.1.x
-      //lih.doBulkLoad(hFilePath, connection.getAdmin, table, regionLocator)
+      lih.doBulkLoad(HFilePath, connection.getAdmin, table, regionLocator)
     } finally {
       connection.close()
 
-      fs.deleteOnExit(hFilePath)
+      fs.deleteOnExit(HFilePath)
 
+      // TotalOrderPartitioner.getPartitionFile ==> Get the path to the SequenceFile storing the sorted partition keyset.
       // clean HFileOutputFormat2 stuff
       fs.deleteOnExit(new Path(TotalOrderPartitioner.getPartitionFile(job.getConfiguration)))
     }
@@ -209,14 +228,9 @@ sealed abstract class HFileRDDHelper extends Serializable {
 
 final class HFileRDDSimple[K: Writer, Q: Writer, C: ClassTag, A: ClassTag, V: ClassTag](mapRdd: RDD[(K, Map[Q, A])], ck: GetCellKey[C, A, V], kvf: KeyValueWrapperF[C, V]) extends HFileRDDHelper {
   /**
-    * Load the underlying RDD to HBase, using HFiles.
+    * 给定列族
     *
-    * Simplified form, where all values are written to the
-    * same column family.
-    *
-    * The RDD is assumed to be an instance of `RDD[(K, Map[Q, A])]`,
-    * where the first value is the rowkey and the second is a map that
-    * associates column names to values.
+    * RDD ==> rowkey -> column -> value
     */
   def toHBaseBulk(tableNameStr: String, family: String, numFilesPerRegionPerFamily: Int = 1)
                  (implicit config: HBaseConfig, ord: Ordering[C]): Unit = {
@@ -245,14 +259,9 @@ final class HFileRDDSimple[K: Writer, Q: Writer, C: ClassTag, A: ClassTag, V: Cl
 
 final class HFileRDDFixed[K: Writer, C: ClassTag, A: ClassTag, V: ClassTag](seqRdd: RDD[(K, Seq[A])], ck: GetCellKey[C, A, V], kvf: KeyValueWrapperF[C, V]) extends HFileRDDHelper {
   /**
-    * Load the underlying RDD to HBase, using HFiles.
+    * 给定列族和列
     *
-    * Simplified form, where all values are written to the
-    * same column family, and columns are fixed, so that their names can be passed as a sequence.
-    *
-    * The RDD is assumed to be an instance of `RDD[(K, Seq[A])`,
-    * where the first value is the rowkey and the second is a sequence of values to be
-    * associated to column names in `headers`.
+    * RDD ==> rowkey -> 一系列value
     */
   def toHBaseBulk[Q: Writer](tableNameStr: String, family: String, headers: Seq[Q], numFilesPerRegionPerFamily: Int = 1)
                             (implicit config: HBaseConfig, ord: Ordering[C]): Unit = {
@@ -283,11 +292,7 @@ final class HFileRDDFixed[K: Writer, C: ClassTag, A: ClassTag, V: ClassTag](seqR
 
 final class HFileRDD[K: Writer, Q: Writer, C: ClassTag, A: ClassTag, V: ClassTag](mapRdd: RDD[(K, Map[String, Map[Q, A]])], ck: GetCellKey[C, A, V], kv: KeyValueWrapperF[C, V]) extends HFileRDDHelper {
   /**
-    * Load the underlying RDD to HBase, using HFiles.
-    *
-    * The RDD is assumed to be an instance of `RDD[(K, Map[String, Map[Q, A]])]`,
-    * where the first value is the rowkey and the second is a nested map that associates
-    * column families and column names to values.
+    * RDD ==> rowkey -> column family -> column -> value
     */
   def toHBaseBulk(tableNameStr: String, numFilesPerRegionPerFamily: Int = 1)
                  (implicit config: HBaseConfig, ord: Ordering[C]): Unit = {
@@ -314,6 +319,38 @@ final class HFileRDD[K: Writer, Q: Writer, C: ClassTag, A: ClassTag, V: ClassTag
           case (k, m) =>
             m map { case (h, v) => ck((k, wq.write(h)), v) }
         }
+    } yield getPartitionedRdd(rdd, kv(fb), partitioner)
+
+    saveAsHFile(rdds.reduce(_ ++ _), table, regionLocator, connection)
+  }
+}
+
+final class HBaseEntityHFileRDD[E <: HBaseEntity, C: ClassTag](entityRdd: RDD[E], ck: GetCellKey[C, Array[Byte], Array[Byte]], kv: KeyValueWrapperF[C, Array[Byte]]) extends HFileRDDHelper {
+  /**
+    * 将HBaseEntity写入HFile并批量导入
+    */
+  def toHBaseBulk(tableNameStr: String, numFilesPerRegionPerFamily: Int = 1)
+                 (implicit config: HBaseConfig, ord: Ordering[C]): Unit = {
+    require(numFilesPerRegionPerFamily > 0)
+    val conf = config.get
+    val tableName = TableName.valueOf(tableNameStr)
+    val connection = ConnectionFactory.createConnection(conf)
+    val regionLocator = connection.getRegionLocator(tableName)
+    val table = connection.getTable(tableName)
+
+    val families = table.getTableDescriptor.getFamiliesKeys
+    val partitioner = getPartitioner(regionLocator, numFilesPerRegionPerFamily)
+
+    val rdds = for {
+      fb <- families
+      rdd = entityRdd.flatMap(e => {
+        val puts = HBaseUtils.convert2Puts(e)
+        puts.flatMap(put => {
+          put.getFamilyCellMap.get(fb).map(cell => {
+            (ck((put.getRow, cell.getQualifierArray), cell.getValueArray))
+          })
+        })
+      })
     } yield getPartitionedRdd(rdd, kv(fb), partitioner)
 
     saveAsHFile(rdds.reduce(_ ++ _), table, regionLocator, connection)
