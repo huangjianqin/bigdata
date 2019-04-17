@@ -325,6 +325,11 @@ final class HFileRDD[K: Writer, Q: Writer, C: ClassTag, A: ClassTag, V: ClassTag
   }
 }
 
+/**
+  *
+  * @param ck 必须带进来, 才能找到Ordering
+  * @param kv 必须带进来, 才能找到Ordering
+  */
 final class HBaseEntityHFileRDD[E <: HBaseEntity, C: ClassTag](entityRdd: RDD[E], ck: GetCellKey[C, Array[Byte], Array[Byte]], kv: KeyValueWrapperF[C, Array[Byte]]) extends HFileRDDHelper {
   /**
     * 将HBaseEntity写入HFile并批量导入
