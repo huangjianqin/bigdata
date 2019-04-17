@@ -64,7 +64,7 @@ trait HFileSupport {
   implicit def toHFileRDDTS[K: Writer, Q: Writer, A: ClassTag](rdd: RDD[(K, Map[String, Map[Q, (A, Long)]])])(implicit writer: Writer[A]): HFileRDD[K, Q, CellKeyTS, (A, Long), A] =
     new HFileRDD[K, Q, CellKeyTS, (A, Long), A](rdd, gc[A], kvft[A])
 
-  implicit def toHEntityRDD[E <: HBaseEntity](entityRdd: RDD[E]): HBaseEntityHFileRDD[E, CellKey] =
+  implicit def toHEntityHFileRDD[E <: HBaseEntity](entityRdd: RDD[E]): HBaseEntityHFileRDD[E, CellKey] =
     new HBaseEntityHFileRDD[E, CellKey](entityRdd, rowGC, rowKVF)
 }
 
@@ -337,7 +337,6 @@ final class HBaseEntityHFileRDD[E <: HBaseEntity, C: ClassTag](entityRdd: RDD[E]
     val connection = ConnectionFactory.createConnection(conf)
     val regionLocator = connection.getRegionLocator(tableName)
     val table = connection.getTable(tableName)
-
     val families = table.getTableDescriptor.getFamiliesKeys
     val partitioner = getPartitioner(regionLocator, numFilesPerRegionPerFamily)
 
