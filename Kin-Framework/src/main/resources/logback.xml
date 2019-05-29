@@ -34,7 +34,7 @@
         </rollingPolicy>
     </appender>
 
-    <appender name="hotSwap" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+    <appender name="hotSwapAppender" class="ch.qos.logback.core.rolling.RollingFileAppender" >
         <Append>true</Append>
         <encoder>
             <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
@@ -48,7 +48,7 @@
         </rollingPolicy>
     </appender>
 
-    <appender name="actor" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+    <appender name="actorAppender" class="ch.qos.logback.core.rolling.RollingFileAppender" >
         <Append>true</Append>
         <encoder>
             <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
@@ -62,7 +62,7 @@
         </rollingPolicy>
     </appender>
 
-    <appender name="actorProfile" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+    <appender name="actorProfileAppender" class="ch.qos.logback.core.rolling.RollingFileAppender" >
         <Append>true</Append>
         <encoder>
             <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
@@ -76,7 +76,7 @@
         </rollingPolicy>
     </appender>
 
-    <appender name="asyncDB" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+    <appender name="asyncDBAppender" class="ch.qos.logback.core.rolling.RollingFileAppender" >
         <Append>true</Append>
         <encoder>
             <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
@@ -90,6 +90,7 @@
         </rollingPolicy>
     </appender>
 
+    <!--                                       async                                                       -->
     <appender name="asyncSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="STDOUT"/>
     </appender>
@@ -98,54 +99,67 @@
         <appender-ref ref="ERROR"/>
     </appender>
 
-    <appender name="asyncHotSwap" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="hotSwap"/>
+    <appender name="asyncHotSwapAppender" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="hotSwapAppender"/>
     </appender>
 
-    <appender name="asyncActor" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="actor"/>
+    <appender name="asyncActorAppender" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="actorAppender"/>
     </appender>
 
-    <appender name="asyncActorProfile" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="actorProfile"/>
+    <appender name="asyncActorProfileAppender" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="actorProfileAppender"/>
     </appender>
 
-    <appender name="asyncDBAppender" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="asyncDB"/>
+    <appender name="asyncAsyncDBAppender" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="asyncDBAppender"/>
     </appender>
+
+    <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->
+    <!--<File>/log</File>-->
+    <!--<Append>true</Append>-->
+    <!--<encoder>-->
+    <!--<pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>-->
+    <!--</encoder>-->
+    <!--<filter class="ch.qos.logback.classic.filter.ThresholdFilter">-->
+    <!--<level>INFO</level>-->
+    <!--</filter>-->
+    <!--</appender>-->
+    <!--<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">-->
+    <!--<fileNamePattern>tests.%i.log.zip</fileNamePattern>-->
+    <!--<minIndex>1</minIndex>-->
+    <!--<maxIndex>3</maxIndex>-->
+    <!--</rollingPolicy>-->
+
+    <!--<triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">-->
+    <!--<maxFileSize>5MB</maxFileSize>-->
+    <!--</triggeringPolicy>-->
+
+
+    <!--<logger name="Test" level="INFO" additivity="false">-->
+    <!--</logger>-->
+
+    <!--                                       logger                                                       -->
+    <logger name="hotSwap" level="INFO" additivity="false">
+        <appender-ref ref="asyncHotSwapAppender"/>
+    </logger>
+
+    <logger name="actor" level="INFO" additivity="false">
+        <appender-ref ref="asyncActor"/>
+    </logger>
+
+    <logger name="actorProfile" level="INFO" additivity="false">
+        <appender-ref ref="asyncActorProfile"/>
+    </logger>
+
+    <logger name="asyncDB" level="INFO" additivity="false">
+        <appender-ref ref="asyncAsyncDBAppender"/>
+    </logger>
 
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="asyncSTDOUT"/>
         <appender-ref ref="asyncERROR"/>
-        <appender-ref ref="asyncHotSwap"/>
-        <appender-ref ref="asyncActor"/>
-        <appender-ref ref="asyncActorProfile"/>
-        <appender-ref ref="asyncDBAppender"/>
     </root>
-
-    <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->
-        <!--<File>/log</File>-->
-        <!--<Append>true</Append>-->
-        <!--<encoder>-->
-            <!--<pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>-->
-        <!--</encoder>-->
-        <!--<filter class="ch.qos.logback.classic.filter.ThresholdFilter">-->
-            <!--<level>INFO</level>-->
-        <!--</filter>-->
-    <!--</appender>-->
-    <!--<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">-->
-        <!--<fileNamePattern>tests.%i.log.zip</fileNamePattern>-->
-        <!--<minIndex>1</minIndex>-->
-        <!--<maxIndex>3</maxIndex>-->
-    <!--</rollingPolicy>-->
-
-    <!--<triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">-->
-        <!--<maxFileSize>5MB</maxFileSize>-->
-    <!--</triggeringPolicy>-->
-
-
-    <!--<logger name="Test" level="INFO" additivity="false">-->
-    <!--</logger>-->
 </configuration>

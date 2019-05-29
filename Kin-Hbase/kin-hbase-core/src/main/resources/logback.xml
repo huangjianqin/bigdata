@@ -34,7 +34,7 @@
         </rollingPolicy>
     </appender>
 
-    <appender name="hbase" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+    <appender name="hbaseAppender" class="ch.qos.logback.core.rolling.RollingFileAppender" >
         <Append>true</Append>
         <encoder>
             <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
@@ -48,6 +48,7 @@
         </rollingPolicy>
     </appender>
 
+    <!--                                       async                                                       -->
     <appender name="asyncSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="STDOUT"/>
     </appender>
@@ -56,38 +57,44 @@
         <appender-ref ref="ERROR"/>
     </appender>
 
-    <appender name="asyncHbase" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="hbase"/>
+    <appender name="asyncHBaseAppender" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="hbaseAppender"/>
     </appender>
 
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="asyncSTDOUT"/>
-        <appender-ref ref="asyncERROR"/>
-        <appender-ref ref="asyncHbase"/>
-    </root>
-
     <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->
-        <!--<File>/log</File>-->
-        <!--<Append>true</Append>-->
-        <!--<encoder>-->
-            <!--<pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>-->
-        <!--</encoder>-->
-        <!--<filter class="ch.qos.logback.classic.filter.ThresholdFilter">-->
-            <!--<level>INFO</level>-->
-        <!--</filter>-->
+    <!--<File>/log</File>-->
+    <!--<Append>true</Append>-->
+    <!--<encoder>-->
+    <!--<pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>-->
+    <!--</encoder>-->
+    <!--<filter class="ch.qos.logback.classic.filter.ThresholdFilter">-->
+    <!--<level>INFO</level>-->
+    <!--</filter>-->
     <!--</appender>-->
     <!--<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">-->
-        <!--<fileNamePattern>tests.%i.log.zip</fileNamePattern>-->
-        <!--<minIndex>1</minIndex>-->
-        <!--<maxIndex>3</maxIndex>-->
+    <!--<fileNamePattern>tests.%i.log.zip</fileNamePattern>-->
+    <!--<minIndex>1</minIndex>-->
+    <!--<maxIndex>3</maxIndex>-->
     <!--</rollingPolicy>-->
 
     <!--<triggeringPolicy class="ch.qos.logback.core.rolling.SizeBasedTriggeringPolicy">-->
-        <!--<maxFileSize>5MB</maxFileSize>-->
+    <!--<maxFileSize>5MB</maxFileSize>-->
     <!--</triggeringPolicy>-->
 
 
     <!--<logger name="Test" level="INFO" additivity="false">-->
     <!--</logger>-->
+
+    <!--                                       logger                                                       -->
+    <logger name="hbase" level="INFO" additivity="false">
+        <appender-ref ref="asyncHBaseAppender"/>
+        <appender-ref ref="org.apache.hadoop"/>
+        <appender-ref ref="org.apache.zookeeper"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="asyncSTDOUT"/>
+        <appender-ref ref="asyncERROR"/>
+    </root>
 </configuration>
