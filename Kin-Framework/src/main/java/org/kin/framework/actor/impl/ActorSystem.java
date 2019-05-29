@@ -1,5 +1,6 @@
 package org.kin.framework.actor.impl;
 
+import org.kin.framework.Closeable;
 import org.kin.framework.actor.domain.ActorPath;
 import org.kin.framework.concurrent.SimpleThreadFactory;
 import org.kin.framework.concurrent.ThreadManager;
@@ -19,7 +20,7 @@ import java.util.concurrent.Executors;
 /**
  * Created by huangjianqin on 2018/6/5.
  */
-public class ActorSystem {
+public class ActorSystem implements Closeable{
     private static final Logger log = LoggerFactory.getLogger("actor");
     private static final Map<String, ActorSystem> name2AS = new ConcurrentHashMap<>();
     private static final String DEFAULT_AS_NAME = "default";
@@ -43,6 +44,8 @@ public class ActorSystem {
         this.threadManager = new ThreadManager(
                 Executors.newCachedThreadPool(new SimpleThreadFactory("actor-system-executor" + name)),
                 Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum(), new SimpleThreadFactory("actor-system-schedule" + name)));
+
+        monitorJVMClose();
     }
 
     private ActorSystem(String name, ThreadManager threadManager) {
@@ -128,7 +131,12 @@ public class ActorSystem {
     }
 
     //getter
-    public ThreadManager getThreadManager() {
+    ThreadManager getThreadManager() {
         return threadManager;
+    }
+
+    @Override
+    public void close() {
+        shutdown();
     }
 }

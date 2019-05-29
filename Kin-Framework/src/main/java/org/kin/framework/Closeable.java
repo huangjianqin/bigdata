@@ -7,4 +7,8 @@ package org.kin.framework;
  */
 public interface Closeable {
     void close();
+
+    default void monitorJVMClose(){
+        JvmCloseCleaner.DEFAULT().add(this);
+    }
 }

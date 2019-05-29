@@ -19,11 +19,11 @@ public enum DBOperation {
         this.canTransfer = canTransfer;
     }
 
-    public DBStatus getTargetStauts() {
+    DBStatus getTargetStauts() {
         return targetStauts;
     }
 
-    public boolean isCanTransfer(DBStatus status){
+    boolean isCanTransfer(DBStatus status){
         return canTransfer.contains(status);
     }
 }

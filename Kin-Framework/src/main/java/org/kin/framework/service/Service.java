@@ -50,7 +50,7 @@ public interface Service extends Closeable {
             this.stateName = stateName;
         }
 
-        public static State getById(int stateId) {
+        static State getById(int stateId) {
             if (stateId == NOTINITED.getStateId()) {
                 return NOTINITED;
             } else if (stateId == INITED.getStateId()) {
@@ -64,7 +64,7 @@ public interface Service extends Closeable {
             }
         }
 
-        public static State getByName(String stateName) {
+        static State getByName(String stateName) {
             if (stateName.toUpperCase().equals(NOTINITED.getStateName())) {
                 return NOTINITED;
             } else if (stateName.toUpperCase().equals(INITED.getStateName())) {
@@ -78,11 +78,11 @@ public interface Service extends Closeable {
             }
         }
 
-        public int getStateId() {
+        int getStateId() {
             return stateId;
         }
 
-        public String getStateName() {
+        String getStateName() {
             return stateName;
         }
 

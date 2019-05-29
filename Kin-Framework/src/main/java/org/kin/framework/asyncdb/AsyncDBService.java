@@ -46,7 +46,7 @@ public class AsyncDBService implements ApplicationContextAware, Closeable{
     }
     //---------------------------------------------------------------------------------------------------
     public AsyncDBService() {
-
+        monitorJVMClose();
     }
 
     public void init(int num, AsyncDBStrategy asyncDBStrategy){
@@ -124,7 +124,7 @@ public class AsyncDBService implements ApplicationContextAware, Closeable{
         return class2Persistent.get(claxx);
     }
 
-    public boolean dbOpr(AsyncDBEntity asyncDBEntity, DBOperation operation){
+    boolean dbOpr(AsyncDBEntity asyncDBEntity, DBOperation operation){
         asyncDBEntity.serialize();
         try{
             DBSynchronzier DBSynchronzier = getAsyncPersistent(asyncDBEntity);

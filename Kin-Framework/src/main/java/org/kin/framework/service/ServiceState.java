@@ -16,11 +16,11 @@ public class ServiceState {
             /*stopped  */ {false, false, false, true}
     };
 
-    public ServiceState(String serviceName) {
+    ServiceState(String serviceName) {
         this.serviceName = serviceName;
     }
 
-    public ServiceState(String serviceName, Service.State state) {
+    ServiceState(String serviceName, Service.State state) {
         this.serviceName = serviceName;
         this.state = state;
     }
@@ -28,14 +28,14 @@ public class ServiceState {
     /**
      * 当前状态是否是指定状态
      */
-    public boolean isInState(Service.State proposed) {
+    boolean isInState(Service.State proposed) {
         return state.equals(proposed);
     }
 
     /**
      * 进入状态
      */
-    public Service.State enterState(Service.State post) {
+    Service.State enterState(Service.State post) {
         //检查状态转换是否合法
         checkStateTransition(serviceName, state, post);
         Service.State old = state;
@@ -46,7 +46,7 @@ public class ServiceState {
     /**
      * 状态转换不合法则抛出异常
      */
-    public static void checkStateTransition(String serviceName, Service.State pre, Service.State post) {
+    static void checkStateTransition(String serviceName, Service.State pre, Service.State post) {
         if (!isValidStateTransition(pre, post)) {
             throw new IllegalStateException(serviceName + " can not enter state " + post.getStateName() + " from state " + pre.getStateName());
         }
@@ -60,11 +60,11 @@ public class ServiceState {
         return targetMap[post.getStateId()];
     }
 
-    public Service.State getState() {
+    Service.State getState() {
         return state;
     }
 
-    public static boolean[][] getStateMap() {
+    static boolean[][] getStateMap() {
         return stateMap;
     }
 }

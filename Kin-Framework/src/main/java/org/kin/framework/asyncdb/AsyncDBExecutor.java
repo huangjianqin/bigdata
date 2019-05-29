@@ -3,6 +3,7 @@ package org.kin.framework.asyncdb;
 import org.kin.framework.Closeable;
 import org.kin.framework.concurrent.SimpleThreadFactory;
 import org.kin.framework.concurrent.ThreadManager;
+import org.kin.framework.utils.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +21,7 @@ public class AsyncDBExecutor implements Closeable{
     private volatile boolean isStopped = false;
     private AsyncDBStrategy asyncDBStrategy;
 
-    public void init(int num, AsyncDBStrategy asyncDBStrategy){
+    void init(int num, AsyncDBStrategy asyncDBStrategy){
         threadManager = new ThreadManager(
                 Executors.newFixedThreadPool(num, new SimpleThreadFactory("asyncDB")),
                 Executors.newSingleThreadScheduledExecutor(new SimpleThreadFactory("asyncDB-monitor")));
@@ -66,7 +67,7 @@ public class AsyncDBExecutor implements Closeable{
         }
     }
 
-    public boolean submit(AsyncDBEntity asyncDBEntity){
+    boolean submit(AsyncDBEntity asyncDBEntity){
         if(!isStopped){
             int key = asyncDBEntity.hashCode();
             int index = key % asyncDBOperators.length;
@@ -86,9 +87,13 @@ public class AsyncDBExecutor implements Closeable{
         private String threadName = "";
         private long preSyncNum = 0;
 
-        public void submit(AsyncDBEntity asyncDBEntity){
+        void submit(AsyncDBEntity asyncDBEntity){
             if(!isStopped){
-                queue.offer(asyncDBEntity);
+                try {
+                    queue.put(asyncDBEntity);
+                } catch (InterruptedException e) {
+                    ExceptionUtils.log(e);
+                }
             }
         }
 
@@ -136,7 +141,7 @@ public class AsyncDBExecutor implements Closeable{
             isStopped = true;
         }
 
-        public SyncState getSyncState(){
+         SyncState getSyncState(){
             long syncNum = this.syncNum;
             long preSyncNum = this.preSyncNum;
             int waittingOprNum = queue.size();

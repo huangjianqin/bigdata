@@ -203,9 +203,9 @@ public class ThreadManager implements ScheduledExecutorService {
             this.name = name;
         }
 
-        public abstract ExecutorService getExecutor();
+        abstract ExecutorService getExecutor();
 
-        public static ExecutorType getByName(String name) {
+        static ExecutorType getByName(String name) {
             for (ExecutorType type : values()) {
                 if (type.getName().toLowerCase().equals(name.toLowerCase())) {
                     return type;
@@ -215,7 +215,7 @@ public class ThreadManager implements ScheduledExecutorService {
             throw new UnknownExecutorTypeException("unknown executor type '" + name + "'");
         }
 
-        public String getName() {
+        String getName() {
             return name;
         }
 
@@ -226,7 +226,7 @@ public class ThreadManager implements ScheduledExecutorService {
         }
     }
 
-    static ScheduledExecutorService getDefaultScheduledExecutor(){
+    private static ScheduledExecutorService getDefaultScheduledExecutor(){
         return Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum());
     }
 }

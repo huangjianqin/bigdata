@@ -34,7 +34,7 @@ public abstract class AsyncDBEntity implements Serializable{
         //do nothing, waitting to overwrite
     }
 
-    public boolean isCanPersist(DBOperation operation){
+    boolean isCanPersist(DBOperation operation){
         DBStatus now;
         do {
             now = status.get();
@@ -46,7 +46,7 @@ public abstract class AsyncDBEntity implements Serializable{
     }
 
 
-    public boolean tryBDOpr(int tryTimes){
+    boolean tryBDOpr(int tryTimes){
         DBStatus now;
         do {
             now = status.get();
@@ -65,11 +65,11 @@ public abstract class AsyncDBEntity implements Serializable{
     }
 
     //setter && getter
-    public DBSynchronzier getAsyncPersistent() {
+    DBSynchronzier getAsyncPersistent() {
         return DBSynchronzier;
     }
 
-    public void setAsyncPersistent(DBSynchronzier DBSynchronzier) {
+    void setAsyncPersistent(DBSynchronzier DBSynchronzier) {
         this.DBSynchronzier = DBSynchronzier;
     }
 }

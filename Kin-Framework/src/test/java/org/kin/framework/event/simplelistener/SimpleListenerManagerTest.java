@@ -1,6 +1,6 @@
 package org.kin.framework.event.simplelistener;
 
-import org.kin.framework.event.SimpleListenerManager;
+import org.kin.framework.event.impl.SimpleListenerManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;

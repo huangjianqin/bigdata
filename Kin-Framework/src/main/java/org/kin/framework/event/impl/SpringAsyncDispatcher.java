@@ -105,7 +105,7 @@ public class SpringAsyncDispatcher extends AsyncDispatcher implements Applicatio
         private Method method;
         private Class<T> eventClass;
 
-        public MethodAnnotationEventHandler(Object invoker, Method method, Class<T> eventClass) {
+        MethodAnnotationEventHandler(Object invoker, Method method, Class<T> eventClass) {
             this.invoker = invoker;
             this.method = method;
             this.eventClass = eventClass;
@@ -123,15 +123,15 @@ public class SpringAsyncDispatcher extends AsyncDispatcher implements Applicatio
             }
         }
 
-        public Object getInvoker() {
+        Object getInvoker() {
             return invoker;
         }
 
-        public Method getMethod() {
+        Method getMethod() {
             return method;
         }
 
-        public Class<T> getEventClass() {
+        Class<T> getEventClass() {
             return eventClass;
         }
     }

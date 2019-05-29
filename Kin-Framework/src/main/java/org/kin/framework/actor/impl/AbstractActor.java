@@ -53,7 +53,7 @@ public abstract class AbstractActor<AA extends AbstractActor<AA>> implements Act
     }
 
     @Override
-    public void stopNow() {
+    public final void stopNow() {
         actorContext.closeNow();
     }
 

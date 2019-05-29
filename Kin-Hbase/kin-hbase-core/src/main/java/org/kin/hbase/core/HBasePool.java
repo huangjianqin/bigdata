@@ -28,9 +28,7 @@ public class HBasePool implements Closeable {
     }
 
     public HBasePool() {
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            cancelAllConnections();
-        }));
+        monitorJVMClose();
     }
 
     public static HBasePool common() {

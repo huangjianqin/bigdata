@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <p>
  * 部分成员域, 在Actor 线程, lazy init
  */
-public class ActorContext<AA extends AbstractActor<AA>> implements Runnable {
+class ActorContext<AA extends AbstractActor<AA>> implements Runnable {
     private static final Logger log = LoggerFactory.getLogger("actor");
     private static final Logger profileLog = LoggerFactory.getLogger("actorProfile");
 
@@ -141,19 +141,19 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable {
         }
     }
 
-    public <T> void receive(T arg) {
+    <T> void receive(T arg) {
         Mail<AA> mail = new ReceiveMailImpl<T>(arg);
         mailBox.add(mail);
         tryRun();
     }
 
-    public void receive(Message<AA> message) {
+    void receive(Message<AA> message) {
         Mail<AA> mail = new MessageMailImpl(message);
         mailBox.add(mail);
         tryRun();
     }
 
-    public Future<?> receiveSchedule(Message<AA> message, long delay, TimeUnit unit) {
+    Future<?> receiveSchedule(Message<AA> message, long delay, TimeUnit unit) {
         Future future = actorSystem.getThreadManager().schedule(() -> {
             receive(message);
         }, delay, unit);
@@ -161,7 +161,7 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable {
         return future;
     }
 
-    public Future<?> receiveFixedRateSchedule(Message<AA> message, long initialDelay, long period, TimeUnit unit) {
+    Future<?> receiveFixedRateSchedule(Message<AA> message, long initialDelay, long period, TimeUnit unit) {
         Future future = actorSystem.getThreadManager().scheduleAtFixedRate(() -> {
             receive(message);
         }, initialDelay, period, unit);
@@ -172,7 +172,7 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable {
     /**
      * Actor线程执行
      */
-    public void close() {
+    void close() {
         isStopped = true;
         actorSystem.remove(actorPath);
         self.preStop();
@@ -191,7 +191,7 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable {
      * Actor线程执行
      * ps: 停止当前执行线程, 另外开
      */
-    public void closeNow() {
+    void closeNow() {
         isStopped = true;
         actorSystem.remove(actorPath);
         if (this.currentThread != null) {
@@ -242,15 +242,15 @@ public class ActorContext<AA extends AbstractActor<AA>> implements Runnable {
     }
 
     //getter
-    public ActorPath getActorPath() {
+    ActorPath getActorPath() {
         return actorPath;
     }
 
-    public boolean isStarted() {
+    boolean isStarted() {
         return isStarted;
     }
 
-    public boolean isStopped() {
+    boolean isStopped() {
         return isStopped;
     }
 }

@@ -32,7 +32,7 @@ public class HotFix {
     }
 
     public void fix0() {
-        //最好存储在堆外(比如数据库), static也行, 因为热更后, 该类的成员域全部刷新成init时的值
+        //TODO 最好存储在堆外(比如数据库), static也行, 因为热更后, 该类的成员域全部刷新成init时的值
         int oldVersion = 0;
         int version = 1;
         if (oldVersion < version) {

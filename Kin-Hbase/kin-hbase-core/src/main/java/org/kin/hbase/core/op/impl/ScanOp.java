@@ -4,6 +4,7 @@ import org.apache.hadoop.hbase.TableName;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.io.TimeRange;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.kin.framework.JvmCloseCleaner;
 import org.kin.hbase.core.HBasePool;
 import org.kin.hbase.core.domain.Page;
 import org.kin.hbase.core.domain.ScannerStatus;
@@ -237,9 +238,9 @@ public class ScanOp extends QueryOp<ScanOp> {
             table.close();
 
             //保证程序关闭, 所有Scanner都关闭
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            JvmCloseCleaner.DEFAULT().add(() -> {
                 scanner.close();
-            }));
+            });
 
             return scanner;
         } catch (IOException e) {

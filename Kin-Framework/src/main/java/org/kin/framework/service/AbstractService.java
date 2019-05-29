@@ -1,5 +1,7 @@
 package org.kin.framework.service;
 
+import org.kin.framework.Closeable;
+
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -9,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Created by 健勤 on 2017/8/8.
  * 服务抽象
  */
-public abstract class AbstractService implements Service {
+public abstract class AbstractService implements Service{
     private final String serviceName;
     private final ServiceState state;
     private long startTime;
@@ -66,10 +68,6 @@ public abstract class AbstractService implements Service {
                 serviceStart();
                 notifyAllListeners(pre);
 
-                //启动JVM挂钩
-                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                    serviceStop();
-                }));
 //                //再次判断
 //                if(isInState(State.STARTED)){
 //                    notifyAllListeners(pre);

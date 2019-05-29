@@ -1,5 +1,6 @@
-package org.kin.framework.event;
+package org.kin.framework.event.impl;
 
+import org.kin.framework.event.Listener;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;

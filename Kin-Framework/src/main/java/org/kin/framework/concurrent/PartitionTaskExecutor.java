@@ -236,7 +236,7 @@ public class PartitionTaskExecutor<K> {
         private boolean isStopped = false;
         private boolean isTerminated = false;
 
-        public void execute(Task task) {
+        void execute(Task task) {
             try {
                 queue.put(task);
             } catch (InterruptedException e) {
@@ -244,13 +244,14 @@ public class PartitionTaskExecutor<K> {
             }
         }
 
-        public void close() {
+        void close() {
             isStopped = true;
             if (bind != null) {
                 bind.interrupt();
             }
         }
 
+        @Override
         public void run() {
             bind = Thread.currentThread();
             while (!isStopped && !Thread.currentThread().isInterrupted()) {

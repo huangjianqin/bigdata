@@ -126,7 +126,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
     /**
      * 检查处理器处理的事件类型与@param eventType是否一致
      */
-    public static boolean check(Class<? extends Enum> eventType, EventHandler handler) {
+    private static boolean check(Class<? extends Enum> eventType, EventHandler handler) {
         if(handler instanceof SpringAsyncDispatcher.MethodAnnotationEventHandler){
             //无法从MethodAnnotationEventHandler获取到eventType类型
             SpringAsyncDispatcher.MethodAnnotationEventHandler methodAnnotationEventHandler = (SpringAsyncDispatcher.MethodAnnotationEventHandler) handler;
@@ -268,7 +268,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
             }
         }
 
-        public void shutdown() {
+        void shutdown() {
             isStopped = true;
             this.bindThread.interrupt();
         }
@@ -278,7 +278,7 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
      * 主要用于接受事件并放入事件队列,等待分发线程分派该事件
      * 支持动态改变线程数来满足事件及时分派的场景
      */
-    class GenericEventHandler implements EventHandler<Event> {
+    private class GenericEventHandler implements EventHandler<Event> {
 
         @Override
         public void handle(Event event) {
@@ -321,10 +321,10 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
     /**
      * 一事件对应多个事件处理器的场景
      */
-    class MultiListenerHandler implements EventHandler<Event> {
+    private class MultiListenerHandler implements EventHandler<Event> {
         private List<EventHandler<Event>> handlers;
 
-        public MultiListenerHandler() {
+        MultiListenerHandler() {
             this.handlers = new LinkedList<>();
         }
 
