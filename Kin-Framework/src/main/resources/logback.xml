@@ -116,6 +116,10 @@
     </appender>
 
     <!--                                       logger                                                       -->
+    <logger name="error" level="WARN" additivity="false">
+        <appender-ref ref="asyncERROR"/>
+    </logger>
+
     <logger name="hotSwap" level="INFO" additivity="false">
         <appender-ref ref="asyncHotSwapAppender"/>
     </logger>
@@ -135,7 +139,6 @@
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="asyncSTDOUT"/>
-        <appender-ref ref="asyncERROR"/>
     </root>
 
 
