@@ -1,7 +1,6 @@
 package org.kin.framework.event;
 
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -13,10 +12,9 @@ import java.util.*;
  * Created by huangjianqin on 2019/3/1.
  */
 @Component
-public class SimpleListenerManager implements InitializingBean, ApplicationContextAware {
+public class SimpleListenerManager implements ApplicationContextAware {
     private static SimpleListenerManager defalut;
 
-    private ApplicationContext context;
     private Map<Class<?>, List<Object>> listeners = new HashMap<>();
 
     public static SimpleListenerManager instance() {
@@ -49,16 +47,6 @@ public class SimpleListenerManager implements InitializingBean, ApplicationConte
 
     public void register(Object bean) {
         register0(bean);
-        sortAll();
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        Map<String, Object> beans = context.getBeansWithAnnotation(Listener.class);
-        for (Object bean : beans.values()) {
-            register0(bean);
-        }
-
         sortAll();
     }
 
@@ -95,7 +83,12 @@ public class SimpleListenerManager implements InitializingBean, ApplicationConte
 
     @Override
     public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.context = applicationContext;
+        Map<String, Object> beans = applicationContext.getBeansWithAnnotation(Listener.class);
+        for (Object bean : beans.values()) {
+            register0(bean);
+        }
+
+        sortAll();
     }
 
     public  <T> List<T> getListener(Class<T> listenerClass) {

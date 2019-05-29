@@ -3,17 +3,14 @@ package org.kin.framework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
-import org.springframework.context.ApplicationListener;
-import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by huangjianqin on 2019/2/28.
@@ -21,13 +18,12 @@ import java.util.Map;
  * 用于控制jvm close时, close一些使用spring IOC容器管理的对象(主要是释放占用资源)
  */
 @Component
-public class JvmClosingCleaner implements ApplicationListener<ContextRefreshedEvent>, ApplicationContextAware, InitializingBean {
+public class JvmClosingCleaner implements ApplicationContextAware{
     private final Logger log = LoggerFactory.getLogger(JvmClosingCleaner.class);
-    private ApplicationContext applicationContext;
-    private List<Closeable> closeables = Collections.emptyList();
+    private List<Closeable> closeables = new CopyOnWriteArrayList<>();
 
-    @Override
-    public void onApplicationEvent(ContextRefreshedEvent contextRefreshedEvent) {
+    @PostConstruct
+    public void waitingClose(){
         //等spring容器完全初始化后执行
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             for (Closeable closeable : closeables) {
@@ -40,17 +36,12 @@ public class JvmClosingCleaner implements ApplicationListener<ContextRefreshedEv
     }
 
     @Override
-    public void afterPropertiesSet() throws Exception {
-        closeables = new ArrayList<>();
-
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
         Map<String, Closeable> beanMap = applicationContext.getBeansOfType(Closeable.class);
-        for (Closeable bean : beanMap.values()) {
-            closeables.add(bean);
-        }
+        closeables.addAll(beanMap.values());
     }
 
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.applicationContext = applicationContext;
+    public void add(Closeable closeable){
+        closeables.add(closeable);
     }
 }

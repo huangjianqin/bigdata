@@ -6,7 +6,6 @@ import org.kin.framework.event.EventHandlerAOT;
 import org.kin.framework.event.HandleEvent;
 import org.kin.framework.utils.ExceptionUtils;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -25,10 +24,8 @@ import java.util.Map;
  * Created by huangjianqin on 2019/3/1.
  */
 @Component
-public class SpringAsyncDispatcher extends AsyncDispatcher implements InitializingBean, ApplicationContextAware, ApplicationListener {
+public class SpringAsyncDispatcher extends AsyncDispatcher implements ApplicationContextAware, ApplicationListener {
     private static SpringAsyncDispatcher defalut;
-
-    private ApplicationContext context;
 
     //setter && getter
     public static SpringAsyncDispatcher instance() {
@@ -46,8 +43,8 @@ public class SpringAsyncDispatcher extends AsyncDispatcher implements Initializi
      * 识别@HandleEvent注解的类 or 方法, 并自动注册
      */
     @Override
-    public void afterPropertiesSet() throws Exception {
-        Map<String, Object> beans = context.getBeansWithAnnotation(EventHandlerAOT.class);
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        Map<String, Object> beans = applicationContext.getBeansWithAnnotation(EventHandlerAOT.class);
         for (Object bean : beans.values()) {
             Class claxx = bean.getClass();
             boolean isFindFromMethod = false;
@@ -89,11 +86,6 @@ public class SpringAsyncDispatcher extends AsyncDispatcher implements Initializi
                 }
             }
         }
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
-        this.context = applicationContext;
     }
 
     @Override
