@@ -115,6 +115,30 @@
         <appender-ref ref="asyncDBAppender"/>
     </appender>
 
+    <!--                                       logger                                                       -->
+    <logger name="hotSwap" level="INFO" additivity="false">
+        <appender-ref ref="asyncHotSwapAppender"/>
+    </logger>
+
+    <logger name="actor" level="INFO" additivity="false">
+        <appender-ref ref="asyncActor"/>
+    </logger>
+
+    <logger name="actorProfile" level="INFO" additivity="false">
+        <appender-ref ref="asyncActorProfile"/>
+    </logger>
+
+    <logger name="asyncDB" level="INFO" additivity="false">
+        <appender-ref ref="asyncAsyncDBAppender"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="asyncSTDOUT"/>
+        <appender-ref ref="asyncERROR"/>
+    </root>
+
+
     <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->
     <!--<File>/log</File>-->
     <!--<Append>true</Append>-->
@@ -138,28 +162,4 @@
 
     <!--<logger name="Test" level="INFO" additivity="false">-->
     <!--</logger>-->
-
-    <!--                                       logger                                                       -->
-    <logger name="hotSwap" level="INFO" additivity="false">
-        <appender-ref ref="asyncHotSwapAppender"/>
-    </logger>
-
-    <logger name="actor" level="INFO" additivity="false">
-        <appender-ref ref="asyncActor"/>
-    </logger>
-
-    <logger name="actorProfile" level="INFO" additivity="false">
-        <appender-ref ref="asyncActorProfile"/>
-    </logger>
-
-    <logger name="asyncDB" level="INFO" additivity="false">
-        <appender-ref ref="asyncAsyncDBAppender"/>
-    </logger>
-
-
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="asyncSTDOUT"/>
-        <appender-ref ref="asyncERROR"/>
-    </root>
 </configuration>

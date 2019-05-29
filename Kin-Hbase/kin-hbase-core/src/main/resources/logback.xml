@@ -61,6 +61,20 @@
         <appender-ref ref="hbaseAppender"/>
     </appender>
 
+    <!--                                       logger                                                       -->
+    <logger name="hbase" level="INFO" additivity="false">
+        <appender-ref ref="asyncHBaseAppender"/>
+        <appender-ref ref="org.apache.hadoop"/>
+        <appender-ref ref="org.apache.zookeeper"/>
+    </logger>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="asyncSTDOUT"/>
+        <appender-ref ref="asyncERROR"/>
+    </root>
+
+
     <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->
     <!--<File>/log</File>-->
     <!--<Append>true</Append>-->
@@ -84,17 +98,4 @@
 
     <!--<logger name="Test" level="INFO" additivity="false">-->
     <!--</logger>-->
-
-    <!--                                       logger                                                       -->
-    <logger name="hbase" level="INFO" additivity="false">
-        <appender-ref ref="asyncHBaseAppender"/>
-        <appender-ref ref="org.apache.hadoop"/>
-        <appender-ref ref="org.apache.zookeeper"/>
-    </logger>
-
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="asyncSTDOUT"/>
-        <appender-ref ref="asyncERROR"/>
-    </root>
 </configuration>
