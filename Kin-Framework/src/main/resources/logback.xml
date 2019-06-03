@@ -90,6 +90,48 @@
         </rollingPolicy>
     </appender>
 
+    <appender name="partitionTaskAppender" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+        <Append>true</Append>
+        <encoder>
+            <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/%d{yyyy-MM-dd}/partitionTask.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <!--<maxHistory>30</maxHistory>-->
+        </rollingPolicy>
+    </appender>
+
+    <appender name="concurrentAppender" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+        <Append>true</Append>
+        <encoder>
+            <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/%d{yyyy-MM-dd}/concurrent.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <!--<maxHistory>30</maxHistory>-->
+        </rollingPolicy>
+    </appender>
+
+    <appender name="eventAppender" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+        <Append>true</Append>
+        <encoder>
+            <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/%d{yyyy-MM-dd}/event.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <!--<maxHistory>30</maxHistory>-->
+        </rollingPolicy>
+    </appender>
+
     <!--                                       async                                                       -->
     <appender name="asyncSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="STDOUT"/>
@@ -115,6 +157,14 @@
         <appender-ref ref="asyncDBAppender"/>
     </appender>
 
+    <appender name="asyncConcurrentAppender" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="concurrentAppender"/>
+    </appender>
+
+    <appender name="asyncEventAppender" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="eventAppender"/>
+    </appender>
+
     <!--                                       logger                                                       -->
     <logger name="error" level="WARN" additivity="false">
         <appender-ref ref="asyncERROR"/>
@@ -134,6 +184,14 @@
 
     <logger name="asyncDB" level="INFO" additivity="false">
         <appender-ref ref="asyncAsyncDBAppender"/>
+    </logger>
+
+    <logger name="concurrent" level="INFO" additivity="false">
+        <appender-ref ref="asyncConcurrentAppender"/>
+    </logger>
+
+    <logger name="event" level="INFO" additivity="false">
+        <appender-ref ref="asyncEventAppender"/>
     </logger>
 
     <root level="INFO">

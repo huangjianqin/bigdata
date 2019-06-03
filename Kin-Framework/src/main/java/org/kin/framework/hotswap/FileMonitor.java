@@ -29,7 +29,7 @@ import java.util.concurrent.Executors;
  * 异步热加载文件 同步类热更新
  */
 public class FileMonitor extends Thread implements Closeable{
-    private static final Logger log = LoggerFactory.getLogger(FileMonitor.class);
+    private static final Logger log = LoggerFactory.getLogger("hotSwap");
     //默认实现
     private static final FileMonitor monitor = new FileMonitor();
     private static volatile boolean isStarted = false;

@@ -1,8 +1,11 @@
 package org.kin.framework.concurrent;
 
 import com.google.common.base.Preconditions;
+import org.kin.framework.concurrent.domain.PartitionTaskReport;
 import org.kin.framework.concurrent.impl.HashPartitioner;
 import org.kin.framework.utils.ExceptionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +19,7 @@ import java.util.concurrent.*;
  * 对于需要 严格 保证task顺序执行的Executor, 则不能扩大或减少Executor的Parallism(不支持重排序)
  */
 public class PartitionTaskExecutor<K> {
+    private static final Logger log = LoggerFactory.getLogger("concurrent");
     //分区数
     private volatile int partitionNum;
 
@@ -42,7 +46,8 @@ public class PartitionTaskExecutor<K> {
     public PartitionTaskExecutor(int partitionNum, Partitioner<K> partitioner, ThreadFactory threadFactory) {
         this.partitionNum = partitionNum;
 
-        this.threadManager = new ThreadManager(Executors.newCachedThreadPool(threadFactory));
+        this.threadManager = new ThreadManager(Executors.newCachedThreadPool(threadFactory),
+                Executors.newSingleThreadScheduledExecutor());
 
         this.partitioner = partitioner;
         this.partitionTasks = new PartitionTaskExecutor.PartitionTask[this.partitionNum];
@@ -54,8 +59,32 @@ public class PartitionTaskExecutor<K> {
     public PartitionTaskExecutor(int partitionNum, Partitioner<K> partitioner, ThreadPoolExecutor threadPool) {
         this.partitionNum = partitionNum;
         this.partitioner = partitioner;
-        this.threadManager = new ThreadManager(threadPool);
+        this.threadManager = new ThreadManager(threadPool, Executors.newSingleThreadScheduledExecutor());
         this.partitionTasks = new PartitionTaskExecutor.PartitionTask[this.partitionNum];
+    }
+
+    //------------------------------------------------------------------------------------------------------------------
+    private void heartbeat(){
+        threadManager.scheduleAtFixedRate(() -> heartbeat0(), 30, 30, TimeUnit.SECONDS);
+    }
+
+    private void heartbeat0(){
+        PartitionTask[] copy = partitionTasks;
+        List<PartitionTaskReport> reports = new ArrayList<>(copy.length);
+        for(PartitionTask partitionTask: copy){
+            reports.add(partitionTask.report());
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("taskNum: " + reports.size() + " >>>" + System.lineSeparator());
+        sb.append("threadName\t" + "pendingTaskNum\t" + "finishedTaskNum" + System.lineSeparator());
+        for(PartitionTaskReport report: reports){
+            sb.append(report.getThreadName() + "\t");
+            sb.append(report.getPendingTaskNum() + "\t");
+            sb.append(report.getFinishedTaskNum() + System.lineSeparator());
+        }
+
+        log.info(sb.toString());
     }
 
     //------------------------------------------------------------------------------------------------------------------
@@ -236,6 +265,8 @@ public class PartitionTaskExecutor<K> {
         private boolean isStopped = false;
         private boolean isTerminated = false;
 
+        private long finishedTaskNum;
+
         void execute(Task task) {
             try {
                 queue.put(task);
@@ -259,6 +290,7 @@ public class PartitionTaskExecutor<K> {
                 try {
                     task = queue.take();
                     task.run();
+                    finishedTaskNum++;
                 } catch (InterruptedException e) {
                     //执行中的task重新插入队头
                     if (task != null) {
@@ -269,6 +301,10 @@ public class PartitionTaskExecutor<K> {
                 }
             }
             isTerminated = true;
+        }
+
+        public PartitionTaskReport report(){
+            return new PartitionTaskReport(bind.getName(), queue.size(), finishedTaskNum);
         }
     }
 }

@@ -12,7 +12,7 @@ import java.util.TimerTask;
  */
 public class HotFix {
     private static HotFix HOT_FIX = new HotFix();
-    private static final Logger log = LoggerFactory.getLogger(HotFix.class);
+    private static final Logger log = LoggerFactory.getLogger("hotSwap");
 
     private HotFix() {
     }

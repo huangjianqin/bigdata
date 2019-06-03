@@ -127,7 +127,7 @@ public class ActorSystem implements Closeable{
                 threadManager.shutdown();
                 threadManager = null;
             }
-        }, 1 * 60 * 1000);
+        }, 10 * 1000);
     }
 
     //getter
