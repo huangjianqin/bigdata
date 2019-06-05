@@ -1,16 +1,17 @@
 package org.kin.spark.hbase.rdd
 
-import scala.collection.JavaConversions._
-import org.apache.hadoop.hbase.{Cell, CellUtil}
 import org.apache.hadoop.hbase.client.{Result, Scan}
 import org.apache.hadoop.hbase.filter.Filter
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
 import org.apache.hadoop.hbase.mapreduce.{IdentityTableMapper, TableInputFormat, TableMapReduceUtil}
+import org.apache.hadoop.hbase.{Cell, CellUtil}
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 import org.kin.hbase.core.entity.HBaseEntity
 import org.kin.hbase.core.utils.HBaseUtils
+
+import scala.collection.JavaConversions._
 //want to use specify implicit, must import this package or add compiler option language:implicitConversions
 import scala.language.implicitConversions
 

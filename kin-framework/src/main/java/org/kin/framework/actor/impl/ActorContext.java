@@ -28,7 +28,7 @@ class ActorContext<AA extends AbstractActor<AA>> implements Runnable {
     private Receive receive;
     private final ActorSystem actorSystem;
 
-    private final Queue<Mail<AA>> mailBox = new ConcurrentLinkedDeque<>();
+    private final Queue<Mail<AA>> mailBox = new LinkedBlockingDeque<>();
     private final AtomicInteger boxSize = new AtomicInteger();
     private volatile Thread currentThread;
     private volatile boolean isStarted = false;
@@ -52,7 +52,7 @@ class ActorContext<AA extends AbstractActor<AA>> implements Runnable {
         self.postStart();
         isStarted = true;
         //每12h清楚已结束的调度
-        receiveFixedRateSchedule(actor -> clearFinishedFutures(), 0, 12, TimeUnit.HOURS);
+        receiveFixedRateSchedule(actor -> clearFinishedFutures(), 0, 1, TimeUnit.HOURS);
     }
 
     @Override

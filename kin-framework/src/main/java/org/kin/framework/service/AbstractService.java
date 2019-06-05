@@ -1,7 +1,5 @@
 package org.kin.framework.service;
 
-import org.kin.framework.Closeable;
-
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
