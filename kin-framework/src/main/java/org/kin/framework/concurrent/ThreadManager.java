@@ -2,6 +2,7 @@ package org.kin.framework.concurrent;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
+import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.utils.Constants;
 import org.kin.framework.utils.StringUtils;
 import org.kin.framework.utils.SysUtils;
@@ -26,6 +27,10 @@ public class ThreadManager implements ScheduledExecutorService {
             DEFAULT_EXECUTOR_TYPE = ExecutorType.THREADPOOL;
             DEFAULT = new ThreadManager(DEFAULT_EXECUTOR_TYPE.getExecutor(), getDefaultScheduledExecutor());
         }
+
+        JvmCloseCleaner.DEFAULT().add(() -> {
+            DEFAULT.shutdown();
+        });
     }
 
     //执行线程

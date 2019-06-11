@@ -1,6 +1,7 @@
 package org.kin.framework.actor.impl;
 
 import org.kin.framework.Closeable;
+import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.actor.domain.ActorPath;
 import org.kin.framework.concurrent.SimpleThreadFactory;
 import org.kin.framework.concurrent.ThreadManager;
@@ -28,6 +29,10 @@ public class ActorSystem implements Closeable{
     static {
         ActorSystem defaultAS = new ActorSystem(DEFAULT_AS_NAME);
         name2AS.put(DEFAULT_AS_NAME, defaultAS);
+
+        JvmCloseCleaner.DEFAULT().add(() -> {
+            defaultAS.shutdown();
+        });
     }
 
     private final String name;

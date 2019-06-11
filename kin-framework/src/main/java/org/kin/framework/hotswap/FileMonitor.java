@@ -1,6 +1,7 @@
 package org.kin.framework.hotswap;
 
 import org.kin.framework.Closeable;
+import org.kin.framework.JvmCloseCleaner;
 import org.kin.framework.concurrent.SimpleThreadFactory;
 import org.kin.framework.concurrent.ThreadManager;
 import org.kin.framework.hotswap.agent.JavaAgentHotswap;
@@ -33,6 +34,12 @@ public class FileMonitor extends Thread implements Closeable{
     //默认实现
     private static final FileMonitor monitor = new FileMonitor();
     private static volatile boolean isStarted = false;
+
+    static {
+        JvmCloseCleaner.DEFAULT().add(() -> {
+            monitor.shutdown();
+        });
+    }
 
     private WatchService watchService;
     //hash(file name) -> Reloadable 实例
