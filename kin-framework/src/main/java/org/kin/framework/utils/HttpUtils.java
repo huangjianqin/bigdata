@@ -27,4 +27,8 @@ public class HttpUtils {
 
         return Collections.emptyMap();
     }
+
+    public static boolean checkHostPort(String address){
+        return address.matches("\\s+:\\d{1,5}");
+    }
 }
