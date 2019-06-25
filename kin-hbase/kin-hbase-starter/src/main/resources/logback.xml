@@ -34,6 +34,7 @@
         </rollingPolicy>
     </appender>
 
+    <!--                                       async                                                       -->
     <appender name="asyncSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="STDOUT"/>
     </appender>
@@ -42,11 +43,10 @@
         <appender-ref ref="ERROR"/>
     </appender>
 
-    <root level="INFO">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="asyncSTDOUT"/>
+    <!--                                       logger                                                       -->
+    <logger name="error" level="ERROR" additivity="false">
         <appender-ref ref="asyncERROR"/>
-    </root>
+    </logger>
 
     <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->
         <!--<File>/log</File>-->
