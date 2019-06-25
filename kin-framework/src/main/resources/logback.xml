@@ -172,30 +172,32 @@
 
     <logger name="hotSwap" level="INFO" additivity="false">
         <appender-ref ref="asyncHotSwapAppender"/>
+        <appender-ref ref="asyncERROR" level="ERROR"/>
     </logger>
 
     <logger name="actor" level="INFO" additivity="false">
         <appender-ref ref="asyncActor"/>
+        <appender-ref ref="asyncERROR" level="ERROR"/>
     </logger>
 
     <logger name="actorProfile" level="INFO" additivity="false">
         <appender-ref ref="asyncActorProfile"/>
+        <appender-ref ref="asyncERROR" level="ERROR"/>
     </logger>
 
     <logger name="asyncDB" level="INFO" additivity="false">
         <appender-ref ref="asyncAsyncDBAppender"/>
+        <appender-ref ref="asyncERROR" level="ERROR"/>
     </logger>
 
     <logger name="concurrent" level="INFO" additivity="false">
         <appender-ref ref="asyncConcurrentAppender"/>
+        <appender-ref ref="asyncERROR" level="ERROR"/>
     </logger>
 
     <logger name="event" level="INFO" additivity="false">
         <appender-ref ref="asyncEventAppender"/>
-    </logger>
-
-    <logger name="error" level="ERROR" additivity="false">
-        <appender-ref ref="asyncERROR"/>
+        <appender-ref ref="asyncERROR" level="ERROR"/>
     </logger>
 
     <root level="INFO">

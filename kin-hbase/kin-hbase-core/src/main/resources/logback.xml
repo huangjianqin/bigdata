@@ -66,6 +66,7 @@
         <appender-ref ref="asyncHBaseAppender"/>
         <appender-ref ref="org.apache.hadoop"/>
         <appender-ref ref="org.apache.zookeeper"/>
+        <appender-ref ref="asyncERROR" level="ERROR"/>
     </logger>
 
     <logger name="error" level="ERROR" additivity="false">
