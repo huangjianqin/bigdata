@@ -138,7 +138,7 @@
             <version>0.9.11</version>
         </dependency>
 
-        <!--java微基准测试工具-->
+        <!--java微基准测试工具   用于较细粒度测试-->
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-core</artifactId>
