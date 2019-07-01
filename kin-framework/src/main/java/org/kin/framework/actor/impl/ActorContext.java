@@ -213,8 +213,9 @@ class ActorContext<AA extends AbstractActor<AA>> implements Runnable {
 
     private void addFuture(Future<?> future) {
         Queue<Future> queue;
-        while ((queue = futures.putIfAbsent(this, new ConcurrentLinkedQueue<>())) == null)
+        while ((queue = futures.putIfAbsent(this, new ConcurrentLinkedQueue<>())) == null) {
             queue.add(future);
+        }
     }
 
     private void clearFutures() {
@@ -252,5 +253,24 @@ class ActorContext<AA extends AbstractActor<AA>> implements Runnable {
 
     boolean isStopped() {
         return isStopped;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        ActorContext<?> that = (ActorContext<?>) o;
+
+        return actorPath != null ? actorPath.equals(that.actorPath) : that.actorPath == null;
+    }
+
+    @Override
+    public int hashCode() {
+        return actorPath != null ? actorPath.hashCode() : 0;
     }
 }

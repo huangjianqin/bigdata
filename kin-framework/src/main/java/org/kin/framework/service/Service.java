@@ -37,9 +37,21 @@ public interface Service extends Closeable {
      * 服务状态的枚举类
      */
     enum State {
+        /**
+         * 服务未初始化状态
+         */
         NOTINITED(0, "NOTINITED"),
+        /**
+         * 服务已初始化状态
+         */
         INITED(1, "INITED"),
+        /**
+         * 服务已启动
+         */
         STARTED(2, "STARTED"),
+        /**
+         * 服务已停止
+         */
         STOPPED(3, " STOPPED");
 
         private final int stateId;

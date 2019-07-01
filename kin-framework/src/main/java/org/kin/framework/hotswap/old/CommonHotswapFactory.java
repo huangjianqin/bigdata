@@ -10,15 +10,15 @@ import java.util.List;
 /**
  * Created by huangjianqin on 2018/2/2.
  */
-public class CommonHotswapFactory extends HotswapFactory {
+public class CommonHotswapFactory extends AbstractHotswapFactory {
     private static final Logger log = LoggerFactory.getLogger("hotSwap");
-    private List<ClassReloadable> monitoredClassReferences = new ArrayList<>();
+    private List<ClassReloadableEntity> monitoredClassReferences = new ArrayList<>();
 
     /**
-     * @param classReloadable 注册该对象, 有类热更新, 尝试更新该实例的成员域
+     * @param classReloadableEntity 注册该对象, 有类热更新, 尝试更新该实例的成员域
      */
-    public void register(ClassReloadable classReloadable) {
-        monitoredClassReferences.add(classReloadable);
+    public void register(ClassReloadableEntity classReloadableEntity) {
+        monitoredClassReferences.add(classReloadableEntity);
     }
 
     @Override
@@ -58,8 +58,8 @@ public class CommonHotswapFactory extends HotswapFactory {
             try {
                 for (Class<?> changedClass : changedClasses) {
                     try {
-                        for (ClassReloadable classReloadable : monitoredClassReferences) {
-                            classReloadable.reload(changedClass, classLoader);
+                        for (ClassReloadableEntity classReloadableEntity : monitoredClassReferences) {
+                            classReloadableEntity.reload(changedClass, classLoader);
                         }
                     } catch (Exception e) {
                         log.error("replace new class '" + changedClass.getName() + "' reference failure", e);

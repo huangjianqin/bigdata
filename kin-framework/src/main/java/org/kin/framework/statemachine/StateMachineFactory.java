@@ -1,6 +1,7 @@
 package org.kin.framework.statemachine;
 
 import com.google.common.collect.Maps;
+import org.kin.framework.utils.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -322,7 +323,7 @@ public class StateMachineFactory<OPERAND, STATE extends Enum<STATE>, EVENTTYPE e
      * 生成可视化图
      */
     public void generateStateGraph() {
-        if (stateGraph == null || stateGraph.equals("")) {
+        if (StringUtils.isBlank(stateGraph)) {
             StringBuilder sb = new StringBuilder();
             sb.append("@@@@@@@@@ state  machine @@@@@@@@@").append(System.lineSeparator());
             sb.append("InitialState: ").append(defaultInitialState);

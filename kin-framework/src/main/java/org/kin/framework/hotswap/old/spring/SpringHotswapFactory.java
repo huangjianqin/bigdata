@@ -2,8 +2,8 @@ package org.kin.framework.hotswap.old.spring;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import org.kin.framework.hotswap.old.AbstractHotswapFactory;
 import org.kin.framework.hotswap.old.DynamicClassLoader;
-import org.kin.framework.hotswap.old.HotswapFactory;
 import org.kin.framework.utils.ClassUtils;
 import org.kin.framework.utils.ExceptionUtils;
 import org.slf4j.Logger;
@@ -28,7 +28,7 @@ import java.util.*;
  * 目前仅仅支持AutoWired注解的bean
  */
 //@Component
-public class SpringHotswapFactory extends HotswapFactory implements ApplicationListener<ContextRefreshedEvent> {
+public class SpringHotswapFactory extends AbstractHotswapFactory implements ApplicationListener<ContextRefreshedEvent> {
     private static final Logger log = LoggerFactory.getLogger("hotSwap");
     private DefaultListableBeanFactory beanFactory;
     //缓存所有BeanDefinition

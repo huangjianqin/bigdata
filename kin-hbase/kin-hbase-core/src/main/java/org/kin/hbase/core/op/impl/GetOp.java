@@ -7,7 +7,7 @@ import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.kin.hbase.core.HBasePool;
-import org.kin.hbase.core.op.QueryOp;
+import org.kin.hbase.core.op.AbstractQueryOp;
 import org.kin.hbase.core.utils.HBaseUtils;
 
 import java.io.IOException;
@@ -15,7 +15,7 @@ import java.io.IOException;
 /**
  * Created by huangjianqin on 2018/5/25.
  */
-public class GetOp extends QueryOp<GetOp> {
+public class GetOp extends AbstractQueryOp<GetOp> {
     private final String rowKey;
 
     public GetOp(String tableName, String rowKey) {

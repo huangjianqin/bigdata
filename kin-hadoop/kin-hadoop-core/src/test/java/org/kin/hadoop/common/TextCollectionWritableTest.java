@@ -74,13 +74,13 @@ public class TextCollectionWritableTest extends WritableTestBase{
 
     public static void testCommonOperation(){
         cw1.addAll(cw2);
-        System.out.println(cw1.mkString(","));
+        System.out.println(cw1.toString());
         cw1.removeAll(cw2);
-        System.out.println(cw1.mkString(","));
+        System.out.println(cw1.toString());
         System.out.println(cw1.containsAll(cw2));
         System.out.println(cw1.contains(new Text("aaa")));
         cw1.clear();
-        System.out.println(cw1.mkString(","));
+        System.out.println(cw1.toString());
     }
 
     public static void testComparator2(){

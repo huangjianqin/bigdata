@@ -8,7 +8,7 @@ public class ServiceState {
     private String serviceName;
     private volatile Service.State state;
     //服务状态转换规则
-    private static final boolean[][] stateMap = {
+    private static final boolean[][] STATE_MAP = {
             //           notInited inited started stopped
             /*notInited*/ {false, true, false, true},
             /*inite    */ {false, true, true, true},
@@ -56,7 +56,7 @@ public class ServiceState {
      * 根据规则判断状态转换是否合法
      */
     private static boolean isValidStateTransition(Service.State pre, Service.State post) {
-        boolean[] targetMap = stateMap[pre.getStateId()];
+        boolean[] targetMap = STATE_MAP[pre.getStateId()];
         return targetMap[post.getStateId()];
     }
 
@@ -65,6 +65,6 @@ public class ServiceState {
     }
 
     static boolean[][] getStateMap() {
-        return stateMap;
+        return STATE_MAP;
     }
 }

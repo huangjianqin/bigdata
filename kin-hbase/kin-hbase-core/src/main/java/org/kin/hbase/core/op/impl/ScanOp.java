@@ -9,7 +9,7 @@ import org.kin.hbase.core.HBasePool;
 import org.kin.hbase.core.domain.Page;
 import org.kin.hbase.core.domain.ScannerStatus;
 import org.kin.hbase.core.exception.IllegalScannerStatusException;
-import org.kin.hbase.core.op.QueryOp;
+import org.kin.hbase.core.op.AbstractQueryOp;
 import org.kin.hbase.core.utils.HBaseUtils;
 
 import java.io.Closeable;
@@ -19,7 +19,7 @@ import java.util.*;
 /**
  * Created by huangjianqin on 2018/5/25.
  */
-public class ScanOp extends QueryOp<ScanOp> {
+public class ScanOp extends AbstractQueryOp<ScanOp> {
     private final Scan scan;
 
     public ScanOp(String tableName) {

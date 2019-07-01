@@ -7,8 +7,17 @@ import java.util.List;
  * Created by huangjianqin on 2019/4/1.
  */
 public enum DBOperation {
+    /**
+     * DB记录插入
+     */
     Insert(DBStatus.INSERT, Arrays.asList(DBStatus.NORMAL, DBStatus.DELETED)),
+    /**
+     * DB记录更新
+     */
     Update(DBStatus.UPDATE, Arrays.asList(DBStatus.INSERT, DBStatus.UPDATE)),
+    /**
+     * DB记录删除
+     */
     Delete(DBStatus.DELETED, Arrays.asList(DBStatus.INSERT, DBStatus.UPDATE)),;
 
     private DBStatus targetStauts;

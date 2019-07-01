@@ -7,12 +7,18 @@ import org.slf4j.LoggerFactory;
  * Created by huangjianqin on 2019/3/31.
  */
 public enum DBStatus {
+    /**
+     * 正常状态
+     */
     NORMAL {
         @Override
         public boolean execute(DBSynchronzier DBSynchronzier, AsyncDBEntity asyncDBEntity) {
             return true;
         }
     },
+    /**
+     * DB记录正在插入状态
+     */
     INSERT {
         @Override
         public boolean execute(DBSynchronzier DBSynchronzier, AsyncDBEntity asyncDBEntity) {
@@ -27,6 +33,9 @@ public enum DBStatus {
             return false;
         }
     },
+    /**
+     * DB记录正在更新状态
+     */
     UPDATE {
         @Override
         public boolean execute(DBSynchronzier DBSynchronzier, AsyncDBEntity asyncDBEntity) {
@@ -41,6 +50,9 @@ public enum DBStatus {
             return false;
         }
     },
+    /**
+     * DB记录正在删除状态
+     */
     DELETED {
         @Override
         public boolean execute(DBSynchronzier DBSynchronzier, AsyncDBEntity asyncDBEntity) {

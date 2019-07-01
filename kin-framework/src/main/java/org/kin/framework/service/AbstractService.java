@@ -1,5 +1,7 @@
 package org.kin.framework.service;
 
+import org.kin.framework.utils.StringUtils;
+
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,7 +16,7 @@ public abstract class AbstractService implements Service{
     private final ServiceState state;
     private long startTime;
     private final List<ServiceStateChangeListener> listeners = new LinkedList<>();
-    private static final List<ServiceStateChangeListener> globalListeners = new LinkedList<>();
+    private static final List<ServiceStateChangeListener> GLOBAL_LISTENERS = new LinkedList<>();
 
     //
     private final Object lock = new Object();
@@ -25,7 +27,7 @@ public abstract class AbstractService implements Service{
     }
 
     public AbstractService(String serviceName) {
-        if (serviceName != null && !serviceName.equals("")) {
+        if (StringUtils.isNotBlank(serviceName)) {
             this.serviceName = serviceName;
         } else {
             this.serviceName = getClass().getSimpleName();
@@ -156,7 +158,7 @@ public abstract class AbstractService implements Service{
 
     private void notifyAllListeners(State pre) {
         notifyListeners(listeners, pre);
-        notifyListeners(globalListeners, pre);
+        notifyListeners(GLOBAL_LISTENERS, pre);
     }
 
     private void notifyListeners(Collection<ServiceStateChangeListener> listeners, State pre) {
@@ -166,11 +168,11 @@ public abstract class AbstractService implements Service{
     }
 
     public void registerGlogalListener(ServiceStateChangeListener listener) {
-        globalListeners.add(listener);
+        GLOBAL_LISTENERS.add(listener);
     }
 
     public void unregisterGlogalListener(ServiceStateChangeListener listener) {
-        globalListeners.remove(listener);
+        GLOBAL_LISTENERS.remove(listener);
     }
 
     @Override

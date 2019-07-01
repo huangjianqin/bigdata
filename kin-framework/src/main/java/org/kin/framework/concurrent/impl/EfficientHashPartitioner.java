@@ -8,6 +8,7 @@ import org.kin.framework.concurrent.Partitioner;
  * 更高效的hash方式
  */
 public class EfficientHashPartitioner<K> implements Partitioner<K> {
+    @Override
     public int toPartition(K key, int numPartition) {
         int h;
         //高低位异或 目的是增加hash的复杂度

@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class AsyncDispatcher extends AbstractService implements Dispatcher {
     private static Logger log = LoggerFactory.getLogger("event");
+    private static final int TOO_MUCH_EVENTS_THRESHOLD = 100;
 
     //缓存所有待分发的时间
     private final BlockingQueue<Event> eventQueue;
@@ -285,12 +286,12 @@ public class AsyncDispatcher extends AbstractService implements Dispatcher {
             try {
                 //用于统计并打印相关信息日志
                 int size = eventQueue.size();
-                if (size > 0 && size % 1000 == 0) {
+                if (size > 0) {
                     log.info("event-queue size = " + size);
                 }
                 int remCapacity = eventQueue.remainingCapacity();
-                if (remCapacity < 1000) {
-                    log.warn("Very low remaining capacity in the event-queue: " + remCapacity);
+                if (remCapacity > TOO_MUCH_EVENTS_THRESHOLD) {
+                    log.warn("high remaining capacity in the event-queue: " + remCapacity);
                 }
                 //end
 

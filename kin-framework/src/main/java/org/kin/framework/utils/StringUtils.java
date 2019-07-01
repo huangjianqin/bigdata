@@ -1,13 +1,17 @@
 package org.kin.framework.utils;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 
 /**
  * Created by huangjianqin on 2018/5/25.
  */
 public class StringUtils {
+    private static final String MKSTRING_SEPARATOR = ",";
+
     public static boolean isBlank(String s) {
-        return s == null || s.equals("");
+        return s == null || "".equals(s);
     }
 
     public static boolean isNotBlank(String s) {
@@ -22,32 +26,47 @@ public class StringUtils {
         return s;
     }
 
-    public static String mkString(String separator, String... contents) {
-        if (contents != null && contents.length > 0) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(contents[0]);
-
-            for (int i = 1; i < contents.length; i++) {
-                sb.append(", " + contents[i]);
-            }
-
-            return sb.toString();
-        }
-
-        return null;
+    public static String mkString(String... contents) {
+        return mkString(MKSTRING_SEPARATOR, contents);
     }
 
-    public static String mkString(String separator, Collection collection) {
+    public static String mkString(String separator, String... contents) {
+        return mkString(separator, Arrays.asList(contents));
+    }
+
+    public static String mkString(Collection collection) {
+        return mkString(MKSTRING_SEPARATOR, collection);
+    }
+
+    public static <E> String mkString(String separator, Collection<E> collection) {
+        separator += " ";
         if (collection != null && collection.size() > 0) {
             StringBuilder sb = new StringBuilder();
-            for(Object o: collection){
-                sb.append(o + ", ");
+            for (E e : collection) {
+                sb.append(e + separator);
             }
             sb.replace(sb.length() - 1, sb.length(), "");
 
             return sb.toString();
         }
 
-        return null;
+        return "";
+    }
+
+    public static <K, V> String mkString(Map<K, V> map) {
+        return mkString(MKSTRING_SEPARATOR, map);
+    }
+
+    public static <K, V> String mkString(String separator, Map<K, V> map) {
+        separator += " ";
+        if (map != null && map.size() > 0) {
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<K, V> entry : map.entrySet()) {
+                sb.append("(" + entry.getKey() + "-" + entry.getValue() + ")" + separator);
+            }
+            sb.replace(sb.length() - separator.length(), sb.length(), "");
+            return sb.toString();
+        }
+        return "";
     }
 }

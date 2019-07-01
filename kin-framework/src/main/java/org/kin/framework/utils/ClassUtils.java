@@ -41,7 +41,7 @@ public class ClassUtils {
     }
 
     public static <T> T instance(String classStr) {
-        if (classStr == null || classStr.equals("")) {
+        if (StringUtils.isBlank(classStr)) {
             return null;
         }
         try {
@@ -76,7 +76,7 @@ public class ClassUtils {
     }
 
     public static Class getClass(String className) {
-        if (className == null || className.equals("")) {
+        if (StringUtils.isBlank(className)) {
             return null;
         }
         try {
@@ -96,7 +96,7 @@ public class ClassUtils {
             Enumeration<URL> urls = currentClassLoader.getResources(packageResource);
             while (urls.hasMoreElements()) {
                 URL url = urls.nextElement();
-                if (url.getProtocol().equals("file")) {
+                if ("file".equals(url.getProtocol())) {
                     Path path = Paths.get(url.toURI());
                     Stream<Path> stream = Files.walk(path);
                     Set<Class<T>> classes = stream.filter(p -> !Files.isDirectory(p) && p.toString().endsWith(CLASS_SUFFIX))
@@ -119,7 +119,7 @@ public class ClassUtils {
                                     && parent.isAssignableFrom(claxx)
                             ).collect(Collectors.toSet());
                     subClasses.addAll(Sets.newHashSet(classes));
-                } else if (url.getProtocol().equals("jar") && isIncludeJar) {
+                } else if ("jar".equals(url.getProtocol()) && isIncludeJar) {
                     JarURLConnection jarURLConnection = (JarURLConnection) url.openConnection();
                     JarFile jarFile = jarURLConnection.getJarFile();
                     Enumeration<JarEntry> jarEntries = jarFile.entries();

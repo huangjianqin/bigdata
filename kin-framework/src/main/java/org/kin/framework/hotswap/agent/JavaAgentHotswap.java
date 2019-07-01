@@ -34,36 +34,37 @@ import java.util.Map;
  */
 public final class JavaAgentHotswap implements JavaAgentHotswapMBean{
     private static final Logger log = LoggerFactory.getLogger("hotSwap");
+    private static final String JAR_SUFFIX = ".jar";
     //热更class文件放另外一个目录
     //开发者指定, 也可以走配置
-    private static final String classesPath = "hotswap/classes";
-    private static final String jarPath = "hotswap/KinJavaAgent.jar";
+    private static final String CLASSPATH = "hotswap/classes";
+    private static final String JAR_PATH = "hotswap/KinJavaAgent.jar";
     private volatile boolean isInit;
     private volatile Map<String, ClassFileInfo> filePath2ClassFileInfo = new HashMap<>();
 
     static {
-//        classesPath = JavaAgentHotswap.class.getClassLoader().getResource("").getPath();
-        log.info("java agent:classpath:{}", classesPath);
+//        CLASSPATH = JavaAgentHotswap.class.getClassLoader().getResource("").getPath();
+        log.info("java agent:classpath:{}", CLASSPATH);
 
-//        jarPath = getJarPath();
-        log.info("java agent:jarPath:{}", jarPath);
+//        JAR_PATH = getJarPath();
+        log.info("java agent:jarPath:{}", JAR_PATH);
     }
 
-    private static final JavaAgentHotswap hotswapFactory = new JavaAgentHotswap();
+    private static final JavaAgentHotswap HOTSWAP_FACTORY = new JavaAgentHotswap();
 
     public static JavaAgentHotswap instance() {
-        if (!hotswapFactory.isInit) {
-            hotswapFactory.init();
-            hotswapFactory.isInit = true;
+        if (!HOTSWAP_FACTORY.isInit) {
+            HOTSWAP_FACTORY.init();
+            HOTSWAP_FACTORY.isInit = true;
         }
-        return hotswapFactory;
+        return HOTSWAP_FACTORY;
     }
 
     private JavaAgentHotswap() {
     }
 
-    public static String getClassesPath() {
-        return classesPath;
+    public static String getClasspath() {
+        return CLASSPATH;
     }
 
     private void init() {
@@ -84,11 +85,13 @@ public final class JavaAgentHotswap implements JavaAgentHotswapMBean{
         URL url = JavaDynamicAgent.class.getProtectionDomain().getCodeSource().getLocation();
         String filePath = null;
         try {
-            filePath = URLDecoder.decode(url.getPath(), "utf-8");// 转化为utf-8编码
+            // 转化为utf-8编码
+            filePath = URLDecoder.decode(url.getPath(), "utf-8");
         } catch (Exception e) {
             ExceptionUtils.log(e);
         }
-        if (filePath.endsWith(".jar")) {// 可执行jar包运行的结果里包含".jar"
+        // 可执行jar包运行的结果里包含".jar"
+        if (filePath.endsWith(JAR_SUFFIX)) {
             // 截取路径中的jar包名
             filePath = filePath.substring(0, filePath.lastIndexOf("/") + 1);
         }
@@ -154,13 +157,13 @@ public final class JavaAgentHotswap implements JavaAgentHotswapMBean{
                 vm = VirtualMachine.attach(pid);
                 //JavaDynamicAgent所在的jar包
                 //app jar包与agent jar包同一路径
-                vm.loadAgent(jarPath);
+                vm.loadAgent(JAR_PATH);
 
                 //重新定义类
                 JavaDynamicAgent.getInstrumentation().redefineClasses(classDefList.toArray(new ClassDefinition[classDefList.size()]));
 
                 //删除热更类文件
-                Path rootPath = Paths.get(classesPath);
+                Path rootPath = Paths.get(CLASSPATH);
                 Files.list(rootPath).forEach(childpath -> {
                     try {
                         Files.deleteIfExists(childpath);

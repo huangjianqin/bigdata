@@ -73,11 +73,11 @@ public class Text2TextMapWritableTest extends WritableTestBase{
 
     public static void testCommonOperation() {
         mr1.putAll(mr4);
-        System.out.println(mr1.mkString(","));
+        System.out.println(mr1.toString());
         for(Object key: mr2.keySet()){
             mr1.remove(key);
         }
-        System.out.println(mr1.mkString(","));
+        System.out.println(mr1.toString());
         for(Object key: mr2.keySet()){
             System.out.println(mr1.get(key));
         }
@@ -86,7 +86,7 @@ public class Text2TextMapWritableTest extends WritableTestBase{
         System.out.println(mr2.putIfAbsent(new Text("1"), new Text("aaaa1")));
         System.out.println(mr2.putIfAbsent(new Text("5"), new Text("eeee")));
         mr2.clear();
-        System.out.println(mr2.mkString(","));
+        System.out.println(mr2.toString());
         System.out.println(mr2.isEmpty());
     }
 

@@ -31,20 +31,20 @@ public class TextPairWritable extends PairWritable<Text, Text> {
         @Override
         public int compare(byte[] b1, int s1, int l1, byte[] b2, int s2, int l2) {
             try {
-                int firstL1S = WritableUtils.decodeVIntSize(b1[s1]);
-                int firstL2S = WritableUtils.decodeVIntSize(b2[s2]);
-                int firstL1 = firstL1S + readVInt(b1, s1);
-                int firstL2 = firstL2S + readVInt(b2, s2);
-                int cmd1 = compareBytes(b1, s1 + firstL1S, firstL1, b2, s2 + firstL2S, firstL2);
+                int firstL1Size = WritableUtils.decodeVIntSize(b1[s1]);
+                int firstL2Size = WritableUtils.decodeVIntSize(b2[s2]);
+                int firstL1 = firstL1Size + readVInt(b1, s1);
+                int firstL2 = firstL2Size + readVInt(b2, s2);
+                int cmd1 = compareBytes(b1, s1 + firstL1Size, firstL1, b2, s2 + firstL2Size, firstL2);
                 if (cmd1 != 0) {
                     return cmd1;
                 }
 
-                int secondL1S = WritableUtils.decodeVIntSize(b1[s1 + firstL1]);
-                int secondL2S = WritableUtils.decodeVIntSize(b2[s2 + firstL2]);
+                int secondL1Size = WritableUtils.decodeVIntSize(b1[s1 + firstL1]);
+                int secondL2Size = WritableUtils.decodeVIntSize(b2[s2 + firstL2]);
 
-                return compareBytes(b1, s1 + firstL1 + secondL1S, l1 - firstL1 - secondL1S,
-                        b2, s2 + firstL2 + secondL2S, l2 - firstL2 - secondL2S);
+                return compareBytes(b1, s1 + firstL1 + secondL1Size, l1 - firstL1 - secondL1Size,
+                        b2, s2 + firstL2 + secondL2Size, l2 - firstL2 - secondL2Size);
             } catch (IOException e) {
                 e.printStackTrace();
             }

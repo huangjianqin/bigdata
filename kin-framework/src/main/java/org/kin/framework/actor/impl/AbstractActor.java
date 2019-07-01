@@ -64,8 +64,12 @@ public abstract class AbstractActor<AA extends AbstractActor<AA>> implements Act
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
 
         AbstractActor<?> that = (AbstractActor<?>) o;
 

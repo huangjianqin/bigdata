@@ -62,11 +62,11 @@ public class ThreadManager implements ScheduledExecutorService {
         return new ThreadManager(ExecutorType.FORKJOIN.getExecutor(), getDefaultScheduledExecutor());
     }
 
-    public static ThreadManager CommonThreadManager() {
+    public static ThreadManager commonThreadManager() {
         return new ThreadManager(ExecutorType.THREADPOOL.getExecutor());
     }
 
-    public static ThreadManager CommonThreadManagerWithScheduled() {
+    public static ThreadManager commonThreadManagerWithScheduled() {
         return new ThreadManager(ExecutorType.THREADPOOL.getExecutor(), getDefaultScheduledExecutor());
     }
 
@@ -190,12 +190,18 @@ public class ThreadManager implements ScheduledExecutorService {
 
     //--------------------------------------------------------------------------------------------
     private enum ExecutorType {
+        /**
+         * ForkJoin线程池
+         */
         FORKJOIN("ForkJoin") {
             @Override
             public ExecutorService getExecutor() {
                 return new ForkJoinPool();
             }
         },
+        /**
+         * 普通线程池
+         */
         THREADPOOL("ThreadPool") {
             @Override
             public ExecutorService getExecutor() {

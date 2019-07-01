@@ -2,6 +2,7 @@ package org.kin.hadoop.common.writable;
 
 import org.apache.hadoop.io.WritableComparable;
 import org.kin.framework.utils.ClassUtils;
+import org.kin.framework.utils.StringUtils;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -34,25 +35,10 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
     public CollectionWritable(Class<T> itemType, Collection<T> collection, boolean isOverwrite) {
         this(itemType);
         if (isOverwrite) {
-            this.collection = (Collection<T>) collection;
+            this.collection = collection;
         } else {
             addAll(collection);
         }
-    }
-
-    public String mkString(String separator) {
-        if (separator == null || separator.equals("")) {
-            separator = ",";
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (WritableComparable item : collection) {
-            sb.append(item.toString() + separator);
-        }
-        if (collection.size() > 0) {
-            sb.replace(sb.length() - separator.length(), sb.length(), "");
-        }
-        return sb.toString();
     }
 
     @Override
@@ -83,9 +69,9 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
         WritableComparable[] thisArr = collection.toArray(new WritableComparable[1]);
         WritableComparable[] thatArr = (WritableComparable[]) o.collection.toArray(new WritableComparable[1]);
 
-        Integer thisArrL = thisArr.length;
-        Integer thatArrL = thatArr.length;
-        Integer lCmd = thisArrL.compareTo(thatArrL);
+        Integer thisArrLength = thisArr.length;
+        Integer thatArrLength = thatArr.length;
+        Integer lCmd = thisArrLength.compareTo(thatArrLength);
         if (lCmd != 0) {
             return lCmd;
         }
@@ -189,12 +175,18 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof CollectionWritable)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof CollectionWritable)) {
+            return false;
+        }
 
         CollectionWritable<?> that = (CollectionWritable<?>) o;
 
-        if (itemType != null ? !itemType.equals(that.itemType) : that.itemType != null) return false;
+        if (itemType != null ? !itemType.equals(that.itemType) : that.itemType != null) {
+            return false;
+        }
         return collection != null ? collection.equals(that.collection) : that.collection == null;
     }
 
@@ -207,7 +199,7 @@ public class CollectionWritable<T extends WritableComparable> implements Writabl
 
     @Override
     public String toString() {
-        return mkString(",");
+        return StringUtils.mkString(collection);
     }
 
     public Class<? extends WritableComparable> getItemType() {

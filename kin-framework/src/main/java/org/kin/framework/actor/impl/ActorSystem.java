@@ -13,25 +13,22 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 
 /**
  * Created by huangjianqin on 2018/6/5.
  */
 public class ActorSystem implements Closeable{
     private static final Logger log = LoggerFactory.getLogger("actor");
-    private static final Map<String, ActorSystem> name2AS = new ConcurrentHashMap<>();
+    private static final Map<String, ActorSystem> NAME2ACTORSYSTEM = new ConcurrentHashMap<>();
     private static final String DEFAULT_AS_NAME = "default";
 
     static {
-        ActorSystem defaultAS = new ActorSystem(DEFAULT_AS_NAME);
-        name2AS.put(DEFAULT_AS_NAME, defaultAS);
+        ActorSystem defaultActorSystem = new ActorSystem(DEFAULT_AS_NAME);
+        NAME2ACTORSYSTEM.put(DEFAULT_AS_NAME, defaultActorSystem);
 
         JvmCloseCleaner.DEFAULT().add(() -> {
-            defaultAS.shutdown();
+            defaultActorSystem.shutdown();
         });
     }
 
@@ -43,12 +40,14 @@ public class ActorSystem implements Closeable{
 
     private ActorSystem(String name) {
         this.name = name;
-        if (name.toLowerCase().equals(DEFAULT_AS_NAME) && name2AS.containsKey(DEFAULT_AS_NAME)) {
+        if (name.toLowerCase().equals(DEFAULT_AS_NAME) && NAME2ACTORSYSTEM.containsKey(DEFAULT_AS_NAME)) {
             throw new IllegalStateException("actor system named '" + name + "' has exists!!!");
         }
         this.threadManager = new ThreadManager(
-                Executors.newCachedThreadPool(new SimpleThreadFactory("actor-system-executor" + name)),
-                Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum(), new SimpleThreadFactory("actor-system-schedule" + name)));
+                new ThreadPoolExecutor(0, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS,
+                        new LinkedBlockingQueue<>(), new SimpleThreadFactory("actor-system-executor" + name)),
+                new ScheduledThreadPoolExecutor(
+                        SysUtils.getSuitableThreadNum(), new SimpleThreadFactory("actor-system-schedule" + name)));
 
         monitorJVMClose();
     }
@@ -59,7 +58,7 @@ public class ActorSystem implements Closeable{
     }
 
     public static ActorSystem create() {
-        return name2AS.get(DEFAULT_AS_NAME);
+        return NAME2ACTORSYSTEM.get(DEFAULT_AS_NAME);
     }
 
     public static ActorSystem create(String name) {
@@ -68,12 +67,12 @@ public class ActorSystem implements Closeable{
 
     public static ActorSystem create(String name, ThreadManager threadManager) {
         ActorSystem actorSystem = new ActorSystem(name, threadManager);
-        name2AS.put(name, actorSystem);
+        NAME2ACTORSYSTEM.put(name, actorSystem);
         return actorSystem;
     }
 
     public static ActorSystem getActorSystem(String name) {
-        return name2AS.get(name);
+        return NAME2ACTORSYSTEM.get(name);
     }
 
     public <AA extends AbstractActor<AA>> AA actorOf(Class<AA> claxx, String name) {
@@ -119,20 +118,16 @@ public class ActorSystem implements Closeable{
     }
 
     public void shutdown() {
-        name2AS.remove(name);
+        NAME2ACTORSYSTEM.remove(name);
         for (AbstractActor actor : path2Actors.values()) {
             actor.stop();
         }
-        //延迟1min关闭线程池
-        Timer timer = new Timer();
-        timer.schedule(new TimerTask() {
-            @Override
-            public void run() {
-                path2Actors = null;
-                threadManager.shutdown();
-                threadManager = null;
-            }
-        }, 10 * 1000);
+        //延迟10s关闭线程池
+        ThreadManager.DEFAULT.schedule(() -> {
+            path2Actors = null;
+            threadManager.shutdown();
+            threadManager = null;
+        }, 10, TimeUnit.SECONDS);
     }
 
     //getter

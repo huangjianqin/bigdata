@@ -7,6 +7,7 @@ import org.kin.framework.concurrent.Partitioner;
  * HashTable的Hash方式
  */
 public class HashPartitioner<K> implements Partitioner<K> {
+    @Override
     public int toPartition(K key, int numPartition) {
         return key == null ? 0 : ((key.hashCode() & Integer.MAX_VALUE) % numPartition);
     }

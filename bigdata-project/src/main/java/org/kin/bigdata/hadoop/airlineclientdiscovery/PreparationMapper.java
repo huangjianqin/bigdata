@@ -5,6 +5,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.kin.framework.utils.StringUtils;
 
 import java.io.IOException;
 import java.util.Calendar;
@@ -43,7 +44,7 @@ public class PreparationMapper extends Mapper<LongWritable, Text, NullWritable, 
 
     private boolean filter(String[] values) {
         //票价为空
-        if (values[14] == null || values[14].equals("") || values[15] == null || values[15].equals("")) {
+        if (StringUtils.isBlank(values[14]) || StringUtils.isBlank(values[15])) {
             return false;
         }
         //票价为0, 平均折扣率!=0, 总飞行公里数>0

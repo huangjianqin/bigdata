@@ -14,7 +14,7 @@ public abstract class AsyncDBEntity implements Serializable{
     private static final Logger log = LoggerFactory.getLogger("asyncDB");
 
     private volatile AtomicReference<DBStatus> status = new AtomicReference<>(DBStatus.NORMAL);
-    private static volatile DBSynchronzier DBSynchronzier;
+    private volatile DBSynchronzier DBSynchronzier;
 
     public void insert(){
         AsyncDBService.getInstance().dbOpr(this, DBOperation.Insert);

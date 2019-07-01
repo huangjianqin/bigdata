@@ -19,7 +19,7 @@ import java.util.function.Predicate;
 public class ReceiveBuilder {
     private static final Logger log = LoggerFactory.getLogger("actor");
     //match和matchEqual根据定义顺序排序,matchAny总是在match和matchEqual之后执行，并且也是根据定义顺序排序
-    private List<FuncWrapper> funcWrappers = new ArrayList<>();
+    private List<AbstractFuncWrapper> funcWrappers = new ArrayList<>();
 
     private ReceiveBuilder() {
     }
@@ -59,10 +59,10 @@ public class ReceiveBuilder {
      * Predicate用于匹配message
      * Comparable用于排序方法
      */
-    private abstract class FuncWrapper<AA extends AbstractActor<AA>, T> implements Predicate, Comparable {
+    private abstract class AbstractFuncWrapper<AA extends AbstractActor<AA>, T> implements Predicate, Comparable {
         private final Receive.Func<AA, T> func;
 
-        protected FuncWrapper(Receive.Func<AA, T> func) {
+        protected AbstractFuncWrapper(Receive.Func<AA, T> func) {
             this.func = func;
         }
 
@@ -77,7 +77,7 @@ public class ReceiveBuilder {
         }
     }
 
-    private class TypeMatchFuncWrapper<AA extends AbstractActor<AA>, T> extends FuncWrapper<AA, T> {
+    private class TypeMatchFuncWrapper<AA extends AbstractActor<AA>, T> extends AbstractFuncWrapper<AA, T> {
         private Class<T> type;
 
         private TypeMatchFuncWrapper(Class<T> type, Receive.Func<AA, T> func) {
@@ -96,7 +96,7 @@ public class ReceiveBuilder {
         }
     }
 
-    private class MatchEqualFuncWrapper<AA extends AbstractActor<AA>, T> extends FuncWrapper<AA, T> {
+    private class MatchEqualFuncWrapper<AA extends AbstractActor<AA>, T> extends AbstractFuncWrapper<AA, T> {
         private T t;
 
         protected MatchEqualFuncWrapper(T t, Receive.Func<AA, T> func) {
@@ -115,7 +115,7 @@ public class ReceiveBuilder {
         }
     }
 
-    private class MatchAnyFuncWrapper<AA extends AbstractActor<AA>, T> extends FuncWrapper<AA, T> {
+    private class MatchAnyFuncWrapper<AA extends AbstractActor<AA>, T> extends AbstractFuncWrapper<AA, T> {
 
         protected MatchAnyFuncWrapper(Receive.Func<AA, T> func) {
             super(func);
@@ -135,16 +135,16 @@ public class ReceiveBuilder {
 
     //-----------------------------------------------------------------------------------------------
     private class InternalReceive implements Receive {
-        private final List<FuncWrapper> funcWrappers;
+        private final List<AbstractFuncWrapper> funcWrappers;
 
-        private InternalReceive(List<FuncWrapper> funcWrappers) {
+        private InternalReceive(List<AbstractFuncWrapper> funcWrappers) {
             this.funcWrappers = funcWrappers;
         }
 
 
         @Override
         public <AA extends AbstractActor<AA>, T> void receive(AA applier, T message) {
-            for (FuncWrapper funcWrapper : funcWrappers) {
+            for (AbstractFuncWrapper funcWrapper : funcWrappers) {
                 //所有匹配的方法都会处理该条message
                 funcWrapper.checkAndExecute(applier, message);
             }

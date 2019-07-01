@@ -8,7 +8,7 @@ import java.lang.reflect.Field;
 /**
  * Created by huangjianqin on 2018/2/1.
  */
-public abstract class ClassReloadable implements Reloadable {
+public abstract class ClassReloadableEntity implements Reloadable {
     /**
      * 默认热更新实现，仅仅会替换当前类(包括子类和父类)的成员域
      * <p>

@@ -9,11 +9,11 @@ import java.util.*;
 /**
  * Created by huangjianqin on 2018/5/25.
  */
-public abstract class QueryOp<S extends QueryOp> extends AbstractHBaseOp<S> {
+public abstract class AbstractQueryOp<S extends AbstractQueryOp> extends AbstractHBaseOp<S> {
     private List<QueryInfo> queryInfos = new ArrayList<>();
     private List<Filter> filters = new ArrayList<>();
 
-    public QueryOp(String tableName) {
+    public AbstractQueryOp(String tableName) {
         super(tableName);
     }
 

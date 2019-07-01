@@ -21,10 +21,10 @@ import java.util.concurrent.*;
  */
 public class HBasePool implements Closeable {
     private static final Logger log = LoggerFactory.getLogger(HBaseConstants.HBASE_LOGGER);
-    private static final HBasePool common;
+    private static final HBasePool COMMON;
 
     static {
-        common = new HBasePool();
+        COMMON = new HBasePool();
     }
 
     public HBasePool() {
@@ -32,7 +32,7 @@ public class HBasePool implements Closeable {
     }
 
     public static HBasePool common() {
-        return common;
+        return COMMON;
     }
 
     //保存着该HBase连接池曾经初始化过的所有连接,并在销毁时,把这些连接全部关闭(不管在池中，还是借出)

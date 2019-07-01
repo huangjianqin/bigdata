@@ -2,6 +2,7 @@ package org.kin.hadoop.common.writable;
 
 import org.apache.hadoop.io.WritableComparable;
 import org.kin.framework.utils.ClassUtils;
+import org.kin.framework.utils.StringUtils;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -42,22 +43,6 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
         }
     }
 
-    public String mkString(String separator) {
-        if (separator == null || separator.equals("")) {
-            separator = ",";
-        }
-
-        if (map.size() > 0) {
-            StringBuilder sb = new StringBuilder();
-            for (Entry<K, V> entry : map.entrySet()) {
-                sb.append("(" + entry.getKey() + ", " + entry.getValue() + ")" + separator);
-            }
-            sb.replace(sb.length() - separator.length(), sb.length(), "");
-            return sb.toString();
-        }
-        return "";
-    }
-
     @Override
     public int compareTo(MapWritable o) {
         if (o == null) {
@@ -74,9 +59,9 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
         Iterator<K> thisIterator = map.keySet().iterator();
         Iterator<K> thatIterator = o.map.keySet().iterator();
         while (thisIterator.hasNext() && thatIterator.hasNext()) {
-            K thisWC = thisIterator.next();
-            K thatWC = thatIterator.next();
-            Integer cmd = thisWC.compareTo(thatWC);
+            K thisWritableComparable = thisIterator.next();
+            K thatWritableComparable = thatIterator.next();
+            Integer cmd = thisWritableComparable.compareTo(thatWritableComparable);
             if (cmd != 0) {
                 return cmd;
             }
@@ -202,13 +187,21 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof MapWritable)) return false;
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof MapWritable)) {
+            return false;
+        }
 
         MapWritable<?, ?> that = (MapWritable<?, ?>) o;
 
-        if (keyClass != null ? !keyClass.equals(that.keyClass) : that.keyClass != null) return false;
-        if (valueClass != null ? !valueClass.equals(that.valueClass) : that.valueClass != null) return false;
+        if (keyClass != null ? !keyClass.equals(that.keyClass) : that.keyClass != null) {
+            return false;
+        }
+        if (valueClass != null ? !valueClass.equals(that.valueClass) : that.valueClass != null) {
+            return false;
+        }
         return map != null ? map.equals(that.map) : that.map == null;
     }
 
@@ -222,7 +215,7 @@ public class MapWritable<K extends WritableComparable, V extends WritableCompara
 
     @Override
     public String toString() {
-        return mkString(",");
+        return StringUtils.mkString(this);
     }
 
     public Class<K> getKeyClass() {

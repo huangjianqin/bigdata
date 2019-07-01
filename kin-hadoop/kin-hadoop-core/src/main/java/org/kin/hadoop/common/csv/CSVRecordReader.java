@@ -97,8 +97,9 @@ public class CSVRecordReader extends RecordReader<LongWritable, TextCollectionWr
         }
 
         while (true) {
-            if (pos >= end)
+            if (pos >= end) {
                 return false;
+            }
             long newSize = 0;
             newSize = readLine(cValue);
             pos += newSize;

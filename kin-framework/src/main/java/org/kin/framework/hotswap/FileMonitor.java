@@ -19,7 +19,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by huangjianqin on 2018/2/1.
@@ -32,20 +34,20 @@ import java.util.concurrent.Executors;
 public class FileMonitor extends Thread implements Closeable{
     private static final Logger log = LoggerFactory.getLogger("hotSwap");
     //默认实现
-    private static final FileMonitor monitor = new FileMonitor();
+    private static final FileMonitor COMMON = new FileMonitor();
     private static volatile boolean isStarted = false;
 
     static {
         JvmCloseCleaner.DEFAULT().add(() -> {
-            monitor.shutdown();
+            COMMON.shutdown();
         });
     }
 
     private WatchService watchService;
     //hash(file name) -> Reloadable 实例
-    private Map<Integer, FileReloadable> monitorItems;
+    private Map<Integer, AbstractFileReloadable> monitorItems;
     //类热加载工厂
-//    private HotswapFactory hotswapFactory;
+//    private AbstractHotswapFactory hotswapFactory;
     private JavaAgentHotswap javaAgentHotswap = JavaAgentHotswap.instance();
     //分段锁
     private Object[] locks;
@@ -59,9 +61,9 @@ public class FileMonitor extends Thread implements Closeable{
 
     public static FileMonitor instance() {
         if (!isStarted) {
-            monitor.start();
+            COMMON.start();
         }
-        return monitor;
+        return COMMON;
     }
 
     private void init() {
@@ -82,7 +84,8 @@ public class FileMonitor extends Thread implements Closeable{
 //        }
         if (threadManager == null) {
             //默认设置
-            ExecutorService executorService = Executors.newFixedThreadPool(10, new SimpleThreadFactory("file-monitor"));
+            ExecutorService executorService = new ThreadPoolExecutor(0, 5, 60L, TimeUnit.SECONDS,
+                    new LinkedBlockingQueue<>(), new SimpleThreadFactory("file-monitor"));
             this.threadManager = new ThreadManager(executorService);
         }
 
@@ -90,7 +93,7 @@ public class FileMonitor extends Thread implements Closeable{
 //            monitorClasspath();
 //        }
         //监听热更class存储目录
-        Path classesPath = Paths.get(JavaAgentHotswap.getClassesPath());
+        Path classesPath = Paths.get(JavaAgentHotswap.getClasspath());
         try {
             classesPath.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
         } catch (IOException e) {
@@ -100,7 +103,7 @@ public class FileMonitor extends Thread implements Closeable{
         monitorJVMClose();
     }
 
-//    public FileMonitor hotswapFactory(HotswapFactory hotswapFactory) {
+//    public FileMonitor hotswapFactory(AbstractHotswapFactory hotswapFactory) {
 //        this.hotswapFactory = hotswapFactory;
 //        return this;
 //    }
@@ -158,7 +161,7 @@ public class FileMonitor extends Thread implements Closeable{
                         } else {
                             synchronized (getLock(hashKey)) {
                                 //处理文件热更新
-                                FileReloadable fileReloadable = monitorItems.get(hashKey);
+                                AbstractFileReloadable fileReloadable = monitorItems.get(hashKey);
                                 if (fileReloadable != null) {
                                     threadManager.execute(() -> {
                                         try {
@@ -230,20 +233,20 @@ public class FileMonitor extends Thread implements Closeable{
 //    /**
 //     * @param classReloadable 监听该实例
 //     */
-//    public void monitorObject(ClassReloadable classReloadable) {
+//    public void monitorObject(ClassReloadableEntity classReloadable) {
 //        checkStatus();
 //        if (hotswapFactory instanceof CommonHotswapFactory) {
 //            ((CommonHotswapFactory) hotswapFactory).register(classReloadable);
 //        }
 //    }
 
-    public void monitorFile(String pathStr, FileReloadable fileReloadable) {
+    public void monitorFile(String pathStr, AbstractFileReloadable fileReloadable) {
         checkStatus();
         Path path = Paths.get(pathStr);
         monitorFile(path, fileReloadable);
     }
 
-    public void monitorFile(Path path, FileReloadable fileReloadable) {
+    public void monitorFile(Path path, AbstractFileReloadable fileReloadable) {
         checkStatus();
         if (!Files.isDirectory(path)) {
             monitorFile0(path.getParent(), path.getFileName().toString(), fileReloadable);
@@ -255,7 +258,7 @@ public class FileMonitor extends Thread implements Closeable{
     /**
      * 监听文件变化
      */
-    private void monitorFile0(Path file, String itemName, FileReloadable fileReloadable) {
+    private void monitorFile0(Path file, String itemName, AbstractFileReloadable fileReloadable) {
         try {
             file.register(watchService, StandardWatchEventKinds.ENTRY_MODIFY);
         } catch (IOException e) {

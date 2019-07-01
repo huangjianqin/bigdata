@@ -18,7 +18,7 @@ import java.io.File;
 public class LoggerFactory {
     public static final String BASE_PATH = "logs";
 
-    public static Logger getAsyncFileLogger(LogEvent logEvent) {
+    public static Logger getAsyncFileLogger(AbstractLogEvent logEvent) {
         Logger logger = org.slf4j.LoggerFactory.getLogger(logEvent.getLoggerName());
         if (!(logger instanceof ch.qos.logback.classic.Logger)) {
             return logger;

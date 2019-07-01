@@ -23,6 +23,18 @@ import java.util.*;
  */
 public class HBaseUtils {
     private static final Logger log = LoggerFactory.getLogger(HBaseConstants.HBASE_LOGGER);
+    private static final String STRING_CLASS = "class java.lang.String";
+    private static final String INTEGER_CLASS = "class java.lang.Integer";
+    private static final String INT_CLASS = "int";
+    private static final String DOUBLE_CLASS = "class java.lang.Double";
+    private static final String DOUBLE_CLASS2 = "double";
+    private static final String LONG_CLASS = "class java.lang.Long";
+    private static final String LONG_CLASS2 = "long";
+    private static final String BYTE_CLASS = "class java.lang.Byte";
+    private static final String BYTE_CLASS2 = "byte";
+    private static final String SHORT_CLASS = "class java.lang.Short";
+    private static final String SHORT_CLASS2 = "short";
+
 
     public static <T> List<Put> convert2Puts(T... entities) {
         return convert2Puts(Arrays.asList(entities));
@@ -94,7 +106,7 @@ public class HBaseUtils {
      */
     private static byte[] getFieldValue(Field field, Object object) {
         try {
-            if (field.getGenericType().toString().equals("class java.lang.String")) {
+            if (STRING_CLASS.equals(field.getGenericType().toString())) {
                 Method m = object.getClass().getMethod(getterMethodName(field.getName()));
 
                 String val;
@@ -108,8 +120,8 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (field.getGenericType().toString().equals("class java.lang.Integer") ||
-                    field.getGenericType().toString().equals("int")) {
+            if (INTEGER_CLASS.equals(field.getGenericType().toString()) ||
+                    INT_CLASS.equals(field.getGenericType().toString())) {
                 Method m = object.getClass().getMethod(getterMethodName(field.getName()));
 
                 int val;
@@ -122,8 +134,8 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (field.getGenericType().toString().equals("class java.lang.Double") ||
-                    field.getGenericType().toString().equals("double")) {
+            if (DOUBLE_CLASS.equals(field.getGenericType().toString()) ||
+                    DOUBLE_CLASS2.equals(field.getGenericType().toString())) {
                 Method m = object.getClass().getMethod(getterMethodName(field.getName()));
 
                 double val;
@@ -136,8 +148,8 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (field.getGenericType().toString().equals("class java.lang.Long") ||
-                    field.getGenericType().toString().equals("long")) {
+            if (LONG_CLASS.equals(field.getGenericType().toString()) ||
+                    LONG_CLASS2.equals(field.getGenericType().toString())) {
                 Method m = object.getClass().getMethod(getterMethodName(field.getName()));
 
                 long val;
@@ -150,8 +162,8 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (field.getGenericType().toString().equals("class java.lang.Byte") ||
-                    field.getGenericType().toString().equals("byte")) {
+            if (BYTE_CLASS.equals(field.getGenericType().toString()) ||
+                    BYTE_CLASS2.equals(field.getGenericType().toString())) {
                 Method m = object.getClass().getMethod(getterMethodName(field.getName()));
 
                 byte val;
@@ -159,6 +171,20 @@ public class HBaseUtils {
                     val = (byte) m.invoke(object);
                 } else {
                     val = field.getByte(object);
+                }
+
+                return Bytes.toBytes(val);
+            }
+
+            if (SHORT_CLASS.equals(field.getGenericType().toString()) ||
+                    SHORT_CLASS2.equals(field.getGenericType().toString())) {
+                Method m = object.getClass().getMethod(getterMethodName(field.getName()));
+
+                short val;
+                if (m != null) {
+                    val = (byte) m.invoke(object);
+                } else {
+                    val = field.getShort(object);
                 }
 
                 return Bytes.toBytes(val);
