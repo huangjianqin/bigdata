@@ -26,11 +26,11 @@ public class StringUtils {
         return s;
     }
 
-    public static String mkString(String... contents) {
+    public static String mkString(Object... contents) {
         return mkString(MKSTRING_SEPARATOR, contents);
     }
 
-    public static String mkString(String separator, String... contents) {
+    public static String mkString(String separator, Object... contents) {
         return mkString(separator, Arrays.asList(contents));
     }
 
