@@ -26,7 +26,7 @@ public class JMHTest {
                 //     使用之前要安装hsdis
                 //-XX:-TieredCompilation 关闭分层优化 -server
                 //-XX:+LogCompilation  运行之后项目路径会出现按照测试顺序输出hotspot_pid<PID>.log文件,可以使用JITWatch进行分析,可以根据最后运行的结果的顺序按文件时间找到对应的hotspot_pid<PID>.log文件
-                .jvmArgs("-XX:+UnlockDiagnosticVMOptions", "-XX:+LogCompilation", "-XX:+TraceClassLoading", "-XX:+PrintAssembly")
+//                .jvmArgs("-XX:+UnlockDiagnosticVMOptions", "-XX:+LogCompilation", "-XX:+TraceClassLoading", "-XX:+PrintAssembly")
                 //  .addProfiler(CompilerProfiler.class)    // report JIT compiler profiling via standard MBeans
                 //  .addProfiler(GCProfiler.class)    // report GC time
                 // .addProfiler(StackProfiler.class) // report method stack execution profile
@@ -38,7 +38,7 @@ public class JMHTest {
                  */
                 //.addProfiler(WinPerfAsmProfiler.class)
                 //更多Profiler,请看JMH介绍
-                //.output("JMHTest.log")//输出信息到文件
+                .output("JMHTest.log")//输出信息到文件
                 .build();
         new Runner(opt).run();
     }
