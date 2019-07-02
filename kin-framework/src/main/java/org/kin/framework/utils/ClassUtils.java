@@ -1,11 +1,14 @@
 package org.kin.framework.utils;
 
 import com.google.common.collect.Sets;
+import scala.annotation.meta.field;
+import sun.jvm.hotspot.runtime.Bytes;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -19,11 +22,28 @@ import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.checkerframework.checker.units.UnitsTools.m;
+
 /**
  * Created by huangjianqin on 2018/1/26.
  */
 public class ClassUtils {
     public static final String CLASS_SUFFIX = ".class";
+    //基础类型类名
+    public static final String STRING_CLASS = "class java.lang.String";
+    public static final String CHAR = "char";
+    public static final String INTEGER_CLASS = "class java.lang.Integer";
+    public static final String INT = "int";
+    public static final String DOUBLE_CLASS = "class java.lang.Double";
+    public static final String DOUBLE = "double";
+    public static final String LONG_CLASS = "class java.lang.Long";
+    public static final String LONG = "long";
+    public static final String BYTE_CLASS = "class java.lang.Byte";
+    public static final String BYTE = "byte";
+    public static final String SHORT_CLASS = "class java.lang.Short";
+    public static final String SHORT = "short";
+    public static final String FLOAT_CLASS = "class java.lang.Float";
+    public static final String FLOAT = "float";
 
     /**
      * 通过无参构造器实例化类
@@ -168,6 +188,32 @@ public class ClassUtils {
         return null;
     }
 
+    /**
+     * 通过setter field实例设置值
+     */
+    public static void setFieldValue(Object instance, Field field, Object value) {
+        if (value == null) {
+            return;
+        }
+        try {
+            Method m = setterMethod(instance, field.getName(), value);
+            if (m != null) {
+                m.invoke(instance, value);
+            } else {
+                try{
+                    field.setAccessible(true);
+                    field.set(instance, value);
+                }
+                finally {
+                    field.setAccessible(false);
+                }
+            }
+
+        } catch (Exception e) {
+            ExceptionUtils.log(e);
+        }
+    }
+
     public static void setFieldValue(Object target, String fieldName, Object newValue) {
         for (Field field : getAllFields(target.getClass())) {
             if (field.getName().equals(fieldName)) {
@@ -183,15 +229,16 @@ public class ClassUtils {
         }
     }
 
-    public static void setFieldValue(Object target, Field field, Object newValue) {
-        Set<Field> fields = getAllFields(target.getClass());
-        if (fields.contains(field)) {
-            try {
-                field.set(target, newValue);
-            } catch (IllegalAccessException e) {
-                ExceptionUtils.log(e);
-            }
-        }
+    public static Method getterMethod(Object instance, String fieldName) throws Exception {
+        byte[] items = fieldName.getBytes();
+        items[0] = (byte) ((char) items[0] - 'a' + 'A');
+        return instance.getClass().getMethod("get" + new String(items));
+    }
+
+    public static Method setterMethod(Object instance, String fieldName, Object value) throws Exception {
+        byte[] items = fieldName.getBytes();
+        items[0] = (byte) ((char) items[0] - 'a' + 'A');
+        return instance.getClass().getMethod("set" + new String(items), value.getClass());
     }
 
     public static Set<Field> getAllFields(Class<?> claxx) {
@@ -232,5 +279,47 @@ public class ClassUtils {
             claxx = claxx.getSuperclass();
         }
         return classes;
+    }
+
+    /**
+     * 获取默认值
+     */
+    public static Object getDefaultValue(Class claxx){
+        if(claxx.isPrimitive()){
+            if (ClassUtils.CHAR.equals(claxx.toString())) {
+                return "";
+            }
+
+            if (ClassUtils.INTEGER_CLASS.equals(claxx.toString()) ||
+                    ClassUtils.INT.equals(claxx.toString())) {
+                return 0;
+            }
+
+            if (ClassUtils.DOUBLE_CLASS.equals(claxx.toString()) ||
+                    ClassUtils.DOUBLE.equals(claxx.toString())) {
+                return 0D;
+            }
+
+            if (ClassUtils.LONG_CLASS.equals(claxx.toString()) ||
+                    ClassUtils.LONG.equals(claxx.toString())) {
+                return 0L;
+            }
+
+            if (ClassUtils.BYTE_CLASS.equals(claxx.toString()) ||
+                    ClassUtils.BYTE.equals(claxx.toString())) {
+                return 0;
+            }
+
+            if (ClassUtils.SHORT_CLASS.equals(claxx.toString()) ||
+                    ClassUtils.SHORT.equals(claxx.toString())) {
+                return 0;
+            }
+
+            if (ClassUtils.FLOAT_CLASS.equals(claxx.toString()) ||
+                    ClassUtils.FLOAT.equals(claxx.toString())) {
+                return 0F;
+            }
+        }
+        return null;
     }
 }
