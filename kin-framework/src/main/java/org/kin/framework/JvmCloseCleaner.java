@@ -28,6 +28,7 @@ public class JvmCloseCleaner {
         //等spring容器完全初始化后执行
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             for (Closeable closeable : this.closeables) {
+                log.info("{} closing...", closeable.getClass().getSimpleName());
                 long startTime = System.currentTimeMillis();
                 closeable.close();
                 long endTime = System.currentTimeMillis();
