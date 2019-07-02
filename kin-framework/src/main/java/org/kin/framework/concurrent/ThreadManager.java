@@ -205,7 +205,8 @@ public class ThreadManager implements ScheduledExecutorService {
         THREADPOOL("ThreadPool") {
             @Override
             public ExecutorService getExecutor() {
-                return Executors.newFixedThreadPool(SysUtils.getSuitableThreadNum(), new SimpleThreadFactory("default-thread-manager"));
+                return new ThreadPoolExecutor(0, SysUtils.getSuitableThreadNum(), 60L, TimeUnit.SECONDS,
+                        new LinkedBlockingQueue<>(), new SimpleThreadFactory("default-thread-manager"));
             }
         };
         private String name;
@@ -238,6 +239,7 @@ public class ThreadManager implements ScheduledExecutorService {
     }
 
     private static ScheduledExecutorService getDefaultScheduledExecutor(){
-        return Executors.newScheduledThreadPool(SysUtils.getSuitableThreadNum());
+        return new ScheduledThreadPoolExecutor(SysUtils.getSuitableThreadNum(),
+                new SimpleThreadFactory("default-schedule-thread-manager"));
     }
 }

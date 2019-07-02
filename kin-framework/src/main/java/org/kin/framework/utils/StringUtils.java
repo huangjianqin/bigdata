@@ -22,19 +22,18 @@ public class StringUtils {
         if (isNotBlank(s)) {
             return new StringBuilder(s).reverse().toString();
         }
-
         return s;
     }
 
-    public static String mkString(Object... contents) {
+    public static <E> String mkString(E... contents) {
         return mkString(MKSTRING_SEPARATOR, contents);
     }
 
-    public static String mkString(String separator, Object... contents) {
+    public static <E> String mkString(String separator, E... contents) {
         return mkString(separator, Arrays.asList(contents));
     }
 
-    public static String mkString(Collection collection) {
+    public static <E> String mkString(Collection<E> collection) {
         return mkString(MKSTRING_SEPARATOR, collection);
     }
 
