@@ -29,6 +29,6 @@ public class HttpUtils {
     }
 
     public static boolean checkHostPort(String address){
-        return address.matches("\\s+:\\d{1,5}");
+        return address.matches("\\S+:\\d{1,5}");
     }
 }
