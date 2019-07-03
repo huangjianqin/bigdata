@@ -38,7 +38,6 @@ public class StringUtils {
     }
 
     public static <E> String mkString(String separator, Collection<E> collection) {
-        separator += " ";
         if (collection != null && collection.size() > 0) {
             StringBuilder sb = new StringBuilder();
             for (E e : collection) {
@@ -57,7 +56,6 @@ public class StringUtils {
     }
 
     public static <K, V> String mkString(String separator, Map<K, V> map) {
-        separator += " ";
         if (map != null && map.size() > 0) {
             StringBuilder sb = new StringBuilder();
             for (Map.Entry<K, V> entry : map.entrySet()) {
