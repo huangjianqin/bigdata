@@ -154,7 +154,9 @@ public class ClassUtils {
                         String className = entryName.replaceAll("/", ".");
                         try {
                             Class<T> claxx = (Class<T>) currentClassLoader.loadClass(className);
-                            subClasses.add(claxx);
+                            if(!parent.equals(claxx) && parent.isAssignableFrom(claxx)){
+                                subClasses.add(claxx);
+                            }
                         } catch (ClassNotFoundException e) {
                             ExceptionUtils.log(e);
                         }
