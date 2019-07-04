@@ -1,8 +1,6 @@
 package org.kin.framework.utils;
 
 import com.google.common.collect.Sets;
-import scala.annotation.meta.field;
-import sun.jvm.hotspot.runtime.Bytes;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -21,8 +19,6 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import static org.checkerframework.checker.units.UnitsTools.m;
 
 /**
  * Created by huangjianqin on 2018/1/26.
@@ -44,6 +40,17 @@ public class ClassUtils {
     public static final String SHORT = "short";
     public static final String FLOAT_CLASS = "class java.lang.Float";
     public static final String FLOAT = "float";
+
+    @FunctionalInterface
+    private interface Matcher<T>{
+        /**
+         *
+         * @param c 基准
+         * @param target 目标
+         * @return true表示匹配
+         */
+        boolean match(Class<T> c, Class<T> target);
+    }
 
     /**
      * 通过无参构造器实例化类
@@ -107,7 +114,45 @@ public class ClassUtils {
         return null;
     }
 
+    /**
+     * 获取某个类的所有子类, 但不包括该类
+     */
     public static <T> Set<Class<T>> getSubClass(String packageName, Class<T> parent, boolean isIncludeJar) {
+        return scanClasspathAndFindMatch(packageName, parent,
+                (c, target) -> target != null && !c.equals(target) && c.isAssignableFrom(target), isIncludeJar);
+    }
+
+    /**
+     * 获取出现某注解的所有类
+     */
+    public static <T> Set<Class<T>> getAnnotationedClass(String packageName, Class<T> annotationClass, boolean isIncludeJar) {
+        if(annotationClass.isAnnotation()){
+            return scanClasspathAndFindMatch(packageName, annotationClass,
+                    (c, target) -> {
+                        if(target.isAnnotationPresent(c)){
+                            return true;
+                        }
+                        else{
+                            for(Field field: target.getDeclaredFields()){
+                                if (field.isAnnotationPresent(c)) {
+                                    return true;
+                                }
+                            }
+
+                            for(Method method: target.getDeclaredMethods()){
+                                if(method.isAnnotationPresent(c)){
+                                    return true;
+                                }
+                            }
+                        }
+
+                        return false;
+                    }, isIncludeJar);
+        }
+        return Collections.emptySet();
+    }
+
+    public static <T> Set<Class<T>> scanClasspathAndFindMatch(String packageName, Class<T> c, Matcher matcher, boolean isIncludeJar) {
         Set<Class<T>> subClasses = Sets.newLinkedHashSet();
         ClassLoader currentClassLoader = Thread.currentThread().getContextClassLoader();
 
@@ -134,10 +179,7 @@ public class ClassUtils {
                                 }
                                 return null;
                             })
-                            .filter(claxx -> claxx != null
-                                    && !parent.equals(claxx)
-                                    && parent.isAssignableFrom(claxx)
-                            ).collect(Collectors.toSet());
+                            .filter(claxx -> matcher.match(c, claxx)).collect(Collectors.toSet());
                     subClasses.addAll(Sets.newHashSet(classes));
                 } else if ("jar".equals(url.getProtocol()) && isIncludeJar) {
                     JarURLConnection jarURLConnection = (JarURLConnection) url.openConnection();
@@ -154,7 +196,7 @@ public class ClassUtils {
                         String className = entryName.replaceAll("/", ".");
                         try {
                             Class<T> claxx = (Class<T>) currentClassLoader.loadClass(className);
-                            if(!parent.equals(claxx) && parent.isAssignableFrom(claxx)){
+                            if(matcher.match(c, claxx)){
                                 subClasses.add(claxx);
                             }
                         } catch (ClassNotFoundException e) {
