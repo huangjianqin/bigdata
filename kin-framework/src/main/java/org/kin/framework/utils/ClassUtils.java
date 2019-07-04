@@ -175,7 +175,7 @@ public class ClassUtils {
                                 try {
                                     return (Class<T>) currentClassLoader.loadClass(className);
                                 } catch (ClassNotFoundException e) {
-                                    ExceptionUtils.log(e);
+
                                 }
                                 return null;
                             })
@@ -200,13 +200,13 @@ public class ClassUtils {
                                 subClasses.add(claxx);
                             }
                         } catch (ClassNotFoundException e) {
-                            ExceptionUtils.log(e);
+
                         }
                     }
                 }
             }
         } catch (IOException | URISyntaxException e) {
-            ExceptionUtils.log(e);
+
         }
 
         return subClasses;
