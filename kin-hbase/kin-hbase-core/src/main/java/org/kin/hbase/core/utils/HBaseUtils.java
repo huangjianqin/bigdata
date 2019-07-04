@@ -25,14 +25,12 @@ import java.util.*;
 public class HBaseUtils {
     private static final Logger log = LoggerFactory.getLogger(HBaseConstants.HBASE_LOGGER);
 
-
-
     public static <T> List<Put> convert2Puts(T... entities) {
         return convert2Puts(Arrays.asList(entities));
     }
 
     /**
-     * 将@HBaseEntity标识的类解析成Put实例
+     * 将@HBaseEntity标识的类解析成Put实例, 不支持继承
      */
     public static <T> List<Put> convert2Puts(Collection<T> entities) {
         if (entities.isEmpty()) {

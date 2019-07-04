@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -40,6 +41,8 @@ public class ClassUtils {
     public static final String SHORT = "short";
     public static final String FLOAT_CLASS = "class java.lang.Float";
     public static final String FLOAT = "float";
+    //用于匹配内部类
+    private static final Pattern INNER_PATTERN = Pattern.compile("\\$(\\d+).", Pattern.CASE_INSENSITIVE);
 
     @FunctionalInterface
     private interface Matcher<T>{
@@ -119,11 +122,11 @@ public class ClassUtils {
      */
     public static <T> Set<Class<T>> getSubClass(String packageName, Class<T> parent, boolean isIncludeJar) {
         return scanClasspathAndFindMatch(packageName, parent,
-                (c, target) -> target != null && !c.equals(target) && c.isAssignableFrom(target), isIncludeJar);
+                (c, target) -> !c.equals(target) && c.isAssignableFrom(target), isIncludeJar);
     }
 
     /**
-     * 获取出现某注解的所有类
+     * 获取出现某注解的所有类, 包括抽象类和接口
      */
     public static <T> Set<Class<T>> getAnnotationedClass(String packageName, Class<T> annotationClass, boolean isIncludeJar) {
         if(annotationClass.isAnnotation()){
@@ -172,13 +175,18 @@ public class ClassUtils {
                                 int endIndex = origin.lastIndexOf(CLASS_SUFFIX);
 
                                 String className = origin.substring(startIndex, endIndex);
-                                try {
-                                    return (Class<T>) currentClassLoader.loadClass(className);
-                                } catch (ClassNotFoundException e) {
+                                if(StringUtils.isNotBlank(className) &&
+                                        !INNER_PATTERN.matcher(className).find() &&
+                                        !(className.indexOf("$") > 0)){
+                                    try {
+                                        return (Class<T>) currentClassLoader.loadClass(className);
+                                    } catch (ClassNotFoundException e) {
 
+                                    }
                                 }
                                 return null;
                             })
+                            .filter(claxx -> !Objects.isNull(claxx))
                             .filter(claxx -> matcher.match(c, claxx)).collect(Collectors.toSet());
                     subClasses.addAll(Sets.newHashSet(classes));
                 } else if ("jar".equals(url.getProtocol()) && isIncludeJar) {
@@ -189,7 +197,15 @@ public class ClassUtils {
                         JarEntry jarEntry = jarEntries.nextElement();
                         String entryName = jarEntry.getName();
 
+                        if(jarEntry.isDirectory()){
+                            continue;
+                        }
+
                         if (entryName.endsWith("/") || !entryName.endsWith(CLASS_SUFFIX)) {
+                            continue;
+                        }
+
+                        if(INNER_PATTERN.matcher(entryName).find() || entryName.indexOf("$") > 0){
                             continue;
                         }
 
@@ -212,9 +228,6 @@ public class ClassUtils {
         return subClasses;
     }
 
-    /**
-     * 从子类往父类遍历,获取成员变量实例
-     */
     public static <T> T getFieldValue(Object target, String fieldName) {
         for (Field field : getAllFields(target.getClass())) {
             if (field.getName().equals(fieldName)) {
@@ -232,32 +245,6 @@ public class ClassUtils {
         return null;
     }
 
-    /**
-     * 通过setter field实例设置值
-     */
-    public static void setFieldValue(Object instance, Field field, Object value) {
-        if (value == null) {
-            return;
-        }
-        try {
-            Method m = setterMethod(instance, field.getName(), value);
-            if (m != null) {
-                m.invoke(instance, value);
-            } else {
-                try{
-                    field.setAccessible(true);
-                    field.set(instance, value);
-                }
-                finally {
-                    field.setAccessible(false);
-                }
-            }
-
-        } catch (Exception e) {
-            ExceptionUtils.log(e);
-        }
-    }
-
     public static void setFieldValue(Object target, String fieldName, Object newValue) {
         for (Field field : getAllFields(target.getClass())) {
             if (field.getName().equals(fieldName)) {
@@ -273,30 +260,90 @@ public class ClassUtils {
         }
     }
 
-    public static Method getterMethod(Object instance, String fieldName) throws Exception {
-        byte[] items = fieldName.getBytes();
-        items[0] = (byte) ((char) items[0] - 'a' + 'A');
-        return instance.getClass().getMethod("get" + new String(items));
+    /**
+     * 通过getter field实例设置值
+     */
+    public static Object getFieldValue(Object instance, Field field) {
+        try {
+            Method m = getterMethod(instance, field.getName());
+            if (m != null) {
+                return m.invoke(instance);
+            } else {
+                try{
+                    field.setAccessible(true);
+                    return field.get(instance);
+                }
+                finally {
+                    field.setAccessible(false);
+                }
+            }
+
+        } catch (Exception e) {
+            ExceptionUtils.log(e);
+        }
+
+        return getDefaultValue(field.getType());
     }
 
-    public static Method setterMethod(Object instance, String fieldName, Object value) throws Exception {
-        byte[] items = fieldName.getBytes();
-        items[0] = (byte) ((char) items[0] - 'a' + 'A');
-        return instance.getClass().getMethod("set" + new String(items), value.getClass());
+    /**
+     * 通过setter field实例设置值
+     */
+    public static void setFieldValue(Object instance, Field field, Object value) {
+        try {
+            Method m = setterMethod(instance, field.getName(), value);
+            if (m != null) {
+                m.invoke(instance, value);
+            } else {
+                try{
+                    field.setAccessible(true);
+                    field.set(instance, value);
+                }
+                finally {
+                    field.setAccessible(false);
+                }
+            }
+        } catch (Exception e) {
+            ExceptionUtils.log(e);
+        }
     }
 
-    public static Set<Field> getAllFields(Class<?> claxx) {
+    public static Method getterMethod(Object instance, String fieldName){
+        byte[] items = fieldName.getBytes();
+        items[0] = (byte) ((char) items[0] - 'a' + 'A');
+        try {
+            return instance.getClass().getMethod("get" + new String(items));
+        } catch (NoSuchMethodException e) {
+
+        }
+
+        return null;
+    }
+
+    public static Method setterMethod(Object instance, String fieldName, Object value){
+        byte[] items = fieldName.getBytes();
+        items[0] = (byte) ((char) items[0] - 'a' + 'A');
+        try {
+            return instance.getClass().getMethod("set" + new String(items), value.getClass());
+        } catch (NoSuchMethodException e) {
+
+        }
+
+        return null;
+    }
+
+    public static List<Field> getAllFields(Class<?> claxx) {
         return getFields(claxx, Object.class);
     }
 
     /**
      * 获取claxx -> parent的所有field
      */
-    public static Set<Field> getFields(Class<?> claxx, Class<?> parent) {
-        if (parent.isAssignableFrom(claxx)) {
-            throw new IllegalStateException(String.format("%s is not super class of %s", parent.getName(), claxx.getName()));
+    public static List<Field> getFields(Class<?> claxx, Class<?> parent) {
+        if(claxx == null || parent == null){
+            return Collections.emptyList();
         }
-        Set<Field> fields = new HashSet<>();
+
+        List<Field> fields = new ArrayList<>();
         while (!claxx.equals(parent)) {
             for (Field field : claxx.getDeclaredFields()) {
                 fields.add(field);
@@ -306,18 +353,18 @@ public class ClassUtils {
         return fields;
     }
 
-    public static Set<Class<?>> getAllClasses(Class<?> claxx) {
+    public static List<Class<?>> getAllClasses(Class<?> claxx) {
         return getClasses(claxx, Object.class);
     }
 
     /**
      * 获取claxx -> parent的所有class
      */
-    public static Set<Class<?>> getClasses(Class<?> claxx, Class<?> parent) {
+    public static List<Class<?>> getClasses(Class<?> claxx, Class<?> parent) {
         if (parent.isAssignableFrom(claxx)) {
             throw new IllegalStateException(String.format("%s is not super class of %s", parent.getName(), claxx.getName()));
         }
-        Set<Class<?>> classes = new HashSet<>();
+        List<Class<?>> classes = new ArrayList<>();
         while (!claxx.equals(parent)) {
             classes.add(claxx);
             claxx = claxx.getSuperclass();
