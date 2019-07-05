@@ -17,11 +17,20 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <java.home>/Library/Java/JavaVirtualMachines/jdk1.8.0_151.jdk/Contents/Home</java.home>
     </properties>
 
     <dependencies>
-
+        <!-- 引用本地jar包-->
+        <dependency>
+            <groupId>com.sun</groupId>
+            <artifactId>tools</artifactId>
+            <version>1.6</version>
+            <scope>system</scope>
+            <systemPath>${java.home}/lib/tools.jar</systemPath>
+        </dependency>
     </dependencies>
+
 
     <build>
         <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
@@ -47,10 +56,12 @@
                     <target>${java.version}</target>
                     <encoding>UTF-8</encoding>
                     <maxmem>1024m</maxmem>
-                    <fork>true</fork>
-                    <compilerArgs>
+                    <!--<fork>true</fork>-->
+                    <compilerArguments>
+                        <!--<verbose/>-->
                         <arg>-Xlint:all,-serial,-path</arg>
-                    </compilerArgs>
+                        <bootclasspath>${java.home}/jre/lib/rt.jar:${java.home}/jre/lib/jce.jar:${java.home}/lib/tools.jar</bootclasspath>
+                    </compilerArguments>
                 </configuration>
             </plugin>
 
@@ -60,6 +71,7 @@
                 <version>3.0.0</version>
                 <executions>
                     <execution>
+                        <id>copy-dependencies</id>
                         <phase>package</phase>
                         <goals>
                             <goal>copy-dependencies</goal>
@@ -73,27 +85,32 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.5.5</version>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <executions>
+                    <execution>
+                        <id>jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <archive>
                         <manifest>
                             <addClasspath>true</addClasspath>
-                            <!--<mainClass></mainClass>-->
+                            <classpathPrefix>/lib/</classpathPrefix>
+                            <!--<mainClass>spark.demo.run.Service</mainClass>-->
                         </manifest>
-                        <!-- 在manifest中设置agent配置信息-->
-                        <manifestEntries>
-                            <Agent-Class>
-                                org.kin.framework.hotswap.agent.JavaDynamicAgent
-                            </Agent-Class>
-                            <Can-Redefine-Classes>true</Can-Redefine-Classes>
-                            <Can-Retransform-Classes>true</Can-Retransform-Classes>
-                        </manifestEntries>
                     </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>2.5.5</version>
                 <executions>
                     <execution>
                         <id>make-assembly</id>
@@ -103,14 +120,35 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>/lib/</classpathPrefix>
+                            <!--<mainClass></mainClass>-->
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
             </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                            <goal>test-jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
-                    <attach>true</attach>
+                    <attach>false</attach>
                 </configuration>
             </plugin>
         </plugins>

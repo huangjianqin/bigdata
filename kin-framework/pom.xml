@@ -17,6 +17,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <scala.version>2.11.12</scala.version>
         <scala.version.head>2.11</scala.version.head>
+        <java.home>/Library/Java/JavaVirtualMachines/jdk1.8.0_151.jdk/Contents/Home</java.home>
     </properties>
 
     <dependencies>
@@ -28,7 +29,7 @@
             <scope>test</scope>
         </dependency>
 
-        
+
         <!-- scala-->
         <dependency>
             <groupId>org.scala-lang</groupId>
@@ -38,7 +39,7 @@
         </dependency>
 
 
-        <!--scala unit test-->
+        <!-- scala unit test-->
         <dependency>
             <groupId>org.specs</groupId>
             <artifactId>specs</artifactId>
@@ -101,7 +102,7 @@
             <version>8.1.0</version>
         </dependency>
 
-        <!--spring-->
+        <!-- spring-->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-core</artifactId>
@@ -116,7 +117,7 @@
             <scope>provided</scope>
         </dependency>
 
-        <!--异步网络IO-->
+        <!-- 异步网络IO-->
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
@@ -124,21 +125,27 @@
             <scope>provided</scope>
         </dependency>
 
-        <!--自家 java agent 依赖-->
+        <!-- 自家 java agent 依赖-->
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kin-java-agent</artifactId>
             <version>0.1.0.0</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.sun</groupId>
+                    <artifactId>tools</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
-        <!--java运行时元数据分析工具-->
+        <!-- java运行时元数据分析工具-->
         <dependency>
             <groupId>org.reflections</groupId>
             <artifactId>reflections</artifactId>
             <version>0.9.11</version>
         </dependency>
 
-        <!--java微基准测试工具   用于较细粒度测试-->
+        <!-- java微基准测试工具   用于较细粒度测试-->
         <dependency>
             <groupId>org.openjdk.jmh</groupId>
             <artifactId>jmh-core</artifactId>
@@ -167,19 +174,25 @@
         </testResources>
 
         <plugins>
+            <!-- maven scala编译插件-->
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
                 <artifactId>scala-maven-plugin</artifactId>
                 <version>3.3.1</version>
                 <executions>
                     <execution>
+                        <id>scala-compile</id>
+                        <!-- 触发mvn compiler时 触发<goal>操作-->
+                        <phase>compile</phase>
                         <goals>
                             <goal>compile</goal>
                             <goal>testCompile</goal>
                         </goals>
                     </execution>
                 </executions>
+                <!-- <configuration>写到<execution>里面似乎不会生效, 但不会报错-->
                 <configuration>
+                    <sourceDir>src/main/scala</sourceDir>
                     <scalaVersion>${scala.version}</scalaVersion>
                     <recompileMode>incremental</recompileMode>
                     <useZincServer>true</useZincServer>
@@ -194,15 +207,20 @@
                         <jvmArg>-XX:ReservedCodeCacheSize=${CodeCacheSize}</jvmArg>
                     </jvmArgs>
                     <javacArgs>
+                        <!-- key value要分开两个标签写-->
                         <javacArg>-source</javacArg>
                         <javacArg>${java.version}</javacArg>
                         <javacArg>-target</javacArg>
                         <javacArg>${java.version}</javacArg>
                         <javacArg>-Xlint:all,-serial,-path</javacArg>
+                        <javacArg>-bootclasspath</javacArg>
+                        <!-- 热更实现依赖了jdk的tools.jar-->
+                        <javacArg>.:${java.home}/jre/lib/rt.jar:${java.home}/jre/lib/jce.jar:${java.home}/lib/tools.jar</javacArg>
                     </javacArgs>
                 </configuration>
             </plugin>
 
+            <!-- maven编译插件, 只编译java-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -212,21 +230,27 @@
                     <target>${java.version}</target>
                     <encoding>UTF-8</encoding>
                     <maxmem>1024m</maxmem>
-                    <fork>true</fork>
-                    <compilerArgs>
+                    <!--<fork>true</fork>-->
+                    <compilerArguments>
+                        <!--<verbose/>-->
                         <arg>-Xlint:all,-serial,-path</arg>
-                    </compilerArgs>
+                        <!-- 热更实现依赖了jdk的tools.jar-->
+                        <bootclasspath>${java.home}/jre/lib/rt.jar:${java.home}/jre/lib/jce.jar:${java.home}/lib/tools.jar</bootclasspath>
+                    </compilerArguments>
                 </configuration>
             </plugin>
 
+            <!-- maven处理依赖插件, -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>3.0.0</version>
                 <executions>
                     <execution>
+                        <id>copy-dependencies</id>
                         <phase>package</phase>
                         <goals>
+                            <!-- 复制项目依赖到指定路径-->
                             <goal>copy-dependencies</goal>
                         </goals>
                         <configuration>
@@ -236,112 +260,99 @@
                 </executions>
             </plugin>
 
+            <!-- maven打包插件-->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
+                <executions>
+                    <execution>
+                        <id>jar</id>
+                        <phase>package</phase>
+                        <goals>
+                            <!-- 打包同时触发打包测试类, 此处再多一个<goal>jar</goal>的话, 会触发两次打包, 而且包名与默认的一样, 会导致包名冲突报错-->
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <!-- 添加依赖路径-->
+                            <addClasspath>true</addClasspath>
+                            <!-- 依赖路径前缀-->
+                            <classpathPrefix>/lib/</classpathPrefix>
+                            <!--<mainClass>spark.demo.run.Service</mainClass>-->
+                        </manifest>
+                        <manifestEntries>
+                            <!-- manifest内自定义的key value-->
+                            <Agent-Class>
+                                org.kin.framework.hotswap.agent.JavaDynamicAgent
+                            </Agent-Class>
+                            <Can-Redefine-Classes>true</Can-Redefine-Classes>
+                            <Can-Retransform-Classes>true</Can-Retransform-Classes>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <!-- maven打包插件-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.5.5</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <!--<addClasspath>true</addClasspath>-->
-                            <!--<mainClass></mainClass>-->
-                        </manifest>
-                        <manifestEntries>
-                            <!--<Agent-Class>-->
-                                <!--org.kin.framework.hotswap.agent.JavaDynamicAgent-->
-                            <!--</Agent-Class>-->
-                            <!--<Can-Redefine-Classes>true</Can-Redefine-Classes>-->
-                            <!--<Can-Retransform-Classes>true</Can-Retransform-Classes>-->
-                        </manifestEntries>
-                    </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                </configuration>
                 <executions>
                     <execution>
                         <id>make-assembly</id>
                         <phase>package</phase>
                         <goals>
+                            <!-- 会把依赖直接写进jar包-->
                             <goal>single</goal>
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>/lib/</classpathPrefix>
+                            <!--<mainClass></mainClass>-->
+                        </manifest>
+                        <manifestEntries>
+                            <Agent-Class>
+                                org.kin.framework.hotswap.agent.JavaDynamicAgent
+                            </Agent-Class>
+                            <Can-Redefine-Classes>true</Can-Redefine-Classes>
+                            <Can-Retransform-Classes>true</Can-Retransform-Classes>
+                        </manifestEntries>
+                    </archive>
+                    <descriptorRefs>
+                        <!-- 包名后缀-->
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
             </plugin>
 
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-jar-plugin</artifactId>-->
-                <!--<version>3.0.2</version>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<goals>-->
-                            <!--<goal>test-jar</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-                <!--<configuration>-->
-                    <!--&lt;!&ndash;<archive>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<manifest>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<addClasspath>true</addClasspath>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<classpathPrefix>lib/</classpathPrefix>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<mainClass>spark.demo.run.Service</mainClass>&ndash;&gt;-->
-                    <!--&lt;!&ndash;</manifest>&ndash;&gt;-->
-                    <!--&lt;!&ndash;</archive>&ndash;&gt;-->
-                <!--</configuration>-->
-            <!--</plugin>-->
-
-            <!--与Spring结合最好使用这个,不然可能会报错-->
-            <!--<plugin>-->
-                <!--<groupId>org.apache.maven.plugins</groupId>-->
-                <!--<artifactId>maven-shade-plugin</artifactId>-->
-                <!--<version>2.4.1</version>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<phase>package</phase>-->
-                        <!--<goals>-->
-                            <!--<goal>shade</goal>-->
-                        <!--</goals>-->
-                        <!--<configuration>-->
-                            <!--<transformers>-->
-                                <!--<transformer-->
-                                        <!--implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">-->
-                                    <!--&lt;!&ndash;<mainClass></mainClass>&ndash;&gt;-->
-                                <!--</transformer>-->
-                                <!--<transformer-->
-                                        <!--implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">-->
-                                    <!--<resource>META-INF/spring.handlers</resource>-->
-                                <!--</transformer>-->
-                                <!--<transformer-->
-                                        <!--implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">-->
-                                    <!--<resource>META-INF/spring.schemas</resource>-->
-                                <!--</transformer>-->
-                                <!--<filters>-->
-                                    <!--<filter>-->
-                                        <!--<artifact>*:*</artifact>-->
-                                        <!--<excludes>-->
-                                            <!--<exclude>META-INF/*.SF</exclude>-->
-                                            <!--<exclude>META-INF/*.DSA</exclude>-->
-                                            <!--<exclude>META-INF/*.RSA</exclude>-->
-                                        <!--</excludes>-->
-                                    <!--</filter>-->
-                                <!--</filters>-->
-                            <!--</transformers>-->
-                        <!--</configuration>-->
-                    <!--</execution>-->
-                <!--</executions>-->
-            <!--</plugin>-->
-
+            <!-- 仅仅添加/src/main/java的源码-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-source-plugin</artifactId>
                 <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jar-no-fork</goal>
+                            <goal>test-jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
-                    <attach>true</attach>
+                    <attach>false</attach>
                 </configuration>
             </plugin>
 
-            <!--添加多个源代码目录-->
+            <!-- 添加多个源代码目录-->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>build-helper-maven-plugin</artifactId>
@@ -353,75 +364,76 @@
                         <goals>
                             <goal>add-source</goal>
                         </goals>
-                        <configuration>
-                            <sources>
-                                <source>${basedir}/src/main/scala</source>
-                            </sources>
-                        </configuration>
                     </execution>
                     <execution>
                         <id>add-test-sources</id>
-                        <phase>generate-test-sources</phase>
+                        <phase>generate-sources</phase>
                         <goals>
                             <goal>add-test-source</goal>
                         </goals>
-                        <configuration>
-                            <sources>
-                                <source>${basedir}/src/test/scala</source>
-                            </sources>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.scalastyle</groupId>
-                <artifactId>scalastyle-maven-plugin</artifactId>
-                <version>0.8.0</version>
-                <configuration>
-                    <verbose>false</verbose>
-                    <failOnViolation>true</failOnViolation>
-                    <includeTestSourceDirectory>false</includeTestSourceDirectory>
-                    <failOnWarning>false</failOnWarning>
-                    <sourceDirectory>${basedir}/src/main/scala</sourceDirectory>
-                    <testSourceDirectory>${basedir}/src/test/scala</testSourceDirectory>
-                    <configLocation>scalastyle-config.xml</configLocation>
-                    <outputFile>${basedir}/target/scalastyle-output.xml</outputFile>
-                    <inputEncoding>${project.build.sourceEncoding}</inputEncoding>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>run-benchmarks</id>
-                        <phase>integration-test</phase>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-
                     </execution>
                 </executions>
                 <configuration>
-                    <classpathScope>test</classpathScope>
-                    <executable>java</executable>
-                    <arguments>
-                        <argument>-classpath</argument>
-                        <classpath />
-                        <argument>org.openjdk.jmh.Main</argument>
-                        <argument>.*</argument>
-                    </arguments>
+                    <sources>
+                        <!-- 会自动根据源代码类型, 决定是否导入该source-->
+                        <source>${basedir}/src/main/scala</source>
+                        <source>${basedir}/src/test/scala</source>
+                    </sources>
                 </configuration>
             </plugin>
+
+            <!-- scala scalastyle插件-->
+            <!--<plugin>-->
+                <!--<groupId>org.scalastyle</groupId>-->
+                <!--<artifactId>scalastyle-maven-plugin</artifactId>-->
+                <!--<version>0.8.0</version>-->
+                <!--<configuration>-->
+                    <!--<verbose>false</verbose>-->
+                    <!--<failOnViolation>true</failOnViolation>-->
+                    <!--<includeTestSourceDirectory>false</includeTestSourceDirectory>-->
+                    <!--<failOnWarning>false</failOnWarning>-->
+                    <!--<sourceDirectory>${basedir}/src/main/scala</sourceDirectory>-->
+                    <!--<testSourceDirectory>${basedir}/src/test/scala</testSourceDirectory>-->
+                    <!--<configLocation>scalastyle-config.xml</configLocation>-->
+                    <!--<outputFile>${basedir}/target/scalastyle-output.xml</outputFile>-->
+                    <!--<inputEncoding>${project.build.sourceEncoding}</inputEncoding>-->
+                <!--</configuration>-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<goals>-->
+                            <!--<goal>check</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+            <!--</plugin>-->
+
+            <!-- jmh插件, install时会触发-->
+            <!--<plugin>-->
+                <!--<groupId>org.codehaus.mojo</groupId>-->
+                <!--<artifactId>exec-maven-plugin</artifactId>-->
+                <!--<version>1.6.0</version>-->
+                <!--<executions>-->
+                    <!--<execution>-->
+                        <!--<id>run-benchmarks</id>-->
+                        <!--<phase>integration-test</phase>-->
+                        <!--<goals>-->
+                            <!--<goal>exec</goal>-->
+                        <!--</goals>-->
+                    <!--</execution>-->
+                <!--</executions>-->
+                <!--<configuration>-->
+                    <!--<classpathScope>test</classpathScope>-->
+                    <!--&lt;!&ndash; 以java执行&ndash;&gt;-->
+                    <!--<executable>java</executable>-->
+                    <!--<arguments>-->
+                        <!--<argument>-classpath</argument>-->
+                        <!--<classpath />-->
+                        <!--&lt;!&ndash; 会自动扫描jmh注解并执行相应测试&ndash;&gt;-->
+                        <!--<argument>org.openjdk.jmh.Main</argument>-->
+                        <!--<argument>.*</argument>-->
+                    <!--</arguments>-->
+                <!--</configuration>-->
+            <!--</plugin>-->
         </plugins>
     </build>
 </project>
