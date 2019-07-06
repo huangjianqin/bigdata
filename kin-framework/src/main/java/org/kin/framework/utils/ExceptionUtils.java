@@ -10,7 +10,7 @@ public class ExceptionUtils {
     private static Logger log = LoggerFactory.getLogger("error");
 
     public static void log(Throwable throwable) {
-        log.error("", throwable);
+        log.error(throwable.getMessage(), throwable);
     }
 
     public static void log(Throwable throwable, String msg, Object... params) {

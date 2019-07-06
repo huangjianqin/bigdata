@@ -66,7 +66,7 @@ public class AsyncDBExecutor implements Closeable {
         try {
             threadManager.awaitTermination(2, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -118,7 +118,7 @@ public class AsyncDBExecutor implements Closeable {
 
                         syncNum++;
                     } catch (InterruptedException e) {
-                        log.error("", e);
+                        log.error(e.getMessage(), e);
                     }
                 }
 
@@ -127,7 +127,7 @@ public class AsyncDBExecutor implements Closeable {
                     try {
                         Thread.sleep(duration);
                     } catch (InterruptedException e) {
-                        log.error("", e);
+                        log.error(e.getMessage(), e);
                     }
                 } else {
                     if (queue.isEmpty()) {

@@ -28,7 +28,7 @@ public class AdminOp extends AbstractHBaseOp<AdminOp> {
 
             admin.close();
         } catch (IOException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -41,7 +41,7 @@ public class AdminOp extends AbstractHBaseOp<AdminOp> {
 
             admin.close();
         } catch (IOException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -60,7 +60,7 @@ public class AdminOp extends AbstractHBaseOp<AdminOp> {
 
             admin.close();
         } catch (IOException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -73,7 +73,7 @@ public class AdminOp extends AbstractHBaseOp<AdminOp> {
 
             admin.close();
         } catch (IOException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -86,7 +86,7 @@ public class AdminOp extends AbstractHBaseOp<AdminOp> {
 
             admin.close();
         } catch (IOException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -100,7 +100,7 @@ public class AdminOp extends AbstractHBaseOp<AdminOp> {
 
             admin.close();
         } catch (IOException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
 
         return result;

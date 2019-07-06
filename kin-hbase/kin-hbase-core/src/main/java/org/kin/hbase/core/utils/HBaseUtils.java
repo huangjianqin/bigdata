@@ -192,7 +192,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
         } catch (Exception ex) {
-            log.error("", ex);
+            log.error(ex.getMessage(), ex);
         }
 
         return null;
@@ -214,7 +214,7 @@ public class HBaseUtils {
             }
 
         } catch (Exception e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
     }
 
@@ -321,9 +321,9 @@ public class HBaseUtils {
                 }
             }
         } catch (InstantiationException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         } catch (IllegalAccessException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         } finally {
             for (Field field : fields) {
                 field.setAccessible(false);

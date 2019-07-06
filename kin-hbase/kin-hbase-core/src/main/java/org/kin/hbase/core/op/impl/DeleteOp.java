@@ -55,7 +55,7 @@ public class DeleteOp extends AbstractHBaseOp<DeleteOp> {
 
             table.close();
         } catch (IOException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
     }
 }

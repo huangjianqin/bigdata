@@ -72,7 +72,7 @@ public class HBasePool implements Closeable {
                 initedConnections.add(connection);
                 log.info("add HBase cluster '{}' 's connection successfully", config.getZookeeperQuorum());
             } catch (IOException e) {
-                log.error("", e);
+                log.error(e.getMessage(), e);
             }
         }
     }
@@ -85,7 +85,7 @@ public class HBasePool implements Closeable {
                         connection.close();
                     }
                 } catch (IOException e) {
-                    log.error("", e);
+                    log.error(e.getMessage(), e);
                     continue;
                 }
             }
@@ -103,7 +103,7 @@ public class HBasePool implements Closeable {
             try {
                 Thread.sleep(200);
             } catch (InterruptedException e) {
-                log.error("", e);
+                log.error(e.getMessage(), e);
             }
         }
 
@@ -137,7 +137,7 @@ public class HBasePool implements Closeable {
                 connection.close();
             }
         } catch (IOException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
     }
 

@@ -90,7 +90,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
         try {
             scan.setTimeRange(minTimeStamp, maxTimeStamp);
         } catch (IOException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
         return this;
     }
@@ -99,7 +99,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
         try {
             scan.setTimeStamp(timeStamp);
         } catch (IOException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
 
         return this;
@@ -189,7 +189,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
                     close();
                 }
             } catch (IOException e) {
-                log.error("", e);
+                log.error(e.getMessage(), e);
             }
 
             return objs;
@@ -210,7 +210,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
                 }
                 close();
             } catch (IOException e) {
-                log.error("", e);
+                log.error(e.getMessage(), e);
             }
 
             return objs;
@@ -244,7 +244,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
 
             return scanner;
         } catch (IOException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
 
         return null;

@@ -27,7 +27,7 @@ public enum DBStatus {
                 return true;
             }
             catch (Exception e){
-                log.error("", e);
+                log.error(e.getMessage(), e);
             }
 
             return false;
@@ -44,7 +44,7 @@ public enum DBStatus {
                 return true;
             }
             catch (Exception e){
-                log.error("", e);
+                log.error(e.getMessage(), e);
             }
 
             return false;
@@ -61,7 +61,7 @@ public enum DBStatus {
                 return true;
             }
             catch (Exception e){
-                log.error("", e);
+                log.error(e.getMessage(), e);
             }
 
             return false;

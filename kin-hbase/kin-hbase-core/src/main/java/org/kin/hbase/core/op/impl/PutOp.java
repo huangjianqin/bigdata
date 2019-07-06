@@ -37,7 +37,7 @@ public class PutOp extends AbstractHBaseOp<PutOp> {
 
                 table.close();
             } catch (IOException e) {
-                log.error("", e);
+                log.error(e.getMessage(), e);
             }
         }
     }

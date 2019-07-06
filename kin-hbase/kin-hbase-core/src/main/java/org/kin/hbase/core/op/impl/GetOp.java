@@ -43,7 +43,7 @@ public class GetOp extends AbstractQueryOp<GetOp> {
 
             return result;
         } catch (IOException e) {
-            log.error("", e);
+            log.error(e.getMessage(), e);
         }
 
         return null;
