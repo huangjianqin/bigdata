@@ -132,6 +132,20 @@
         </rollingPolicy>
     </appender>
 
+    <appender name="httpAppender" class="ch.qos.logback.core.rolling.RollingFileAppender" >
+        <Append>true</Append>
+        <encoder>
+            <pattern>[%p] %d{yyyy-MM-dd HH:mm:ss SSS} [%t] |  %C.%M\(%L\) : %msg%n%ex</pattern>
+        </encoder>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/%d{yyyy-MM-dd}/http.log.%d{yyyy-MM-dd}</fileNamePattern>
+            <!--<maxHistory>30</maxHistory>-->
+        </rollingPolicy>
+    </appender>
+
     <!--                                       async                                                       -->
     <appender name="asyncSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="STDOUT"/>
@@ -163,6 +177,10 @@
 
     <appender name="asyncEventAppender" class="ch.qos.logback.classic.AsyncAppender">
         <appender-ref ref="eventAppender"/>
+    </appender>
+
+    <appender name="asyncHttpAppender" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="httpAppender"/>
     </appender>
 
     <!--                                       logger                                                       -->
@@ -197,6 +215,11 @@
 
     <logger name="event" level="INFO" additivity="false">
         <appender-ref ref="asyncEventAppender"/>
+        <appender-ref ref="asyncERROR" level="ERROR"/>
+    </logger>
+
+    <logger name="http" level="INFO" additivity="false">
+        <appender-ref ref="asyncHttpAppender"/>
         <appender-ref ref="asyncERROR" level="ERROR"/>
     </logger>
 
