@@ -359,7 +359,6 @@
                     <!--<fork>true</fork>-->
                     <compilerArguments>
                         <!--<verbose/>-->
-                        <arg>-Xlint:all,-serial,-path</arg>
                     </compilerArguments>
                 </configuration>
             </plugin>

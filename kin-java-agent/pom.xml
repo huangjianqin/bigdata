@@ -58,7 +58,6 @@
                     <!--<fork>true</fork>-->
                     <compilerArguments>
                         <!--<verbose/>-->
-                        <arg>-Xlint:all,-serial,-path</arg>
                         <bootclasspath>${java.home}/jre/lib/rt.jar:${java.home}/jre/lib/jce.jar:${java.home}/lib/tools.jar</bootclasspath>
                     </compilerArguments>
                 </configuration>

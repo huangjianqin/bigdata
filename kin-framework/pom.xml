@@ -233,7 +233,6 @@
                     <!--<fork>true</fork>-->
                     <compilerArguments>
                         <!--<verbose/>-->
-                        <arg>-Xlint:all,-serial,-path</arg>
                         <!-- 热更实现依赖了jdk的tools.jar-->
                         <bootclasspath>${java.home}/jre/lib/rt.jar:${java.home}/jre/lib/jce.jar:${java.home}/lib/tools.jar</bootclasspath>
                     </compilerArguments>
