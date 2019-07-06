@@ -1,4 +1,0 @@
-Manifest-Version: 1.0
-Agent-Class: org.kin.framework.hotswap.agent.JavaDynamicAgent
-Can-Redefine-Classes: true
-Can-Retransform-Classes: true
