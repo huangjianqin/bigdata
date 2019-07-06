@@ -26,29 +26,13 @@ import java.util.stream.Stream;
  */
 public class ClassUtils {
     public static final String CLASS_SUFFIX = ".class";
-    //基础类型类名
-    public static final String STRING_CLASS = "class java.lang.String";
-    public static final String CHAR = "char";
-    public static final String INTEGER_CLASS = "class java.lang.Integer";
-    public static final String INT = "int";
-    public static final String DOUBLE_CLASS = "class java.lang.Double";
-    public static final String DOUBLE = "double";
-    public static final String LONG_CLASS = "class java.lang.Long";
-    public static final String LONG = "long";
-    public static final String BYTE_CLASS = "class java.lang.Byte";
-    public static final String BYTE = "byte";
-    public static final String SHORT_CLASS = "class java.lang.Short";
-    public static final String SHORT = "short";
-    public static final String FLOAT_CLASS = "class java.lang.Float";
-    public static final String FLOAT = "float";
     //用于匹配内部类
     private static final Pattern INNER_PATTERN = Pattern.compile("\\$(\\d+).", Pattern.CASE_INSENSITIVE);
 
     @FunctionalInterface
-    private interface Matcher<T>{
+    private interface Matcher<T> {
         /**
-         *
-         * @param c 基准
+         * @param c      基准
          * @param target 目标
          * @return true表示匹配
          */
@@ -129,21 +113,20 @@ public class ClassUtils {
      * 获取出现某注解的所有类, 包括抽象类和接口
      */
     public static <T> Set<Class<T>> getAnnotationedClass(String packageName, Class<T> annotationClass, boolean isIncludeJar) {
-        if(annotationClass.isAnnotation()){
+        if (annotationClass.isAnnotation()) {
             return scanClasspathAndFindMatch(packageName, annotationClass,
                     (c, target) -> {
-                        if(target.isAnnotationPresent(c)){
+                        if (target.isAnnotationPresent(c)) {
                             return true;
-                        }
-                        else{
-                            for(Field field: target.getDeclaredFields()){
+                        } else {
+                            for (Field field : target.getDeclaredFields()) {
                                 if (field.isAnnotationPresent(c)) {
                                     return true;
                                 }
                             }
 
-                            for(Method method: target.getDeclaredMethods()){
-                                if(method.isAnnotationPresent(c)){
+                            for (Method method : target.getDeclaredMethods()) {
+                                if (method.isAnnotationPresent(c)) {
                                     return true;
                                 }
                             }
@@ -175,9 +158,9 @@ public class ClassUtils {
                                 int endIndex = origin.lastIndexOf(CLASS_SUFFIX);
 
                                 String className = origin.substring(startIndex, endIndex);
-                                if(StringUtils.isNotBlank(className) &&
+                                if (StringUtils.isNotBlank(className) &&
                                         !INNER_PATTERN.matcher(className).find() &&
-                                        !(className.indexOf("$") > 0)){
+                                        !(className.indexOf("$") > 0)) {
                                     try {
                                         return (Class<T>) currentClassLoader.loadClass(className);
                                     } catch (ClassNotFoundException e) {
@@ -197,7 +180,7 @@ public class ClassUtils {
                         JarEntry jarEntry = jarEntries.nextElement();
                         String entryName = jarEntry.getName();
 
-                        if(jarEntry.isDirectory()){
+                        if (jarEntry.isDirectory()) {
                             continue;
                         }
 
@@ -205,14 +188,14 @@ public class ClassUtils {
                             continue;
                         }
 
-                        if(INNER_PATTERN.matcher(entryName).find() || entryName.indexOf("$") > 0){
+                        if (INNER_PATTERN.matcher(entryName).find() || entryName.indexOf("$") > 0) {
                             continue;
                         }
 
                         String className = entryName.replaceAll("/", ".");
                         try {
                             Class<T> claxx = (Class<T>) currentClassLoader.loadClass(className);
-                            if(matcher.match(c, claxx)){
+                            if (matcher.match(c, claxx)) {
                                 subClasses.add(claxx);
                             }
                         } catch (ClassNotFoundException e) {
@@ -269,11 +252,10 @@ public class ClassUtils {
             if (m != null) {
                 return m.invoke(instance);
             } else {
-                try{
+                try {
                     field.setAccessible(true);
                     return field.get(instance);
-                }
-                finally {
+                } finally {
                     field.setAccessible(false);
                 }
             }
@@ -294,11 +276,10 @@ public class ClassUtils {
             if (m != null) {
                 m.invoke(instance, value);
             } else {
-                try{
+                try {
                     field.setAccessible(true);
                     field.set(instance, value);
-                }
-                finally {
+                } finally {
                     field.setAccessible(false);
                 }
             }
@@ -307,7 +288,7 @@ public class ClassUtils {
         }
     }
 
-    public static Method getterMethod(Object instance, String fieldName){
+    public static Method getterMethod(Object instance, String fieldName) {
         byte[] items = fieldName.getBytes();
         items[0] = (byte) ((char) items[0] - 'a' + 'A');
         try {
@@ -319,7 +300,7 @@ public class ClassUtils {
         return null;
     }
 
-    public static Method setterMethod(Object instance, String fieldName, Object value){
+    public static Method setterMethod(Object instance, String fieldName, Object value) {
         byte[] items = fieldName.getBytes();
         items[0] = (byte) ((char) items[0] - 'a' + 'A');
         try {
@@ -339,7 +320,7 @@ public class ClassUtils {
      * 获取claxx -> parent的所有field
      */
     public static List<Field> getFields(Class<?> claxx, Class<?> parent) {
-        if(claxx == null || parent == null){
+        if (claxx == null || parent == null) {
             return Collections.emptyList();
         }
 
@@ -375,41 +356,55 @@ public class ClassUtils {
     /**
      * 获取默认值
      */
-    public static Object getDefaultValue(Class claxx){
-        if(claxx.isPrimitive()){
-            if (ClassUtils.CHAR.equals(claxx.toString())) {
+    public static Object getDefaultValue(Class claxx) {
+        if (claxx.isPrimitive()) {
+            if (String.class.equals(claxx)) {
                 return "";
-            }
-
-            if (ClassUtils.INTEGER_CLASS.equals(claxx.toString()) ||
-                    ClassUtils.INT.equals(claxx.toString())) {
+            } else if (Boolean.class.equals(claxx) || Boolean.TYPE.equals(claxx)) {
+                return false;
+            } else if (Byte.class.equals(claxx) || Byte.TYPE.equals(claxx)) {
                 return 0;
-            }
-
-            if (ClassUtils.DOUBLE_CLASS.equals(claxx.toString()) ||
-                    ClassUtils.DOUBLE.equals(claxx.toString())) {
-                return 0D;
-            }
-
-            if (ClassUtils.LONG_CLASS.equals(claxx.toString()) ||
-                    ClassUtils.LONG.equals(claxx.toString())) {
+            } else if (Character.class.equals(claxx) || Character.TYPE.equals(claxx)) {
+                return "";
+            } else if (Short.class.equals(claxx) || Short.TYPE.equals(claxx)) {
+                return 0;
+            } else if (Integer.class.equals(claxx) || Integer.TYPE.equals(claxx)) {
+                return 0;
+            } else if (Long.class.equals(claxx) || Long.TYPE.equals(claxx)) {
                 return 0L;
+            } else if (Float.class.equals(claxx) || Float.TYPE.equals(claxx)) {
+                return 0.0F;
+            } else if (Double.class.equals(claxx) || Double.TYPE.equals(claxx)) {
+                return 0.0D;
             }
+        }
+        return null;
+    }
 
-            if (ClassUtils.BYTE_CLASS.equals(claxx.toString()) ||
-                    ClassUtils.BYTE.equals(claxx.toString())) {
-                return 0;
-            }
+    public static <T> T convertBytes2PrimitiveObj(Class<T> claxx, byte[] values) {
+        if (values == null || values.length == 0) {
+            return null;
+        }
 
-            if (ClassUtils.SHORT_CLASS.equals(claxx.toString()) ||
-                    ClassUtils.SHORT.equals(claxx.toString())) {
-                return 0;
-            }
-
-            if (ClassUtils.FLOAT_CLASS.equals(claxx.toString()) ||
-                    ClassUtils.FLOAT.equals(claxx.toString())) {
-                return 0F;
-            }
+        String strValue = new String(values);
+        if (String.class.equals(claxx)) {
+            return (T) strValue;
+        } else if (Boolean.class.equals(claxx) || Boolean.TYPE.equals(claxx)) {
+            return (T) Boolean.valueOf(strValue);
+        } else if (Byte.class.equals(claxx) || Byte.TYPE.equals(claxx)) {
+            return (T) Byte.valueOf(strValue);
+        } else if (Character.class.equals(claxx) || Character.TYPE.equals(claxx)) {
+            return (T) strValue;
+        } else if (Short.class.equals(claxx) || Short.TYPE.equals(claxx)) {
+            return (T) Short.valueOf(strValue);
+        } else if (Integer.class.equals(claxx) || Integer.TYPE.equals(claxx)) {
+            return (T) Integer.valueOf(strValue);
+        } else if (Long.class.equals(claxx) || Long.TYPE.equals(claxx)) {
+            return (T) Long.valueOf(strValue);
+        } else if (Float.class.equals(claxx) || Float.TYPE.equals(claxx)) {
+            return (T) Float.valueOf(strValue);
+        } else if (Double.class.equals(claxx) || Double.TYPE.equals(claxx)) {
+            return (T) Double.valueOf(strValue);
         }
         return null;
     }

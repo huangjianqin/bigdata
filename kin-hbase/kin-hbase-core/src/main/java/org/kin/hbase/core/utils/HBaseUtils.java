@@ -96,7 +96,7 @@ public class HBaseUtils {
     private static byte[] getFieldValue(Object object, Field field) {
         try {
             Method m = ClassUtils.getterMethod(object, field.getName());
-            if (ClassUtils.STRING_CLASS.equals(field.getGenericType().toString())) {
+            if (String.class.equals(field)) {
                 String val;
                 if (m != null) {
                     // 调用getter方法获取属性值
@@ -108,7 +108,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (ClassUtils.CHAR.equals(field.getGenericType().toString())) {
+            if (Character.class.equals(field) || Character.TYPE.equals(field)) {
                 char val;
                 if (m != null) {
                     // 调用getter方法获取属性值
@@ -120,8 +120,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (ClassUtils.INTEGER_CLASS.equals(field.getGenericType().toString()) ||
-                    ClassUtils.INT.equals(field.getGenericType().toString())) {
+            if (Integer.class.equals(field) || Integer.TYPE.equals(field)) {
                 int val;
                 if (m != null) {
                     val = (int) m.invoke(object);
@@ -132,8 +131,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (ClassUtils.DOUBLE_CLASS.equals(field.getGenericType().toString()) ||
-                    ClassUtils.DOUBLE.equals(field.getGenericType().toString())) {
+            if (Double.class.equals(field) || Double.TYPE.equals(field)) {
                 double val;
                 if (m != null) {
                     val = (double) m.invoke(object);
@@ -144,8 +142,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (ClassUtils.LONG_CLASS.equals(field.getGenericType().toString()) ||
-                    ClassUtils.LONG.equals(field.getGenericType().toString())) {
+            if (Long.class.equals(field) || Long.TYPE.equals(field)) {
                 long val;
                 if (m != null) {
                     val = (long) m.invoke(object);
@@ -156,8 +153,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (ClassUtils.BYTE_CLASS.equals(field.getGenericType().toString()) ||
-                    ClassUtils.BYTE.equals(field.getGenericType().toString())) {
+            if (Byte.class.equals(field) || Byte.TYPE.equals(field)) {
                 byte val;
                 if (m != null) {
                     val = (byte) m.invoke(object);
@@ -168,8 +164,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (ClassUtils.SHORT_CLASS.equals(field.getGenericType().toString()) ||
-                    ClassUtils.SHORT.equals(field.getGenericType().toString())) {
+            if (Short.class.equals(field) || Short.TYPE.equals(field)) {
                 short val;
                 if (m != null) {
                     val = (byte) m.invoke(object);
@@ -180,8 +175,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (ClassUtils.FLOAT_CLASS.equals(field.getGenericType().toString()) ||
-                    ClassUtils.FLOAT.equals(field.getGenericType().toString())) {
+            if (Float.class.equals(field) || Float.TYPE.equals(field)) {
                 float val;
                 if (m != null) {
                     val = (float) m.invoke(object);
@@ -218,63 +212,6 @@ public class HBaseUtils {
         }
     }
 
-    public static <T> T convertBytes2Obj(Class<T> clazz, byte[] values) {
-        if (values == null || values.length == 0) {
-            return null;
-        }
-
-        String classType = clazz.toString();
-        String value = new String(values);
-        T instance;
-        switch (classType) {
-            case ClassUtils.STRING_CLASS:
-                instance = (T) value;
-                break;
-            case ClassUtils.CHAR:
-                instance = (T) value;
-                break;
-            case ClassUtils.INTEGER_CLASS:
-                instance = (T) Integer.valueOf(value);
-                break;
-            case ClassUtils.INT:
-                instance = (T) Integer.valueOf(value);
-                break;
-            case ClassUtils.LONG_CLASS:
-                instance = (T) Long.valueOf(Bytes.toLong(values));
-                break;
-            case ClassUtils.LONG:
-                instance = (T) Long.valueOf(Bytes.toLong(values));
-                break;
-            case ClassUtils.DOUBLE_CLASS:
-                instance = (T) Double.valueOf(value);
-                break;
-            case ClassUtils.DOUBLE:
-                instance = (T) Double.valueOf(value);
-                break;
-            case ClassUtils.FLOAT_CLASS:
-                instance = (T) Float.valueOf(value);
-                break;
-            case ClassUtils.FLOAT:
-                instance = (T) Float.valueOf(value);
-                break;
-            case ClassUtils.BYTE_CLASS:
-                instance = (T) Byte.valueOf(value);
-                break;
-            case ClassUtils.BYTE:
-                instance = (T) Byte.valueOf(value);
-                break;
-            case ClassUtils.SHORT_CLASS:
-                instance = (T) Short.valueOf(value);
-                break;
-            case ClassUtils.SHORT:
-                instance = (T) Short.valueOf(value);
-                break;
-            default:
-                return null;
-        }
-        return instance;
-    }
-
     /**
      * 解析注解，注入数据
      */
@@ -293,7 +230,7 @@ public class HBaseUtils {
                     field.setAccessible(true);
                     //设置RowKey @RowKey
                     if (field.isAnnotationPresent(RowKey.class)) {
-                        setFieldValue(instance, field, convertBytes2Obj(field.getType(), result.getRow()));
+                        setFieldValue(instance, field, ClassUtils.convertBytes2PrimitiveObj(field.getType(), result.getRow()));
                     } else {
                         //设置列值 @Column
                         if (field.isAnnotationPresent(Column.class)) {
@@ -310,7 +247,7 @@ public class HBaseUtils {
                                 throw new RuntimeException("@Column 's qualifier family must be not blank");
                             }
 
-                            setFieldValue(instance, field, convertBytes2Obj(field.getType(), result.getValue(Bytes.toBytes(family), Bytes.toBytes(qualifier))));
+                            setFieldValue(instance, field, ClassUtils.convertBytes2PrimitiveObj(field.getType(), result.getValue(Bytes.toBytes(family), Bytes.toBytes(qualifier))));
                         }
                     }
                 }
