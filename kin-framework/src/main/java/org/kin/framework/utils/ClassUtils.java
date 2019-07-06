@@ -381,31 +381,38 @@ public class ClassUtils {
         return null;
     }
 
-    public static <T> T convertBytes2PrimitiveObj(Class<T> claxx, byte[] values) {
-        if (values == null || values.length == 0) {
+    public static <T> T convertBytes2PrimitiveObj(Class<T> claxx, byte[] bytes) {
+        if (bytes == null || bytes.length <= 0) {
             return null;
         }
 
-        String strValue = new String(values);
-        if (String.class.equals(claxx)) {
-            return (T) strValue;
-        } else if (Boolean.class.equals(claxx) || Boolean.TYPE.equals(claxx)) {
-            return (T) Boolean.valueOf(strValue);
-        } else if (Byte.class.equals(claxx) || Byte.TYPE.equals(claxx)) {
-            return (T) Byte.valueOf(strValue);
-        } else if (Character.class.equals(claxx) || Character.TYPE.equals(claxx)) {
-            return (T) strValue;
-        } else if (Short.class.equals(claxx) || Short.TYPE.equals(claxx)) {
-            return (T) Short.valueOf(strValue);
-        } else if (Integer.class.equals(claxx) || Integer.TYPE.equals(claxx)) {
-            return (T) Integer.valueOf(strValue);
-        } else if (Long.class.equals(claxx) || Long.TYPE.equals(claxx)) {
-            return (T) Long.valueOf(strValue);
-        } else if (Float.class.equals(claxx) || Float.TYPE.equals(claxx)) {
-            return (T) Float.valueOf(strValue);
-        } else if (Double.class.equals(claxx) || Double.TYPE.equals(claxx)) {
-            return (T) Double.valueOf(strValue);
+        String strValue = new String(bytes);
+        return convertStr2PrimitiveObj(claxx, strValue);
+    }
+
+    public static <T> T convertStr2PrimitiveObj(Class<T> claxx, String strValue) {
+        if (StringUtils.isNotBlank(strValue)) {
+            if (String.class.equals(claxx)) {
+                return (T) strValue;
+            } else if (Boolean.class.equals(claxx) || Boolean.TYPE.equals(claxx)) {
+                return (T) Boolean.valueOf(strValue);
+            } else if (Byte.class.equals(claxx) || Byte.TYPE.equals(claxx)) {
+                return (T) Byte.valueOf(strValue);
+            } else if (Character.class.equals(claxx) || Character.TYPE.equals(claxx)) {
+                return (T) strValue;
+            } else if (Short.class.equals(claxx) || Short.TYPE.equals(claxx)) {
+                return (T) Short.valueOf(strValue);
+            } else if (Integer.class.equals(claxx) || Integer.TYPE.equals(claxx)) {
+                return (T) Integer.valueOf(strValue);
+            } else if (Long.class.equals(claxx) || Long.TYPE.equals(claxx)) {
+                return (T) Long.valueOf(strValue);
+            } else if (Float.class.equals(claxx) || Float.TYPE.equals(claxx)) {
+                return (T) Float.valueOf(strValue);
+            } else if (Double.class.equals(claxx) || Double.TYPE.equals(claxx)) {
+                return (T) Double.valueOf(strValue);
+            }
         }
+
         return null;
     }
 }
