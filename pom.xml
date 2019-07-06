@@ -8,15 +8,13 @@
     <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
     <modules>
-        <module>BigData-Project</module>
-        <module>Kin-Framework</module>
-        <module>Kin-Hbase</module>
-        <module>Kin-Kafka</module>
-        <module>Kin-Hadoop</module>
-        <module>Kin-Hive</module>
-        <module>Kin-Spark</module>
-        <module>Kin-Flink</module>
-        <module>Kin-Java-Agent</module>
+        <module>bigdata-project</module>
+        <module>kin-hbase</module>
+        <module>kin-kafka</module>
+        <module>kin-hadoop</module>
+        <module>kin-hive</module>
+        <module>kin-spark</module>
+        <module>kin-flink</module>
     </modules>
 
     <properties>
