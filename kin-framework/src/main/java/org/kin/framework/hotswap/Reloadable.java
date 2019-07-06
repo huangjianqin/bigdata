@@ -1,4 +1,4 @@
-package org.kin.framework.hotswap.old;
+package org.kin.framework.hotswap;
 
 /**
  * Created by huangjianqin on 2018/1/31.
