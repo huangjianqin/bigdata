@@ -11,7 +11,7 @@ public class StringUtils {
     private static final String MKSTRING_SEPARATOR = ",";
 
     public static boolean isBlank(String s) {
-        return s == null || "".equals(s);
+        return s == null || "".equals(s.trim());
     }
 
     public static boolean isNotBlank(String s) {
