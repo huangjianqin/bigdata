@@ -11,16 +11,8 @@
     <artifactId>kin-hbase-core</artifactId>
     <version>0.1.0.0</version>
     <packaging>jar</packaging>
+    
     <properties>
-        <java.version>1.8</java.version>
-        <CodeCacheSize>512m</CodeCacheSize>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <hadoop.version>2.6.4</hadoop.version>
-        <hbase.version>1.2.4</hbase.version>
-        <spring.version>4.3.7.RELEASE</spring.version>
     </properties>
 
     <dependencies>

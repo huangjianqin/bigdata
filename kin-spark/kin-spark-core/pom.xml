@@ -14,17 +14,6 @@
     <packaging>jar</packaging>
 
     <properties>
-        <java.version>1.8</java.version>
-        <CodeCacheSize>512m</CodeCacheSize>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <scala.version>2.11.12</scala.version>
-        <scala.version.head>2.11</scala.version.head>
-        <spark.version>2.2.0</spark.version>
-        <mongo.version>3.2.2</mongo.version>
-        <hbase.version>1.2.4</hbase.version>
     </properties>
 
     <dependencies>
@@ -41,14 +30,14 @@
         <dependency>
             <groupId>org.specs</groupId>
             <artifactId>specs</artifactId>
-            <version>1.2.5</version>
+            <version>${specs.version}</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>org.scalatest</groupId>
             <artifactId>scalatest_${scala.version.head}</artifactId>
-            <version>3.0.4</version>
+            <version>${scalatest.version}</version>
             <scope>test</scope>
         </dependency>
 
@@ -79,7 +68,7 @@
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-streaming-kafka_${scala.version.head}</artifactId>
-            <version>1.6.2</version>
+            <version>${spark-streaming-kafka.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -102,7 +91,7 @@
         <dependency>
             <groupId>com.github.fommil.netlib</groupId>
             <artifactId>core</artifactId>
-            <version>1.1.2</version>
+            <version>${fommil.netlib.core.version}</version>
         </dependency>
 
 
@@ -110,7 +99,7 @@
         <dependency>
             <groupId>org.mongodb.spark</groupId>
             <artifactId>mongo-spark-connector_${scala.version.head}</artifactId>
-            <version>2.2.0</version>
+            <version>${mongo-spark-connector.version}</version>
         </dependency>
 
 
@@ -118,7 +107,7 @@
         <dependency>
             <groupId>redislabs</groupId>
             <artifactId>spark-redis</artifactId>
-            <version>0.3.2</version>
+            <version>${spark-redis.version}</version>
         </dependency>
 
 
@@ -126,7 +115,7 @@
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
-            <version>2.8.1</version>
+            <version>${jedis.version}</version>
         </dependency>
 
 
@@ -141,7 +130,7 @@
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kin-hbase-core</artifactId>
-            <version>0.1.0.0</version>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>

@@ -14,14 +14,6 @@
     <packaging>jar</packaging>
 
     <properties>
-        <java.version>1.8</java.version>
-        <CodeCacheSize>512m</CodeCacheSize>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <hadoop.version>2.6.4</hadoop.version>
-        <hbase.version>1.2.4</hbase.version>
     </properties>
 
     <dependencies>
@@ -58,7 +50,7 @@
         <dependency>
             <groupId>org.apache.mrunit</groupId>
             <artifactId>mrunit</artifactId>
-            <version>1.1.0</version>
+            <version>${mrunit.version}</version>
             <classifier>hadoop2</classifier>
             <scope>test</scope>
         </dependency>
@@ -77,7 +69,7 @@
         <dependency>
             <groupId>com.opencsv</groupId>
             <artifactId>opencsv</artifactId>
-            <version>3.8</version>
+            <version>${opencsv.version}</version>
         </dependency>
 
 
@@ -85,7 +77,7 @@
         <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
-            <version>5.1.38</version>
+            <version>${mysql-connector-java.version}</version>
         </dependency>
     </dependencies>
 
