@@ -43,7 +43,7 @@
         <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
         <resources>
             <resource>
-                <directory>src/main/resources</directory>
+                <directory>${basedir}/src/main/resources</directory>
             </resource>
         </resources>
         <testResources>
