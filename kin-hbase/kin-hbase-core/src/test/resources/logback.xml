@@ -62,10 +62,8 @@
     </appender>
 
     <!--                                       logger                                                       -->
-    <logger name="hbase" level="INFO" additivity="false">
+    <logger name="org.kin.hbase" level="INFO" additivity="false">
         <appender-ref ref="asyncHBaseAppender"/>
-        <appender-ref ref="org.apache.hadoop"/>
-        <appender-ref ref="org.apache.zookeeper"/>
         <appender-ref ref="asyncERROR" level="ERROR"/>
     </logger>
 
