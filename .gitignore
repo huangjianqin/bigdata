@@ -1,16 +1,7 @@
 
-.idea/*
-*/.idea/*
-*.iml
-*/*.iml
-target/*
-*/target/*
-*/*/target/*
-*/*/*/target/*
-*.csv
-*.jar
-*.txt
-*.class
-*/*.DS_Store
+**/.idea/*
+**/*.iml
+**/target/*
+**/*.DS_Store
 logs/*
 data/*
