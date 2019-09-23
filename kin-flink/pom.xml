@@ -149,8 +149,8 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <addClasspath>true</addClasspath>
-                            <classpathPrefix>/lib/</classpathPrefix>
+<!--                            <addClasspath>true</addClasspath>-->
+<!--                            <classpathPrefix>lib/</classpathPrefix>-->
                             <!--<mainClass>spark.demo.run.Service</mainClass>-->
                         </manifest>
                     </archive>
@@ -172,8 +172,8 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <addClasspath>true</addClasspath>
-                            <classpathPrefix>/lib/</classpathPrefix>
+<!--                            <addClasspath>true</addClasspath>-->
+<!--                            <classpathPrefix>lib/</classpathPrefix>-->
                             <!--<mainClass></mainClass>-->
                         </manifest>
                     </archive>
