@@ -44,10 +44,4 @@
             <version>${kafka.version}</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <plugins>
-
-        </plugins>
-    </build>
 </project>
