@@ -78,6 +78,11 @@ public class HBaseConnection implements Connection {
     }
 
     @Override
+    public void clearRegionLocationCache() {
+        connection.clearRegionLocationCache();
+    }
+
+    @Override
     public Admin getAdmin() throws IOException {
         if (connection != null) {
             return connection.getAdmin();
@@ -105,6 +110,11 @@ public class HBaseConnection implements Connection {
         }
 
         return true;
+    }
+
+    @Override
+    public TableBuilder getTableBuilder(TableName tableName, ExecutorService executorService) {
+        return connection.getTableBuilder(tableName, executorService);
     }
 
     @Override

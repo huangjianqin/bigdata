@@ -23,7 +23,7 @@ object MongoScalaTest {
     //.toFuture()可能调用了subscrbie
     val findFuture = personCollection.find().toFuture()
     Await.result(findFuture, 10 second)
-    findFuture.onSuccess {
+    findFuture.onComplete {
       case seq => seq.foreach(println)
     }
 

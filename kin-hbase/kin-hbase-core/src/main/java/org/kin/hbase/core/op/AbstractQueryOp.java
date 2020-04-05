@@ -1,5 +1,6 @@
 package org.kin.hbase.core.op;
 
+import org.apache.hadoop.hbase.CompareOperator;
 import org.apache.hadoop.hbase.filter.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.kin.hbase.core.domain.QueryInfo;
@@ -23,7 +24,7 @@ public abstract class AbstractQueryOp<S extends AbstractQueryOp> extends Abstrac
         return (S) this;
     }
 
-    private S qualifierValueFilter(String family, String qualifier, String value, CompareFilter.CompareOp compareOp) {
+    private S qualifierValueFilter(String family, String qualifier, String value, CompareOperator compareOp) {
         SingleColumnValueFilter filter = new SingleColumnValueFilter(
                 Bytes.toBytes(family),
                 Bytes.toBytes(qualifier),
@@ -34,7 +35,7 @@ public abstract class AbstractQueryOp<S extends AbstractQueryOp> extends Abstrac
         return addFilter(filter);
     }
 
-    private S qualifierValueFilter(String family, String qualifier, ByteArrayComparable comparable, CompareFilter.CompareOp compareOp) {
+    private S qualifierValueFilter(String family, String qualifier, ByteArrayComparable comparable, CompareOperator compareOp) {
         SingleColumnValueFilter filter = new SingleColumnValueFilter(
                 Bytes.toBytes(family),
                 Bytes.toBytes(qualifier),
@@ -87,64 +88,64 @@ public abstract class AbstractQueryOp<S extends AbstractQueryOp> extends Abstrac
     //-------------------------------------------------------------------------------------------------------
     //列值过滤器
     public S eq(String family, String qualifier, String value) {
-        return qualifierValueFilter(family, qualifier, value, CompareFilter.CompareOp.EQUAL);
+        return qualifierValueFilter(family, qualifier, value, CompareOperator.EQUAL);
     }
 
     public S neq(String family, String qualifier, String value) {
-        return qualifierValueFilter(family, qualifier, value, CompareFilter.CompareOp.NOT_EQUAL);
+        return qualifierValueFilter(family, qualifier, value, CompareOperator.NOT_EQUAL);
     }
 
     public S gt(String family, String qualifier, String value) {
-        return qualifierValueFilter(family, qualifier, value, CompareFilter.CompareOp.GREATER);
+        return qualifierValueFilter(family, qualifier, value, CompareOperator.GREATER);
     }
 
     public S ge(String family, String qualifier, String value) {
-        return qualifierValueFilter(family, qualifier, value, CompareFilter.CompareOp.GREATER_OR_EQUAL);
+        return qualifierValueFilter(family, qualifier, value, CompareOperator.GREATER_OR_EQUAL);
     }
 
     public S lt(String family, String qualifier, String value) {
-        return qualifierValueFilter(family, qualifier, value, CompareFilter.CompareOp.LESS);
+        return qualifierValueFilter(family, qualifier, value, CompareOperator.LESS);
     }
 
     public S le(String family, String qualifier, String value) {
-        return qualifierValueFilter(family, qualifier, value, CompareFilter.CompareOp.LESS_OR_EQUAL);
+        return qualifierValueFilter(family, qualifier, value, CompareOperator.LESS_OR_EQUAL);
     }
 
     public S regexFilter(String family, String qualifier, String regex) {
-        return qualifierValueFilter(family, qualifier, new RegexStringComparator(regex), CompareFilter.CompareOp.EQUAL);
+        return qualifierValueFilter(family, qualifier, new RegexStringComparator(regex), CompareOperator.EQUAL);
     }
 
     public S substringFilter(String family, String qualifier, String substring) {
-        return qualifierValueFilter(family, qualifier, new SubstringComparator(substring), CompareFilter.CompareOp.EQUAL);
+        return qualifierValueFilter(family, qualifier, new SubstringComparator(substring), CompareOperator.EQUAL);
     }
 
     public S nRegexFilter(String family, String qualifier, String regex) {
-        return qualifierValueFilter(family, qualifier, new RegexStringComparator(regex), CompareFilter.CompareOp.NOT_EQUAL);
+        return qualifierValueFilter(family, qualifier, new RegexStringComparator(regex), CompareOperator.NOT_EQUAL);
     }
 
     public S nSubstringFilter(String family, String qualifier, String substring) {
-        return qualifierValueFilter(family, qualifier, new SubstringComparator(substring), CompareFilter.CompareOp.NOT_EQUAL);
+        return qualifierValueFilter(family, qualifier, new SubstringComparator(substring), CompareOperator.NOT_EQUAL);
     }
 
     //-------------------------------------------------------------------------------------------------------
     //键值元数据过滤器
     public S familyFilter(String family) {
-        FamilyFilter filter = new FamilyFilter(CompareFilter.CompareOp.EQUAL, new BinaryComparator(Bytes.toBytes(family)));
+        FamilyFilter filter = new FamilyFilter(CompareOperator.EQUAL, new BinaryComparator(Bytes.toBytes(family)));
         return addFilter(filter);
     }
 
     public S nFamilyFilter(String family) {
-        FamilyFilter filter = new FamilyFilter(CompareFilter.CompareOp.NOT_EQUAL, new BinaryComparator(Bytes.toBytes(family)));
+        FamilyFilter filter = new FamilyFilter(CompareOperator.NOT_EQUAL, new BinaryComparator(Bytes.toBytes(family)));
         return addFilter(filter);
     }
 
     public S qualifierFilter(String qualifier) {
-        QualifierFilter filter = new QualifierFilter(CompareFilter.CompareOp.EQUAL, new BinaryComparator(Bytes.toBytes(qualifier)));
+        QualifierFilter filter = new QualifierFilter(CompareOperator.EQUAL, new BinaryComparator(Bytes.toBytes(qualifier)));
         return addFilter(filter);
     }
 
     public S nQualifierFilter(String qualifier) {
-        QualifierFilter filter = new QualifierFilter(CompareFilter.CompareOp.NOT_EQUAL, new BinaryComparator(Bytes.toBytes(qualifier)));
+        QualifierFilter filter = new QualifierFilter(CompareOperator.NOT_EQUAL, new BinaryComparator(Bytes.toBytes(qualifier)));
         return addFilter(filter);
     }
 
@@ -177,12 +178,12 @@ public abstract class AbstractQueryOp<S extends AbstractQueryOp> extends Abstrac
     //-------------------------------------------------------------------------------------------------------
     //行键元数据过滤器
     public S rowFilter(String rowKey) {
-        RowFilter filter = new RowFilter(CompareFilter.CompareOp.EQUAL, new BinaryComparator(Bytes.toBytes(rowKey)));
+        RowFilter filter = new RowFilter(CompareOperator.EQUAL, new BinaryComparator(Bytes.toBytes(rowKey)));
         return addFilter(filter);
     }
 
     public S nRowFilter(String rowKey) {
-        RowFilter filter = new RowFilter(CompareFilter.CompareOp.EQUAL, new BinaryComparator(Bytes.toBytes(rowKey)));
+        RowFilter filter = new RowFilter(CompareOperator.EQUAL, new BinaryComparator(Bytes.toBytes(rowKey)));
         return addFilter(filter);
     }
 

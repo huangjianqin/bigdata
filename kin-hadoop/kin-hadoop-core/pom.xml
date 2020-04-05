@@ -36,16 +36,6 @@
             <version>${hadoop.version}</version>
         </dependency>
 
-
-        <!--hadoop hbase-->
-        <dependency>
-            <groupId>org.apache.hbase</groupId>
-            <artifactId>hbase-hadoop-compat</artifactId>
-            <version>${hbase.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-
         <!--mapreduce 单元测试-->
         <dependency>
             <groupId>org.apache.mrunit</groupId>

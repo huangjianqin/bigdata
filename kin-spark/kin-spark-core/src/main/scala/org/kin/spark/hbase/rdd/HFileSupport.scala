@@ -7,7 +7,8 @@ import org.apache.hadoop.fs.permission.FsPermission
 import org.apache.hadoop.fs.{FileSystem, Path}
 import org.apache.hadoop.hbase.client._
 import org.apache.hadoop.hbase.io.ImmutableBytesWritable
-import org.apache.hadoop.hbase.mapreduce.{HFileOutputFormat2, LoadIncrementalHFiles}
+import org.apache.hadoop.hbase.mapreduce.HFileOutputFormat2
+import org.apache.hadoop.hbase.tool.BulkLoadHFiles
 import org.apache.hadoop.hbase.util.Bytes
 import org.apache.hadoop.hbase.{KeyValue, TableName}
 import org.apache.hadoop.mapreduce.Job
@@ -18,7 +19,7 @@ import org.kin.hbase.core.entity.HBaseEntity
 import org.kin.hbase.core.utils.HBaseUtils
 import org.kin.spark.hbase.rdd.HFileMethods._
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 //want to use specify implicit, must import this package or add compiler option language:implicitConversions
 import scala.language.implicitConversions
@@ -35,10 +36,10 @@ import scala.language.implicitConversions
   * 2.快速导入海量的数据
   * 3.减少CPU网络内存资源消耗
   *
-	* !!!!!在这种情况下,我们不用自己写reduce过程,但是会使用Hbase给我们提供的reduce,也就是说,无论你怎么设置reduce数量,都是无效的
+  * !!!!!在这种情况下,我们不用自己写reduce过程,但是会使用Hbase给我们提供的reduce,也就是说,无论你怎么设置reduce数量,都是无效的
   * !!!!!在建表的时候进行合理的预分区!!!预分区的数目会决定你的reduce过程的数目!简单来说,在一定的范围内,进行合适预分区的话,reduce的数量增加多少,效率就提高多少倍!!! ===> SPLITS
   * !!!!!如果hdfs地址没有写端口，会认为是两个不同文件系统，所以要copy，而如果当是同一文件系统时，则是move
-	* !!!!!由于BulkLoad是绕过了Write to WAL，Write to MemStore及Flush to disk的过程，所以并不能通过WAL来进行一些复制数据的操作
+  * !!!!!由于BulkLoad是绕过了Write to WAL，Write to MemStore及Flush to disk的过程，所以并不能通过WAL来进行一些复制数据的操作
   *
   */
 trait HFileSupport {
@@ -80,6 +81,7 @@ private[hbase] object HFileMethods {
 
   // GetCellKey
   def gc[A](c: CellKey, v: A): (CellKey, A) = (c, v)
+
   def rowGC(c: CellKey, vb: Array[Byte]): (CellKey, Array[Byte]) = (c, vb)
 
   def gc[A](c: CellKey, v: (A, Long)): (CellKeyTS, A) = ((c, v._2), v._1)
@@ -131,8 +133,8 @@ sealed abstract class HFileRDDHelper extends Serializable {
 
   private object HFilePartitioner {
     def apply(conf: Configuration, splits: Array[Array[Byte]], numFilesPerRegionPerFamily: Int): HFilePartitioner = {
-      //每个region的HFile不允许超过LoadIncrementalHFiles.MAX_FILES_PER_REGION_PER_FAMILY(默认32), 否则会写入失败
-      val fraction = 1 max numFilesPerRegionPerFamily min conf.getInt(LoadIncrementalHFiles.MAX_FILES_PER_REGION_PER_FAMILY, 32)
+      //每个region的HFile不允许超过BulkLoadHFiles.MAX_FILES_PER_REGION_PER_FAMILY(默认32), 否则会写入失败
+      val fraction = 1 max numFilesPerRegionPerFamily min conf.getInt(BulkLoadHFiles.MAX_FILES_PER_REGION_PER_FAMILY, 32)
       new HFilePartitioner(splits, fraction)
     }
   }
@@ -181,13 +183,13 @@ sealed abstract class HFileRDDHelper extends Serializable {
 
     // prepare path for HFiles output
     val fs = FileSystem.get(conf)
-    val HFilePath = new Path("/tmp", table.getName.getQualifierAsString/*获取唯一名*/ + "_" + UUID.randomUUID())
+    val hFilePath = new Path("/tmp", table.getName.getQualifierAsString /*获取唯一名*/ + "_" + UUID.randomUUID())
     //
-    HFilePath.makeQualified(fs.getUri, fs.getWorkingDirectory)
+    hFilePath.makeQualified(fs.getUri, fs.getWorkingDirectory)
 
     try {
       rdd
-        .saveAsNewAPIHadoopFile(HFilePath.toString, classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat2], job.getConfiguration)
+        .saveAsNewAPIHadoopFile(hFilePath.toString, classOf[ImmutableBytesWritable], classOf[KeyValue], classOf[HFileOutputFormat2], job.getConfiguration)
 
       // prepare HFiles for incremental load
       // set folders permissions read/write/exec for all
@@ -209,15 +211,16 @@ sealed abstract class HFileRDDHelper extends Serializable {
           }
         }
       }
-      setRecursivePermission(HFilePath)
+
+      setRecursivePermission(hFilePath)
 
       //批量导入
-      val lih = new LoadIncrementalHFiles(conf)
-      lih.doBulkLoad(HFilePath, connection.getAdmin, table, regionLocator)
+      val lih = BulkLoadHFiles.create(conf)
+      lih.bulkLoad(table.getName, hFilePath)
     } finally {
       connection.close()
 
-      fs.deleteOnExit(HFilePath)
+      fs.deleteOnExit(hFilePath)
 
       // TotalOrderPartitioner.getPartitionFile ==> Get the path to the SequenceFile storing the sorted partition keyset.
       // clean HFileOutputFormat2 stuff
@@ -307,11 +310,11 @@ final class HFileRDD[K: Writer, Q: Writer, C: ClassTag, A: ClassTag, V: ClassTag
     val regionLocator = connection.getRegionLocator(tableName)
     val table = connection.getTable(tableName)
 
-    val families = table.getTableDescriptor.getFamiliesKeys
+    val families = table.getDescriptor.getColumnFamilyNames
     val partitioner = getPartitioner(regionLocator, numFilesPerRegionPerFamily)
 
     val rdds = for {
-      fb <- families
+      fb <- families.asScala
       f = rs.read(fb)
       rdd = mapRdd
         .collect { case (k, m) if m.contains(f) => (wk.write(k), m(f)) }
@@ -342,15 +345,15 @@ final class HBaseEntityHFileRDD[E <: HBaseEntity, C: ClassTag](entityRdd: RDD[E]
     val connection = ConnectionFactory.createConnection(conf)
     val regionLocator = connection.getRegionLocator(tableName)
     val table = connection.getTable(tableName)
-    val families = table.getTableDescriptor.getFamiliesKeys
+    val families = table.getDescriptor.getColumnFamilyNames
     val partitioner = getPartitioner(regionLocator, numFilesPerRegionPerFamily)
 
     val rdds = for {
-      fb <- families
+      fb <- families.asScala
       rdd = entityRdd.flatMap(e => {
         val puts = HBaseUtils.convert2Puts(e)
-        puts.flatMap(put => {
-          put.getFamilyCellMap.get(fb).map(cell => {
+        puts.asScala.flatMap(put => {
+          put.getFamilyCellMap.get(fb).asScala.map(cell => {
             (ck((put.getRow, cell.getQualifierArray), cell.getValueArray))
           })
         })

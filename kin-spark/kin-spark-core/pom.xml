@@ -25,23 +25,6 @@
             <scope>provided</scope>
         </dependency>
 
-
-        <!--scala unit test-->
-        <dependency>
-            <groupId>org.specs</groupId>
-            <artifactId>specs</artifactId>
-            <version>${specs.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.version.head}</artifactId>
-            <version>${scalatest.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-
         <!-- spark-->
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -67,7 +50,7 @@
         <!-- 不能再引用其他kafka client依赖, 避免引起冲突 -->
         <dependency>
             <groupId>org.apache.spark</groupId>
-            <artifactId>spark-streaming-kafka_${scala.version.head}</artifactId>
+            <artifactId>spark-streaming-kafka-0-10_${scala.version.head}</artifactId>
             <version>${spark-streaming-kafka.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -86,15 +69,6 @@
             <scope>provided</scope>
         </dependency>
 
-
-        <!-- spark mlib依赖于breeze优化数学运算,而breeze又依赖于下包-->
-        <dependency>
-            <groupId>com.github.fommil.netlib</groupId>
-            <artifactId>core</artifactId>
-            <version>${fommil.netlib.core.version}</version>
-        </dependency>
-
-
         <!--  spark mongodb-->
         <dependency>
             <groupId>org.mongodb.spark</groupId>
@@ -105,8 +79,8 @@
 
         <!-- spark-redis-->
         <dependency>
-            <groupId>redislabs</groupId>
-            <artifactId>spark-redis</artifactId>
+            <groupId>com.redislabs</groupId>
+            <artifactId>spark-redis_${scala.version.head}</artifactId>
             <version>${spark-redis.version}</version>
         </dependency>
 
@@ -143,6 +117,13 @@
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-server</artifactId>
+            <version>${hbase.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hbase</groupId>
+            <artifactId>hbase-mapreduce</artifactId>
             <version>${hbase.version}</version>
             <scope>provided</scope>
         </dependency>

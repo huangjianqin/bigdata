@@ -11,7 +11,7 @@ import org.apache.spark.rdd.RDD
 import org.kin.hbase.core.entity.HBaseEntity
 import org.kin.hbase.core.utils.HBaseUtils
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 //want to use specify implicit, must import this package or add compiler option language:implicitConversions
 import scala.language.implicitConversions
 
@@ -39,7 +39,7 @@ final class HBaseReader(@transient sc: SparkContext) extends Serializable {
   }
 
   private def extractRow[Q, V](data: Set[String], result: Result, read: Cell => V)(implicit rq: Reader[Q], rs: Reader[String]) = {
-    result.listCells groupBy { cell =>
+    result.listCells.asScala groupBy { cell =>
       rs.read(CellUtil.cloneFamily(cell))
     } filterKeys data.contains map {
       // We cannot use mapValues here, because it returns a MapLike, which is not serializable,

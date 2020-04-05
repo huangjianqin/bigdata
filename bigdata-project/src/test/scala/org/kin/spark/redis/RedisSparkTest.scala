@@ -30,6 +30,8 @@ object RedisSparkTest {
     rdd4.foreach(println)
     rdd5.foreach(println)
 
+    import com.redislabs.provider.redis.streaming._
+
     val ssc = new StreamingContext(sc, Seconds(1))
     ssc.checkpoint(".checkpoint")
     val listItem = ssc.createRedisStream(Array("l1"), storageLevel = StorageLevel.MEMORY_AND_DISK_SER_2)

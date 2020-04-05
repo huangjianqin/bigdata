@@ -16,15 +16,6 @@
     </properties>
 
     <dependencies>
-        <!-- 测试包-->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${junit.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-
         <!-- scala-->
         <dependency>
             <groupId>org.scala-lang</groupId>
@@ -33,24 +24,6 @@
             <scope>provided</scope>
         </dependency>
 
-
-        <!--scala unit test-->
-        <dependency>
-            <groupId>org.specs</groupId>
-            <artifactId>specs</artifactId>
-            <version>${specs.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.scalatest</groupId>
-            <artifactId>scalatest_${scala.version.head}</artifactId>
-            <version>${scalatest.version}</version>
-            <scope>test</scope>
-        </dependency>
-
-
-        <!--2.12版本的scala 将akka独立出去了-->
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor_${scala.version.head}</artifactId>
@@ -70,31 +43,6 @@
             <artifactId>mongo-scala-driver_${scala.version.head}</artifactId>
             <version>${mongo-scala-driver.version}</version>
         </dependency>
-
-
-        <!-- druid连接池-->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>druid</artifactId>
-            <version>${alibaba.druid.version}</version>
-        </dependency>
-
-
-        <!-- activeMQ-->
-        <dependency>
-            <groupId>org.apache.activemq</groupId>
-            <artifactId>activemq-core</artifactId>
-            <version>${activemq.version}</version>
-        </dependency>
-
-
-        <!-- rabbitMQ -->
-        <dependency>
-            <groupId>com.rabbitmq</groupId>
-            <artifactId>amqp-client</artifactId>
-            <version>${rabbitmq.version}</version>
-        </dependency>
-
 
         <!-- 解析yml-->
         <dependency>
@@ -153,37 +101,6 @@
             <artifactId>netty-all</artifactId>
             <version>${netty.version}</version>
             <scope>provided</scope>
-        </dependency>
-
-        <!-- flink -->
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-scala_${scala.version.head}</artifactId>
-            <version>${flink.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-streaming-scala_${scala.version.head}</artifactId>
-            <version>${flink.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-clients_${scala.version.head}</artifactId>
-            <version>${flink.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-table_${scala.version.head}</artifactId>
-            <version>${flink.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-test-utils_2.11</artifactId>
-            <version>${flink.version}</version>
-            <scope>test</scope>
         </dependency>
 
         <!-- zookeeper-->
@@ -259,12 +176,6 @@
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kin-spark-core</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.kin</groupId>
-            <artifactId>kin-flink-core</artifactId>
             <version>${project.version}</version>
         </dependency>
 
@@ -370,12 +281,12 @@
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.0.2</version>
                 <executions>
-<!--                    <execution>-->
-<!--                        <id>test-jar</id>-->
-<!--                        <goals>-->
-<!--                            <goal>test-jar</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
+                    <!--                    <execution>-->
+                    <!--                        <id>test-jar</id>-->
+                    <!--                        <goals>-->
+                    <!--                            <goal>test-jar</goal>-->
+                    <!--                        </goals>-->
+                    <!--                    </execution>-->
                 </executions>
                 <configuration>
                     <archive>
@@ -393,18 +304,18 @@
                 <artifactId>maven-assembly-plugin</artifactId>
                 <version>2.5.5</version>
                 <executions>
-<!--                    <execution>-->
-<!--                        <id>make-assembly</id>-->
-<!--                        <goals>-->
-<!--                            <goal>single</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
+                    <!--                    <execution>-->
+                    <!--                        <id>make-assembly</id>-->
+                    <!--                        <goals>-->
+                    <!--                            <goal>single</goal>-->
+                    <!--                        </goals>-->
+                    <!--                    </execution>-->
                 </executions>
                 <configuration>
                     <archive>
                         <manifest>
-<!--                            <addClasspath>true</addClasspath>-->
-<!--                            <classpathPrefix>lib/</classpathPrefix>-->
+                            <!--                            <addClasspath>true</addClasspath>-->
+                            <!--                            <classpathPrefix>lib/</classpathPrefix>-->
                             <!--<mainClass></mainClass>-->
                         </manifest>
                     </archive>
@@ -461,27 +372,27 @@
             </plugin>
 
             <!--<plugin>-->
-                <!--<groupId>org.scalastyle</groupId>-->
-                <!--<artifactId>scalastyle-maven-plugin</artifactId>-->
-                <!--<version>0.8.0</version>-->
-                <!--<configuration>-->
-                    <!--<verbose>false</verbose>-->
-                    <!--<failOnViolation>true</failOnViolation>-->
-                    <!--<includeTestSourceDirectory>false</includeTestSourceDirectory>-->
-                    <!--<failOnWarning>false</failOnWarning>-->
-                    <!--<sourceDirectory>${basedir}/src/main/scala</sourceDirectory>-->
-                    <!--<testSourceDirectory>${basedir}/src/test/scala</testSourceDirectory>-->
-                    <!--<configLocation>scalastyle-config.xml</configLocation>-->
-                    <!--<outputFile>${basedir}/target/scalastyle-output.xml</outputFile>-->
-                    <!--<inputEncoding>${project.build.sourceEncoding}</inputEncoding>-->
-                <!--</configuration>-->
-                <!--<executions>-->
-                    <!--<execution>-->
-                        <!--<goals>-->
-                            <!--<goal>check</goal>-->
-                        <!--</goals>-->
-                    <!--</execution>-->
-                <!--</executions>-->
+            <!--<groupId>org.scalastyle</groupId>-->
+            <!--<artifactId>scalastyle-maven-plugin</artifactId>-->
+            <!--<version>0.8.0</version>-->
+            <!--<configuration>-->
+            <!--<verbose>false</verbose>-->
+            <!--<failOnViolation>true</failOnViolation>-->
+            <!--<includeTestSourceDirectory>false</includeTestSourceDirectory>-->
+            <!--<failOnWarning>false</failOnWarning>-->
+            <!--<sourceDirectory>${basedir}/src/main/scala</sourceDirectory>-->
+            <!--<testSourceDirectory>${basedir}/src/test/scala</testSourceDirectory>-->
+            <!--<configLocation>scalastyle-config.xml</configLocation>-->
+            <!--<outputFile>${basedir}/target/scalastyle-output.xml</outputFile>-->
+            <!--<inputEncoding>${project.build.sourceEncoding}</inputEncoding>-->
+            <!--</configuration>-->
+            <!--<executions>-->
+            <!--<execution>-->
+            <!--<goals>-->
+            <!--<goal>check</goal>-->
+            <!--</goals>-->
+            <!--</execution>-->
+            <!--</executions>-->
             <!--</plugin>-->
         </plugins>
     </build>

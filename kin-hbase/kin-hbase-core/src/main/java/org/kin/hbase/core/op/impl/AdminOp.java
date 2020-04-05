@@ -1,14 +1,15 @@
 package org.kin.hbase.core.op.impl;
 
-import org.apache.hadoop.hbase.HColumnDescriptor;
-import org.apache.hadoop.hbase.HTableDescriptor;
 import org.apache.hadoop.hbase.TableName;
-import org.apache.hadoop.hbase.client.Admin;
-import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.util.Bytes;
 import org.kin.hbase.core.HBasePool;
 import org.kin.hbase.core.op.AbstractHBaseOp;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Created by huangjianqin on 2018/5/25.
@@ -45,18 +46,17 @@ public class AdminOp extends AbstractHBaseOp<AdminOp> {
         }
     }
 
-    public void create(HColumnDescriptor... families) {
+    public void create(String... families) {
         try (Connection connection = HBasePool.common().getConnection()) {
             Admin admin = connection.getAdmin();
             TableName tableName = TableName.valueOf(getTableName());
-            HTableDescriptor descriptor = new HTableDescriptor(tableName);
+            TableDescriptorBuilder tableDescriptorBuilder = TableDescriptorBuilder.newBuilder(tableName);
             if (families.length > 0) {
-                for (HColumnDescriptor columnDescriptor : families) {
-                    descriptor.addFamily(columnDescriptor);
-                }
+                List<ColumnFamilyDescriptor> columnFamilyDescriptors =
+                        Arrays.stream(families).map(family -> ColumnFamilyDescriptorBuilder.newBuilder(Bytes.toBytes(family)).build()).collect(Collectors.toList());
+                tableDescriptorBuilder.setColumnFamilies(columnFamilyDescriptors);
             }
-
-            admin.createTable(descriptor);
+            admin.createTable(tableDescriptorBuilder.build());
 
             admin.close();
         } catch (IOException e) {

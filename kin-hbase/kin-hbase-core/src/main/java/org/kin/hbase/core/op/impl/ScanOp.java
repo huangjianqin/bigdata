@@ -29,8 +29,8 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
 
     public ScanOp(String tableName, String startRow, String stopRow) {
         this(tableName);
-        scan.setStartRow(Bytes.toBytes(startRow));
-        scan.setStopRow(Bytes.toBytes(stopRow));
+        scan.withStartRow(Bytes.toBytes(startRow));
+        scan.withStopRow(Bytes.toBytes(stopRow));
     }
 
     //-------------------------------------------------------------------------------------------------------
@@ -51,18 +51,18 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
     }
 
     public ScanOp startRow(String startRow) {
-        scan.setStartRow(Bytes.toBytes(startRow));
+        scan.withStartRow(Bytes.toBytes(startRow));
         return this;
     }
 
     public ScanOp stopRow(String stopRow) {
-        scan.setStopRow(Bytes.toBytes(stopRow));
+        scan.withStopRow(Bytes.toBytes(stopRow));
         return this;
 
     }
 
     public ScanOp maxVresions(int version) {
-        scan.setMaxVersions(version);
+        scan.readAllVersions();
         return this;
     }
 
@@ -96,12 +96,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
     }
 
     public ScanOp timeStamp(long timeStamp) {
-        try {
-            scan.setTimeStamp(timeStamp);
-        } catch (IOException e) {
-            log.error(e.getMessage(), e);
-        }
-
+        scan.setTimestamp(timeStamp);
         return this;
     }
 
@@ -113,7 +108,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
         ScanOp op = super.includeStop(stopRowKey);
 
         //这里设置了stop row, InclusiveStopFilter就会没效
-        scan.setStopRow(null);
+        scan.withStopRow(null);
 
         return op;
     }
