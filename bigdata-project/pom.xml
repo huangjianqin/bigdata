@@ -24,12 +24,44 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- akka core-->
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor_${scala.version.head}</artifactId>
+            <artifactId>akka-actor-typed_${scala.version.head}</artifactId>
             <version>${akka.version}</version>
         </dependency>
 
+        <!-- 管理actor集群-->
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-cluster-typed_${scala.version.head}</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
+
+        <!-- 一般与persistent使用-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.typesafe.akka</groupId>-->
+        <!--            <artifactId>akka-cluster-sharding-typed_${scala.version.head}</artifactId>-->
+        <!--            <version>${akka.version}</version>-->
+        <!--        </dependency>-->
+
+        <!--        <dependency>-->
+        <!--            <groupId>com.typesafe.akka</groupId>-->
+        <!--            <artifactId>akka-persistence-typed_${scala.version.head}</artifactId>-->
+        <!--            <version>${akka.version}</version>-->
+        <!--        </dependency>-->
+
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-stream_${scala.version.head}</artifactId>
+            <version>${akka.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.typesafe.akka</groupId>
+            <artifactId>akka-http_${scala.version.head}</artifactId>
+            <version>${akka.http.version}</version>
+        </dependency>
 
         <!--scala mongo-->
         <dependency>
