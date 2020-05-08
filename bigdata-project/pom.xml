@@ -29,6 +29,7 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-actor-typed_${scala.version.head}</artifactId>
             <version>${akka.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- 管理actor集群-->
@@ -36,31 +37,21 @@
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-cluster-typed_${scala.version.head}</artifactId>
             <version>${akka.version}</version>
+            <scope>provided</scope>
         </dependency>
-
-        <!-- 一般与persistent使用-->
-        <!--        <dependency>-->
-        <!--            <groupId>com.typesafe.akka</groupId>-->
-        <!--            <artifactId>akka-cluster-sharding-typed_${scala.version.head}</artifactId>-->
-        <!--            <version>${akka.version}</version>-->
-        <!--        </dependency>-->
-
-        <!--        <dependency>-->
-        <!--            <groupId>com.typesafe.akka</groupId>-->
-        <!--            <artifactId>akka-persistence-typed_${scala.version.head}</artifactId>-->
-        <!--            <version>${akka.version}</version>-->
-        <!--        </dependency>-->
 
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-stream_${scala.version.head}</artifactId>
             <version>${akka.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>com.typesafe.akka</groupId>
             <artifactId>akka-http_${scala.version.head}</artifactId>
             <version>${akka.http.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!--scala mongo-->
@@ -68,12 +59,14 @@
             <groupId>org.reactivemongo</groupId>
             <artifactId>reactivemongo_${scala.version.head}</artifactId>
             <version>${reactivemongo.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.mongodb.scala</groupId>
             <artifactId>mongo-scala-driver_${scala.version.head}</artifactId>
             <version>${mongo-scala-driver.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!-- 解析yml-->
@@ -81,8 +74,8 @@
             <groupId>org.jyaml</groupId>
             <artifactId>jyaml</artifactId>
             <version>${jyaml.version}</version>
+            <scope>provided</scope>
         </dependency>
-
 
         <!-- spark-->
         <dependency>
@@ -154,6 +147,7 @@
                     <artifactId>zookeeper</artifactId>
                 </exclusion>
             </exclusions>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -166,18 +160,7 @@
                     <artifactId>zookeeper</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-recipes</artifactId>
-            <version>${curator.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.zookeeper</groupId>
-                    <artifactId>zookeeper</artifactId>
-                </exclusion>
-            </exclusions>
+            <scope>provided</scope>
         </dependency>
 
         <!-- kin -->
