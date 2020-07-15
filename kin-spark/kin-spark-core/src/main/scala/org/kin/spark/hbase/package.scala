@@ -1,6 +1,6 @@
 package org.kin.spark
 
-import org.kin.spark.hbase.rdd._
+import org.kin.spark.hbase.rdd.{HFileSupport, _}
 import org.kin.spark.hbase.util.HBaseUtils
 
 /**

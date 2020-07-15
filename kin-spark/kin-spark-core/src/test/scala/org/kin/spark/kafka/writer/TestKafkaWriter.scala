@@ -16,7 +16,6 @@ object TestKafkaWriter {
     }
 
     val rdd1 = sc.parallelize(Seq(1, 2, 3, 4, 5, 6, 7))
-    import org.kin.spark.kafka.writer._
     rdd1.write2Kafka({ data =>
       new ProducerRecord("test", null, data.toString)
     }, Option.apply(new MyCallback()))

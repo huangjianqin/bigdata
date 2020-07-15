@@ -4,10 +4,10 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.hbase.client.{ColumnFamilyDescriptorBuilder, Connection, ConnectionFactory, TableDescriptorBuilder}
 import org.apache.hadoop.hbase.mapreduce.TableOutputFormat
 import org.apache.hadoop.hbase.util.Bytes
-import org.apache.hadoop.hbase.TableName
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.rdd.RDD
 import org.kin.spark.hbase.rdd.{HBaseConfig, Writer}

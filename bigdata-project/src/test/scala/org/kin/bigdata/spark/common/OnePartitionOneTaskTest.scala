@@ -1,4 +1,4 @@
-package org.kin.spark.common
+package org.kin.bigdata.spark.common
 
 import org.apache.spark.{SparkConf, SparkContext}
 

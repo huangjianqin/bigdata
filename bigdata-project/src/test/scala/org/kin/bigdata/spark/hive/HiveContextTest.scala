@@ -1,4 +1,4 @@
-package org.kin.spark.hive
+package org.kin.bigdata.spark.hive
 
 import org.apache.spark.sql.SparkSession
 

@@ -1,4 +1,4 @@
-package org.kin.spark.airlineclientdiscovery
+package org.kin.bigdata.spark.airlineclientdiscovery
 
 import org.apache.spark.mllib.clustering.KMeans
 import org.apache.spark.mllib.linalg.Vectors

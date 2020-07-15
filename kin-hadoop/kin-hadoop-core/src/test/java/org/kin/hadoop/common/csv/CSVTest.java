@@ -1,4 +1,4 @@
-package org.kin.bigdata.common;
+package org.kin.hadoop.common.csv;
 
 import com.opencsv.CSVParser;
 

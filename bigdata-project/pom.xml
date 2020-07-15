@@ -24,59 +24,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- akka core-->
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-actor-typed_${scala.version.head}</artifactId>
-            <version>${akka.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- 管理actor集群-->
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-cluster-typed_${scala.version.head}</artifactId>
-            <version>${akka.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-stream_${scala.version.head}</artifactId>
-            <version>${akka.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-http_${scala.version.head}</artifactId>
-            <version>${akka.http.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!--scala mongo-->
-        <dependency>
-            <groupId>org.reactivemongo</groupId>
-            <artifactId>reactivemongo_${scala.version.head}</artifactId>
-            <version>${reactivemongo.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.mongodb.scala</groupId>
-            <artifactId>mongo-scala-driver_${scala.version.head}</artifactId>
-            <version>${mongo-scala-driver.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- 解析yml-->
-        <dependency>
-            <groupId>org.jyaml</groupId>
-            <artifactId>jyaml</artifactId>
-            <version>${jyaml.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- spark-->
         <dependency>
             <groupId>org.apache.spark</groupId>
@@ -117,22 +64,6 @@
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-hive_${scala.version.head}</artifactId>
             <version>${spark.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!--异步网络IO-->
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-            <version>${netty.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- zookeeper-->
-        <dependency>
-            <groupId>org.apache.zookeeper</groupId>
-            <artifactId>zookeeper</artifactId>
-            <version>${zookeeper.version}</version>
             <scope>provided</scope>
         </dependency>
 

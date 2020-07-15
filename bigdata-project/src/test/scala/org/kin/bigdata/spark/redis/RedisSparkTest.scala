@@ -1,4 +1,4 @@
-package org.kin.spark.redis
+package org.kin.bigdata.spark.redis
 
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.streaming.{Seconds, StreamingContext}

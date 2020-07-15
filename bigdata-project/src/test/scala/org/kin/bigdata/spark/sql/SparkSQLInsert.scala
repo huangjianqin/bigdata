@@ -1,4 +1,4 @@
-package org.kin.spark.sql
+package org.kin.bigdata.spark.sql
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.SparkSession
