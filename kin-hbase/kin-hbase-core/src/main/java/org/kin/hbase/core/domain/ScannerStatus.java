@@ -15,7 +15,8 @@ public enum ScannerStatus {
     /**
      * HBASE scanner 关闭状态
      */
-    CLOSED(2, "关闭"),;
+    CLOSED(2, "关闭"),
+    ;
 
     private int id;
     private String desc;

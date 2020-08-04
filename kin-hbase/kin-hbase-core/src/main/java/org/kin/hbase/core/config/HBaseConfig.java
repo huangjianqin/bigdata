@@ -4,16 +4,18 @@ package org.kin.hbase.core.config;
  * Created by huangjianqin on 2018/5/24.
  */
 public class HBaseConfig {
-
+    /**
+     * zookeeper地址
+     */
     private String zookeeperQuorum;
-    private String zookeeperClientPort;
 
     public HBaseConfig() {
     }
 
-    public HBaseConfig(String zookeeperQuorum, String zookeeperClientPort) {
-        this.zookeeperQuorum = zookeeperQuorum;
-        this.zookeeperClientPort = zookeeperClientPort;
+    public static HBaseConfig of(String zookeeperQuorum) {
+        HBaseConfig hBaseConfig = new HBaseConfig();
+        hBaseConfig.zookeeperQuorum = zookeeperQuorum;
+        return hBaseConfig;
     }
 
     //setter & getter
@@ -23,13 +25,5 @@ public class HBaseConfig {
 
     public void setZookeeperQuorum(String zookeeperQuorum) {
         this.zookeeperQuorum = zookeeperQuorum;
-    }
-
-    public String getZookeeperClientPort() {
-        return zookeeperClientPort;
-    }
-
-    public void setZookeeperClientPort(String zookeeperClientPort) {
-        this.zookeeperClientPort = zookeeperClientPort;
     }
 }

@@ -1,4 +1,4 @@
-package org.kin.hbase.core.test;
+package org.kin.hbase.core;
 
 import org.kin.hbase.core.annotation.Column;
 import org.kin.hbase.core.annotation.HBaseEntity;
