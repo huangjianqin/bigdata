@@ -1,27 +1,20 @@
-package org.kin.kafka.domain;
+package org.kin.kafka.consumer.multi;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
-import org.kin.kafka.api.CallBack;
-import org.kin.kafka.api.CommitStrategy;
-import org.kin.kafka.api.MessageHandler;
 
 
 /**
- * Created by hjq on 2017/6/19.
  * 对ConsumerRecord的简单封装,添加回调接口,用户可自定义回调接口,进而在消息处理完成后进行一些额外的操作
+ * <p>
+ * Created by hjq on 2017/6/19.
  */
-public class ConsumerRecordInfo<K, V> {
+public class KafkaMessageWrapper<K, V> {
+    /** kafka消息 */
     private ConsumerRecord<K, V> record;
-    private CallBack callBack;
 
-    public ConsumerRecordInfo(ConsumerRecord<K, V> record) {
+    public KafkaMessageWrapper(ConsumerRecord<K, V> record) {
         this.record = record;
-    }
-
-    public ConsumerRecordInfo(ConsumerRecord<K, V> record, CallBack callBack) {
-        this.record = record;
-        this.callBack = callBack;
     }
 
     public ConsumerRecord<K, V> record() {
@@ -30,13 +23,6 @@ public class ConsumerRecordInfo<K, V> {
 
     public long offset() {
         return record.offset();
-    }
-
-    public void callBack(MessageHandler messageHandler, CommitStrategy commitStrategy, Exception e) throws Exception {
-        if (callBack != null) {
-            callBack.onComplete(record, messageHandler, commitStrategy, e);
-            callBack.cleanup();
-        }
     }
 
     public TopicPartition topicPartition() {
@@ -52,11 +38,11 @@ public class ConsumerRecordInfo<K, V> {
         if (this == o) {
             return true;
         }
-        if (!(o instanceof ConsumerRecordInfo)) {
+        if (!(o instanceof KafkaMessageWrapper)) {
             return false;
         }
 
-        ConsumerRecordInfo<?, ?> that = (ConsumerRecordInfo<?, ?>) o;
+        KafkaMessageWrapper<?, ?> that = (KafkaMessageWrapper<?, ?>) o;
 
         return !(record != null ? !record.equals(that.record) : that.record != null);
 
