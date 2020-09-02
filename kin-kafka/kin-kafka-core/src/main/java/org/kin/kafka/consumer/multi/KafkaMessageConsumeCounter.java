@@ -1,7 +1,7 @@
 package org.kin.kafka.consumer.multi;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.kin.kafka.consumer.multi.statistics.Counters;
+import org.kin.kafka.consumer.multi.statistics.KafkaCounters;
 
 /**
  * 默认的Message handler
@@ -17,8 +17,8 @@ public class KafkaMessageConsumeCounter<K, V> implements KafkaMessageHandler<K, 
 
     @Override
     public void handle(ConsumerRecord<K, V> record) {
-        Counters.getCounters().increment("consumer-counter");
-        Counters.getCounters().add("consumer-byte-counter", record.value().toString().getBytes().length);
+        KafkaCounters.getCounters().increment(KafkaCounters.CONSUMER_COUNTER);
+        KafkaCounters.getCounters().increment(KafkaCounters.CONSUMER_BYTE_COUNTER, record.value().toString().getBytes().length);
     }
 
     @Override
