@@ -95,7 +95,7 @@ public class HBaseUtils {
      */
     private static byte[] getFieldValue(Object object, Field field) {
         try {
-            Method m = ClassUtils.getterMethod(object, field.getName());
+            Method m = ClassUtils.getterMethod(object.getClass(), field);
             if (String.class.equals(field)) {
                 String val;
                 if (m != null) {
@@ -200,7 +200,7 @@ public class HBaseUtils {
             return;
         }
         try {
-            Method m = ClassUtils.setterMethod(instance, field.getName(), value);
+            Method m = ClassUtils.setterMethod(instance.getClass(), field);
             if (m != null) {
                 m.invoke(instance, value);
             } else {
