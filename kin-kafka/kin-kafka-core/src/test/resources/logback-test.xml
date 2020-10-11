@@ -38,11 +38,6 @@
         </rollingPolicy>
     </appender>
 
-    <!--                                       async                                                       -->
-    <appender name="asyncERROR" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="ERROR"/>
-    </appender>
-
     <!--                                       logger                                                       -->
     <logger name="org.apache.spark" level="WARN"/>
     <logger name="org.spark_project.jetty" level="WARN"/>
@@ -54,7 +49,8 @@
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="asyncSTDOUT"/>
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="ERROR"/>
     </root>
 
     <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->

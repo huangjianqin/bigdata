@@ -38,22 +38,14 @@
         </rollingPolicy>
     </appender>
 
-    <!--                                       async                                                       -->
-    <appender name="asyncSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="STDOUT"/>
-    </appender>
-
-    <appender name="asyncERROR" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="ERROR"/>
-    </appender>
-
     <!--                                       logger                                                       -->
     <logeer name="org.apache.curator" level="WARN"/>
     <logeer name="org.apache.zookeeper" level="WARN"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="asyncSTDOUT"/>
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="ERROR"/>
     </root>
 
     <!--<appender name="FILE" class="ch.qos.logback.core.FileAppender">-->
