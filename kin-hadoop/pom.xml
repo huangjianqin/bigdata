@@ -31,7 +31,7 @@
     <dependencies>
         <dependency>
             <groupId>org.kin</groupId>
-            <artifactId>kin-framework</artifactId>
+            <artifactId>kin-framework-java</artifactId>
             <version>${kin-framework.version}</version>
         </dependency>
     </dependencies>
