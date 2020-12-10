@@ -244,7 +244,7 @@ public class HBaseUtils {
                             }
 
                             if (StringUtils.isBlank(family)) {
-                                throw new RuntimeException("@Column 's qualifier family must be not blank");
+                                throw new IllegalArgumentException("@Column 's qualifier family must be not blank");
                             }
 
                             setFieldValue(instance, field, ClassUtils.convertBytes2PrimitiveObj(field.getType(), result.getValue(Bytes.toBytes(family), Bytes.toBytes(qualifier))));
