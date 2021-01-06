@@ -129,7 +129,9 @@
                 <configuration>
                     <sources>
                         <source>${basedir}/src/main/scala</source>
+                        <source>${basedir}/src/main/java</source>
                         <source>${basedir}/src/test/scala</source>
+                        <source>${basedir}/src/test/java</source>
                     </sources>
                 </configuration>
             </plugin>

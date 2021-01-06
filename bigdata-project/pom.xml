@@ -12,9 +12,6 @@
     <version>0.1.0.0</version>
     <packaging>jar</packaging>
 
-    <properties>
-    </properties>
-
     <dependencies>
         <!-- scala-->
         <dependency>
@@ -78,7 +75,6 @@
                     <artifactId>zookeeper</artifactId>
                 </exclusion>
             </exclusions>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -91,7 +87,6 @@
                     <artifactId>zookeeper</artifactId>
                 </exclusion>
             </exclusions>
-            <scope>provided</scope>
         </dependency>
 
         <!-- kin -->
@@ -130,7 +125,6 @@
             <artifactId>kin-framework-java</artifactId>
             <version>${project.version}</version>
         </dependency>
-
     </dependencies>
 
     <!-- mvn clean scala:compile compile package -->
@@ -208,27 +202,10 @@
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>2.5.5</version>
-                <executions>
-                    <!--                    <execution>-->
-                    <!--                        <id>make-assembly</id>-->
-                    <!--                        <goals>-->
-                    <!--                            <goal>single</goal>-->
-                    <!--                        </goals>-->
-                    <!--                    </execution>-->
-                </executions>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.0.2</version>
                 <configuration>
-                    <archive>
-                        <manifest>
-                            <!--                            <addClasspath>true</addClasspath>-->
-                            <!--                            <classpathPrefix>lib/</classpathPrefix>-->
-                            <!--<mainClass></mainClass>-->
-                        </manifest>
-                    </archive>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
+                    <outputDirectory>${project.build.directory}/lib</outputDirectory>
                 </configuration>
             </plugin>
 
@@ -255,34 +232,12 @@
                 <configuration>
                     <sources>
                         <source>${basedir}/src/main/scala</source>
+                        <source>${basedir}/src/main/java</source>
                         <source>${basedir}/src/test/scala</source>
+                        <source>${basedir}/src/test/java</source>
                     </sources>
                 </configuration>
             </plugin>
-
-            <!--<plugin>-->
-            <!--<groupId>org.scalastyle</groupId>-->
-            <!--<artifactId>scalastyle-maven-plugin</artifactId>-->
-            <!--<version>0.8.0</version>-->
-            <!--<configuration>-->
-            <!--<verbose>false</verbose>-->
-            <!--<failOnViolation>true</failOnViolation>-->
-            <!--<includeTestSourceDirectory>false</includeTestSourceDirectory>-->
-            <!--<failOnWarning>false</failOnWarning>-->
-            <!--<sourceDirectory>${basedir}/src/main/scala</sourceDirectory>-->
-            <!--<testSourceDirectory>${basedir}/src/test/scala</testSourceDirectory>-->
-            <!--<configLocation>scalastyle-config.xml</configLocation>-->
-            <!--<outputFile>${basedir}/target/scalastyle-output.xml</outputFile>-->
-            <!--<inputEncoding>${project.build.sourceEncoding}</inputEncoding>-->
-            <!--</configuration>-->
-            <!--<executions>-->
-            <!--<execution>-->
-            <!--<goals>-->
-            <!--<goal>check</goal>-->
-            <!--</goals>-->
-            <!--</execution>-->
-            <!--</executions>-->
-            <!--</plugin>-->
         </plugins>
     </build>
 </project>
