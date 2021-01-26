@@ -1,7 +1,7 @@
 package org.kin.kafka.consumer.multi.statistics;
 
 import org.kin.framework.concurrent.ExecutionContext;
-import org.kin.framework.concurrent.actor.PinnedThreadSafeHandler;
+import org.kin.framework.concurrent.PinnedThreadExecutor;
 import org.kin.framework.counter.Counters;
 
 /**
@@ -11,7 +11,7 @@ import org.kin.framework.counter.Counters;
  * <p>
  * Created by 健勤 on 2017/6/28.
  */
-public class KafkaCounters extends PinnedThreadSafeHandler<KafkaCounters> {
+public class KafkaCounters extends PinnedThreadExecutor<KafkaCounters> {
     private static final KafkaCounters counters = new KafkaCounters();
 
     public static KafkaCounters getCounters() {
@@ -35,7 +35,7 @@ public class KafkaCounters extends PinnedThreadSafeHandler<KafkaCounters> {
     }
 
     public void increment(String counter, long value) {
-        handle(c -> Counters.increment(GROUP, counter, value));
+        receive(c -> Counters.increment(GROUP, counter, value));
     }
 
     public long count(String counter) {
@@ -43,8 +43,6 @@ public class KafkaCounters extends PinnedThreadSafeHandler<KafkaCounters> {
     }
 
     public void reset() {
-        handle(c -> {
-            Counters.reset();
-        });
+        receive(c -> Counters.reset());
     }
 }

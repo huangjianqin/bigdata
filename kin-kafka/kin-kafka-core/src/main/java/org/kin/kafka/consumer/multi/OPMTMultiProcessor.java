@@ -3,7 +3,7 @@ package org.kin.kafka.consumer.multi;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.kin.framework.concurrent.ExecutionContext;
-import org.kin.framework.concurrent.keeper.Keeper;
+import org.kin.framework.concurrent.Keeper;
 import org.kin.framework.utils.CollectionUtils;
 import org.kin.framework.utils.HashUtils;
 import org.kin.kafka.consumer.multi.utils.TPStrUtils;
