@@ -7,7 +7,7 @@ public enum ScannerStatus {
     /**
      * HBASE scanner 初始状态
      */
-    Init(0, "初始化"),
+    INIT(0, "初始化"),
     /**
      * HBASE scanner 有效状态
      */

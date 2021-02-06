@@ -156,7 +156,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
 
     //-------------------------------------------------------------------------------------------------------
     public class Scanner implements Closeable {
-        private ScannerStatus scannerStatus = ScannerStatus.Init;
+        private ScannerStatus scannerStatus = ScannerStatus.INIT;
         private ResultScanner scanner;
 
         public Scanner(ResultScanner scanner) {
