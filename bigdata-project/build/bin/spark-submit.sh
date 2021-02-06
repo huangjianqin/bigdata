@@ -12,3 +12,6 @@ base_dir=$(dirname $0)/..
 cmd=`spark-submit --conf spark.driver.extraClassPath=${base_dir}/lib/*.jar \
 --conf spark.executor.extraClassPath=${base_dir}/lib/*.jar \
 --class $1 $2 2>&1`
+
+# run
+`$cmd`

@@ -200,7 +200,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                     <descriptors>
                         <!-- 相当于${project.basedir}/assembly/assembly.xml -->
-                        <descriptor>assembly/assembly.xml</descriptor>
+                        <descriptor>build/assembly.xml</descriptor>
                     </descriptors>
                 </configuration>
             </plugin>
