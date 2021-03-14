@@ -1,7 +1,7 @@
 package org.kin.kafka.consumer.multi.statistics;
 
 import org.kin.framework.concurrent.ExecutionContext;
-import org.kin.framework.concurrent.PinnedThreadExecutor;
+import org.kin.framework.concurrent.OrderedEventLoop;
 import org.kin.framework.counter.Counters;
 
 /**
@@ -11,7 +11,7 @@ import org.kin.framework.counter.Counters;
  * <p>
  * Created by 健勤 on 2017/6/28.
  */
-public class KafkaCounters extends PinnedThreadExecutor<KafkaCounters> {
+public class KafkaCounters extends OrderedEventLoop<KafkaCounters> {
     private static final KafkaCounters counters = new KafkaCounters();
 
     public static KafkaCounters getCounters() {
@@ -27,7 +27,7 @@ public class KafkaCounters extends PinnedThreadExecutor<KafkaCounters> {
     //--------------------------------------------------------------------------------------------------------------------------------
 
     private KafkaCounters() {
-        super(ExecutionContext.fix(1, "kafka-counters"));
+        super(null, ExecutionContext.fix(1, "kafka-counters"));
     }
 
     public void increment(String counter) {
