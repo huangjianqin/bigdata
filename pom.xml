@@ -8,7 +8,6 @@
     <packaging>pom</packaging>
     <version>${revision}</version>
     <modules>
-        <module>bigdata-project</module>
         <module>kin-hbase</module>
         <module>kin-kafka</module>
         <module>kin-hadoop</module>
