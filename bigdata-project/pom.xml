@@ -6,10 +6,9 @@
     <parent>
         <groupId>org.kin</groupId>
         <artifactId>bigdata</artifactId>
-        <version>0.1.0.0</version>
+        <version>${revision}</version>
     </parent>
     <artifactId>bigdata-project</artifactId>
-    <version>0.1.0.0</version>
     <packaging>jar</packaging>
 
     <dependencies>

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>bigdata</artifactId>
         <groupId>org.kin</groupId>
-        <version>0.1.0.0</version>
+        <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -13,7 +13,6 @@
     <modules>
         <module>kin-kafka-core</module>
     </modules>
-    <version>0.1.0.0</version>
     <!--多模块情况下，父模块必须是pom-->
     <packaging>pom</packaging>
 
@@ -36,24 +35,4 @@
             <version>${kin-framework.version}</version>
         </dependency>
     </dependencies>
-
-    <!-- mvn clean scala:compile compile package -->
-    <build>
-        <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
-        <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
-        <resources>
-            <resource>
-                <directory>${basedir}/src/main/resources</directory>
-            </resource>
-        </resources>
-        <testResources>
-            <testResource>
-                <directory>${basedir}/src/test/resources</directory>
-            </testResource>
-        </testResources>
-
-        <plugins>
-
-        </plugins>
-    </build>
 </project>

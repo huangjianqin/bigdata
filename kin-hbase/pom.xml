@@ -5,11 +5,10 @@
     <parent>
         <artifactId>bigdata</artifactId>
         <groupId>org.kin</groupId>
-        <version>0.1.0.0</version>
+        <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>kin-hbase</artifactId>
-    <version>0.1.0.0</version>
     <modules>
         <module>kin-hbase-core</module>
         <module>kin-hbase-starter</module>
@@ -42,22 +41,4 @@
             <version>${kin-framework.version}</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
-        <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
-        <resources>
-            <resource>
-                <directory>${basedir}/src/main/resources</directory>
-            </resource>
-        </resources>
-        <testResources>
-            <testResource>
-                <directory>${basedir}/src/test/resources</directory>
-            </testResource>
-        </testResources>
-
-        <plugins>
-        </plugins>
-    </build>
 </project>

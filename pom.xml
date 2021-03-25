@@ -6,7 +6,7 @@
     <artifactId>bigdata</artifactId>
     <!--多模块情况下，父模块必须是pom-->
     <packaging>pom</packaging>
-    <version>0.1.0.0</version>
+    <version>${revision}</version>
     <modules>
         <module>bigdata-project</module>
         <module>kin-hbase</module>
@@ -24,6 +24,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <CodeCacheSize>512m</CodeCacheSize>
+
+        <revision>0.1.0.0</revision>
 
         <kin-framework.version>0.1.0.0</kin-framework.version>
         <lettuce.version>5.3.3.RELEASE</lettuce.version>
@@ -48,6 +50,52 @@
         <netty.version>4.1.28.Final</netty.version>
         <logback.version>1.2.3</logback.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.kin</groupId>
+                <artifactId>distributelock</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.kin</groupId>
+                <artifactId>kin-hadoop-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.kin</groupId>
+                <artifactId>kin-hbase-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.kin</groupId>
+                <artifactId>kin-hbase-starter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.kin</groupId>
+                <artifactId>kin-hive-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.kin</groupId>
+                <artifactId>kin-kafka-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.kin</groupId>
+                <artifactId>kin-spark-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <plugins>
@@ -81,6 +129,34 @@
                         <goals>
                             <goal>jar-no-fork</goal>
                             <goal>test-jar-no-fork</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- 可自动替换pom中的${revision}值  -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>flatten-maven-plugin</artifactId>
+                <version>1.1.0</version>
+                <configuration>
+                    <!-- 是否更新pom文件，此处还有更高级的用法 -->
+                    <updatePomFile>true</updatePomFile>
+                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>flatten</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>flatten</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>flatten.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>clean</goal>
                         </goals>
                     </execution>
                 </executions>

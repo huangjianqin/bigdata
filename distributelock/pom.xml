@@ -5,12 +5,11 @@
     <parent>
         <artifactId>bigdata</artifactId>
         <groupId>org.kin</groupId>
-        <version>0.1.0.0</version>
+        <version>${revision}</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>distributelock</artifactId>
-    <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -63,24 +62,4 @@
             <version>${logback.version}</version>
         </dependency>
     </dependencies>
-
-    <build>
-        <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
-        <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
-        <resources>
-            <resource>
-                <directory>${basedir}/src/main/resources</directory>
-            </resource>
-        </resources>
-        <testResources>
-            <testResource>
-                <directory>${basedir}/src/test/resources</directory>
-            </testResource>
-        </testResources>
-
-        <plugins>
-
-        </plugins>
-    </build>
-
 </project>
