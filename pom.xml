@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.kin</groupId>
-    <artifactId>bigdata</artifactId>
+    <artifactId>bigdata-parent</artifactId>
     <!--多模块情况下，父模块必须是pom-->
     <packaging>pom</packaging>
     <version>${revision}</version>
