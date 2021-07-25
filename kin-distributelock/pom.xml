@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>distributelock</artifactId>
+    <artifactId>kin-distributelock</artifactId>
     <packaging>jar</packaging>
 
     <dependencies>

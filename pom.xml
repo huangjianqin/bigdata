@@ -13,7 +13,7 @@
         <module>kin-hadoop</module>
         <module>kin-hive</module>
         <module>kin-spark</module>
-        <module>distributelock</module>
+        <module>kin-distributelock</module>
     </modules>
 
     <properties>
@@ -39,7 +39,7 @@
         <kafka.version>2.1.0</kafka.version>
         <zookeeper.version>3.5.8</zookeeper.version>
         <hive.version>2.3.6</hive.version>
-        <spring.boot.version>2.3.1.RELEASE</spring.boot.version>
+        <spring.boot.version>2.5.0</spring.boot.version>
         <hadoop.version>2.6.4</hadoop.version>
         <mrunit.version>1.1.0</mrunit.version>
         <opencsv.version>3.8</opencsv.version>
@@ -54,7 +54,7 @@
         <dependencies>
             <dependency>
                 <groupId>org.kin</groupId>
-                <artifactId>distributelock</artifactId>
+                <artifactId>kin-distributelock</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
