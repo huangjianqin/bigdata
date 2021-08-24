@@ -32,12 +32,10 @@
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kin-framework-java</artifactId>
-            <version>${kin-framework.version}</version>
         </dependency>
         <dependency>
             <groupId>org.kin</groupId>
             <artifactId>kin-framework-scala</artifactId>
-            <version>${kin-framework.version}</version>
         </dependency>
     </dependencies>
 

@@ -14,6 +14,7 @@
         <module>kin-hive</module>
         <module>kin-spark</module>
         <module>kin-distributelock</module>
+        <module>kin-bigdata-bom</module>
     </modules>
 
     <properties>
@@ -54,44 +55,10 @@
         <dependencies>
             <dependency>
                 <groupId>org.kin</groupId>
-                <artifactId>kin-distributelock</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.kin</groupId>
-                <artifactId>kin-hadoop-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.kin</groupId>
-                <artifactId>kin-hbase-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.kin</groupId>
-                <artifactId>kin-hbase-starter</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.kin</groupId>
-                <artifactId>kin-hive-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.kin</groupId>
-                <artifactId>kin-kafka-core</artifactId>
-                <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.kin</groupId>
-                <artifactId>kin-spark-core</artifactId>
-                <version>${project.version}</version>
+                <artifactId>kin-framework-bom</artifactId>
+                <version>${kin-framework.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>
