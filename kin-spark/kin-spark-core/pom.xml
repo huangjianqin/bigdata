@@ -12,15 +12,11 @@
     <artifactId>kin-spark-core</artifactId>
     <packaging>jar</packaging>
 
-    <properties>
-    </properties>
-
     <dependencies>
         <!-- scala-->
         <dependency>
             <groupId>org.scala-lang</groupId>
             <artifactId>scala-library</artifactId>
-            <version>${scala.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -28,43 +24,30 @@
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-core_${scala.version.head}</artifactId>
-            <version>${spark.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-streaming-kafka-0-10_${scala.version.head}</artifactId>
-            <version>${spark.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-streaming_${scala.version.head}</artifactId>
-            <version>${spark.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- 不能再引用其他kafka client依赖, 避免引起冲突 -->
-        <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-streaming-kafka-0-10_${scala.version.head}</artifactId>
-            <version>${spark-streaming-kafka.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-mllib_${scala.version.head}</artifactId>
-            <version>${spark.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.spark</groupId>
             <artifactId>spark-hive_${scala.version.head}</artifactId>
-            <version>${spark.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -72,7 +55,7 @@
         <dependency>
             <groupId>org.mongodb.spark</groupId>
             <artifactId>mongo-spark-connector_${scala.version.head}</artifactId>
-            <version>${mongo-spark-connector.version}</version>
+            <optional>true</optional>
         </dependency>
 
 
@@ -80,7 +63,7 @@
         <dependency>
             <groupId>com.redislabs</groupId>
             <artifactId>spark-redis_${scala.version.head}</artifactId>
-            <version>${spark-redis.version}</version>
+            <optional>true</optional>
         </dependency>
 
 
@@ -88,7 +71,7 @@
         <dependency>
             <groupId>io.lettuce</groupId>
             <artifactId>lettuce-core</artifactId>
-            <version>${lettuce.version}</version>
+            <optional>true</optional>
         </dependency>
 
 
@@ -96,7 +79,7 @@
         <dependency>
             <groupId>org.mongodb</groupId>
             <artifactId>mongo-java-driver</artifactId>
-            <version>${mongo.version}</version>
+            <optional>true</optional>
         </dependency>
 
         <!--kin hbase工具-->
@@ -104,27 +87,25 @@
             <groupId>org.kin</groupId>
             <artifactId>kin-hbase-core</artifactId>
             <version>${project.version}</version>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-common</artifactId>
-            <version>${hbase.version}</version>
-            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-server</artifactId>
-            <version>${hbase.version}</version>
-            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-mapreduce</artifactId>
-            <version>${hbase.version}</version>
-            <scope>provided</scope>
+            <optional>true</optional>
         </dependency>
     </dependencies>
 

@@ -15,23 +15,4 @@
     </modules>
     <!--多模块情况下，父模块必须是pom-->
     <packaging>pom</packaging>
-
-    <properties>
-    </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.kin</groupId>
-                <artifactId>kin-hive-core</artifactId>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
-    <dependencies>
-        <dependency>
-            <groupId>org.kin</groupId>
-            <artifactId>kin-framework-java</artifactId>
-        </dependency>
-    </dependencies>
 </project>

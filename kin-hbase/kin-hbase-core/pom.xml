@@ -10,37 +10,27 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>kin-hbase-core</artifactId>
     <packaging>jar</packaging>
-    
-    <properties>
-    </properties>
 
     <dependencies>
         <!-- hbase-->
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-client</artifactId>
-            <version>${hbase.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-common</artifactId>
-            <version>${hbase.version}</version>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-server</artifactId>
-            <version>${hbase.version}</version>
-            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.apache.hbase</groupId>
             <artifactId>hbase-mapreduce</artifactId>
-            <version>${hbase.version}</version>
-            <scope>provided</scope>
         </dependency>
     </dependencies>
 </project>
