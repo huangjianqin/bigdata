@@ -6,7 +6,7 @@ import com.alipay.sofa.jraft.option.CliOptions;
  * @author huangjianqin
  * @date 2021/11/7
  */
-public class RaftClientOptions {
+public final class RaftClientOptions {
     /** raft group id */
     private String groupId;
     /** ip:port,ip:port,ip:port */

@@ -15,7 +15,7 @@ import java.util.List;
  * @author huangjianqin
  * @date 2021/11/7
  */
-public class RaftServerOptions<NW extends DefaultStateMachine, S extends RaftService> {
+public final class RaftServerOptions<NW extends DefaultStateMachine, S extends RaftService> {
     /** 数据存储目录 */
     private String dataDir;
     /** raft group id */

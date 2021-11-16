@@ -1,12 +1,11 @@
 package org.kin.jraft;
 
-import com.alipay.remoting.exception.CodecException;
-import com.alipay.remoting.serialization.SerializerManager;
 import com.alipay.sofa.jraft.Status;
 import com.alipay.sofa.jraft.entity.Task;
 import com.alipay.sofa.jraft.error.RaftError;
 import org.apache.commons.lang.StringUtils;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 /**
@@ -37,23 +36,33 @@ public abstract class AbstractRaftService implements RaftService {
 
     /**
      * leader节点apply task
+     *
+     * @param dataObj task data
      */
-    protected void applyTask(Object param, AbstractClosure<?> closure) {
-        if (!isLeader()) {
-            handlerNotLeaderError(closure);
-            return;
-        }
-
+    protected void applyTask(Object dataObj, AbstractClosure<?> closure) {
         try {
-            Task task = new Task();
-            task.setData(ByteBuffer.wrap(SerializerManager.getSerializer(SerializerManager.Hessian2).serialize(param)));
-            task.setDone(closure);
-            bootstrap.getNode().apply(task);
-        } catch (CodecException e) {
-            String errorMsg = "fail to encode CounterOperation";
+            applyTask(ByteBuffer.wrap(RaftUtils.PROTOBUF.serialize(dataObj)), closure);
+        } catch (IOException e) {
+            String errorMsg = "fail to encode data";
             error(errorMsg, e);
             closure.failure(errorMsg, StringUtils.EMPTY);
             closure.run(new Status(RaftError.EINTERNAL, errorMsg));
         }
     }
+
+    /**
+     * leader节点apply task
+     */
+    protected void applyTask(ByteBuffer data, AbstractClosure<?> closure) {
+        if (!isLeader()) {
+            handlerNotLeaderError(closure);
+            return;
+        }
+
+        Task task = new Task();
+        task.setData(data);
+        task.setDone(closure);
+        bootstrap.getNode().apply(task);
+    }
+
 }

@@ -14,9 +14,9 @@ import java.nio.charset.StandardCharsets;
  * @author huangjianqin
  * @date 2021/11/14
  */
-public class DefaultSnapshotFileOpr implements SnapshotFileOpr<Object>, LoggerOprs {
+final class DefaultSnapshotFileOpr implements SnapshotFileOpr<Object>, LoggerOprs {
     /** 单例 */
-    public static final DefaultSnapshotFileOpr INSTANCE = new DefaultSnapshotFileOpr();
+    static final DefaultSnapshotFileOpr INSTANCE = new DefaultSnapshotFileOpr();
 
     @Override
     public boolean save(String path, Object obj) {

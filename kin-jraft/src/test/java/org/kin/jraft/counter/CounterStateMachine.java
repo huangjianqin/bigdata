@@ -1,11 +1,11 @@
 package org.kin.jraft.counter;
 
-import com.alipay.remoting.exception.CodecException;
-import com.alipay.remoting.serialization.SerializerManager;
 import com.alipay.sofa.jraft.Iterator;
 import com.alipay.sofa.jraft.Status;
 import org.kin.jraft.DefaultStateMachine;
+import org.kin.jraft.RaftUtils;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -38,10 +38,8 @@ public class CounterStateMachine extends DefaultStateMachine<Long> {
                 // 手动序列化
                 ByteBuffer data = iterator.getData();
                 try {
-                    // TODO: 2021/11/14 新增支持protobuff 
-                    counterOperation = SerializerManager.getSerializer(SerializerManager.Hessian2).deserialize(
-                            data.array(), CounterOperation.class.getName());
-                } catch (CodecException e) {
+                    counterOperation = RaftUtils.PROTOBUF.deserialize(data.array(), CounterOperation.class);
+                } catch (IOException | ClassNotFoundException e) {
                     error("fail to decode IncrementAndGetRequest", e);
                 }
             }

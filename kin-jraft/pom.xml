@@ -16,5 +16,10 @@
             <groupId>com.alipay.sofa</groupId>
             <artifactId>jraft-core</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>org.kin</groupId>
+            <artifactId>kin-rpc-serialization-protobuf</artifactId>
+        </dependency>
     </dependencies>
 </project>

@@ -26,7 +26,7 @@ import java.util.Objects;
  * @date 2021/11/7
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
-public class RaftServerBootstrap implements Lifecycle<RaftServerOptions> {
+public final class RaftServerBootstrap implements Lifecycle<RaftServerOptions> {
     private static final Logger log = LoggerFactory.getLogger(RaftServerBootstrap.class);
 
     /** raft service */
@@ -47,7 +47,7 @@ public class RaftServerBootstrap implements Lifecycle<RaftServerOptions> {
     @Override
     public synchronized boolean init(RaftServerOptions opts) {
         if (started) {
-            log.info("[ElectionNode: {}] already started.", opts.getAddress());
+            log.info("[RaftNode: {}] already started.", opts.getAddress());
             return true;
         }
 
@@ -158,7 +158,7 @@ public class RaftServerBootstrap implements Lifecycle<RaftServerOptions> {
             raftServiceRpcServer.shutdown();
         }
         started = false;
-        log.info("[ElectionNode] shutdown successfully: {}.", this);
+        log.info("[RaftNode] shutdown successfully: {}.", this);
     }
 
     /**

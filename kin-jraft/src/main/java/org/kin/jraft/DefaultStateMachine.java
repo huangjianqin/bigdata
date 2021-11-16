@@ -84,15 +84,15 @@ public class DefaultStateMachine<T> extends StateMachineAdapter implements Logge
     public void onSnapshotSave(SnapshotWriter writer, Closure done) {
         Object snapshotValue = getSnapshotValue();
         Utils.runInThread(() -> {
-            String path = writer.getPath() + File.separator + RaftConstants.SNAPSHOT_FILE_NAME;
+            String path = writer.getPath() + File.separator + RaftUtils.SNAPSHOT_FILE_NAME;
             if (snapshotFileOpr.save(path, getSnapshotValue())) {
-                if (writer.addFile(RaftConstants.SNAPSHOT_FILE_NAME)) {
+                if (writer.addFile(RaftUtils.SNAPSHOT_FILE_NAME)) {
                     done.run(Status.OK());
                 } else {
                     done.run(new Status(RaftError.EIO, "fail to add file to writer"));
                 }
             } else {
-                done.run(new Status(RaftError.EIO, "fail to save counter snapshot %s", path));
+                done.run(new Status(RaftError.EIO, "fail to save snapshot %s", path));
             }
         });
     }
@@ -108,12 +108,12 @@ public class DefaultStateMachine<T> extends StateMachineAdapter implements Logge
             warn("leader is not supposed to load snapshot");
             return false;
         }
-        if (reader.getFileMeta(RaftConstants.SNAPSHOT_FILE_NAME) == null) {
+        if (reader.getFileMeta(RaftUtils.SNAPSHOT_FILE_NAME) == null) {
             error("fail to find data file in {}", reader.getPath());
             return false;
         }
 
-        String path = reader.getPath() + File.separator + RaftConstants.SNAPSHOT_FILE_NAME;
+        String path = reader.getPath() + File.separator + RaftUtils.SNAPSHOT_FILE_NAME;
         try {
             onSnapshotLoad(snapshotFileOpr.load(path));
             return true;

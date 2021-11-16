@@ -20,7 +20,7 @@ import java.util.Objects;
  * @author huangjianqin
  * @date 2021/11/7
  */
-public class RaftClient implements Lifecycle<RaftClientOptions>, Closeable {
+public final class RaftClient implements Lifecycle<RaftClientOptions>, Closeable {
     private static final Logger log = LoggerFactory.getLogger(RaftClient.class);
 
     private RaftClientOptions opts;
