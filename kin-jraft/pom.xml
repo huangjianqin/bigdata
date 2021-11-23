@@ -9,17 +9,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
     <artifactId>kin-jraft</artifactId>
-    <packaging>jar</packaging>
-
-    <dependencies>
-        <dependency>
-            <groupId>com.alipay.sofa</groupId>
-            <artifactId>jraft-core</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.kin</groupId>
-            <artifactId>kin-rpc-serialization-protobuf</artifactId>
-        </dependency>
-    </dependencies>
+    <packaging>pom</packaging>
+    <modules>
+        <module>kin-jraft-core</module>
+    </modules>
 </project>
