@@ -2,8 +2,11 @@ package org.kin.jraft;
 
 import com.alipay.sofa.jraft.core.ElectionPriority;
 import com.alipay.sofa.jraft.option.NodeOptions;
+import com.alipay.sofa.jraft.option.RaftOptions;
+import com.alipay.sofa.jraft.option.ReadOnlyOption;
 import com.alipay.sofa.jraft.storage.SnapshotThrottle;
 import com.alipay.sofa.jraft.util.Utils;
+import com.codahale.metrics.MetricRegistry;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,7 +18,7 @@ import java.util.List;
  * @author huangjianqin
  * @date 2021/11/7
  */
-public final class RaftServerOptions<NW extends DefaultStateMachine, S extends RaftService> {
+public final class RaftServerOptions<NW extends DefaultStateMachine<?>, S extends RaftService> {
     /** 数据存储目录 */
     private String dataDir;
     /** raft group id */
@@ -25,7 +28,7 @@ public final class RaftServerOptions<NW extends DefaultStateMachine, S extends R
     /** ip:port,ip:port,ip:port */
     private String clusterAddresses;
     /** {@link NodeStateChangeListener} list */
-    private List<NodeStateChangeListener> listeners = new ArrayList<>();
+    private final List<NodeStateChangeListener> listeners = new ArrayList<>();
     /** ip:port, raft service绑定地址 */
     private String serviceAddress;
     /** {@link RaftService}实现类构建逻辑 */
@@ -73,6 +76,56 @@ public final class RaftServerOptions<NW extends DefaultStateMachine, S extends R
     private boolean sharedStepDownTimer = false;
     /** {@link NodeOptions#isSharedSnapshotTimer()} */
     private boolean sharedSnapshotTimer = false;
+    /** {@link NodeOptions#getRpcConnectTimeoutMs()} */
+    private int rpcConnectTimeoutMs = 1000;
+
+    /** {@link NodeOptions#getRpcConnectTimeoutMs()} */
+    private int rpcDefaultTimeout = 5000;
+    /** {@link NodeOptions#getRpcInstallSnapshotTimeout()} */
+    private int rpcInstallSnapshotTimeout = 5 * 60 * 1000;
+    /** {@link NodeOptions#getRpcProcessorThreadPoolSize()} */
+    private int rpcProcessorThreadPoolSize = 80;
+    /** {@link NodeOptions#isEnableRpcChecksum()} */
+    private boolean enableRpcChecksum = false;
+    /** {@link NodeOptions#getMetricRegistry()} */
+    private MetricRegistry metricRegistry;
+
+    /** {@link RaftOptions#getMaxByteCountPerRpc()} */
+    private int maxByteCountPerRpc = 128 * 1024;
+    /** {@link RaftOptions#isFileCheckHole()} */
+    private boolean fileCheckHole = false;
+    /** {@link RaftOptions#getMaxEntriesSize()} */
+    private int maxEntriesSize = 1024;
+    /** {@link RaftOptions#getMaxBodySize()} */
+    private int maxBodySize = 512 * 1024;
+    /** {@link RaftOptions#getMaxAppendBufferSize()} */
+    private int maxAppendBufferSize = 256 * 1024;
+    /** {@link RaftOptions#getMaxElectionDelayMs()} */
+    private int maxElectionDelayMs = 1000;
+    /** {@link RaftOptions#getElectionHeartbeatFactor()} */
+    private int electionHeartbeatFactor = 10;
+    /** {@link RaftOptions#getApplyBatch()} */
+    private int applyBatch = 32;
+    /** {@link RaftOptions#isSync()} */
+    private boolean sync = true;
+    /** {@link RaftOptions#isSyncMeta()} */
+    private boolean syncMeta = false;
+    /** {@link RaftOptions#isOpenStatistics()} */
+    private boolean openStatistics = true;
+    /** {@link RaftOptions#isReplicatorPipeline()} */
+    private boolean replicatorPipeline = true;
+    /** {@link RaftOptions#getMaxReplicatorInflightMsgs()} */
+    private int maxReplicatorInflightMsgs = 256;
+    /** {@link RaftOptions#getDisruptorBufferSize()} ()} */
+    private int disruptorBufferSize = 16384;
+    /** {@link RaftOptions#getDisruptorPublishEventWaitTimeoutSecs()} */
+    private int disruptorPublishEventWaitTimeoutSecs = 10;
+    /** {@link RaftOptions#isEnableLogEntryChecksum()} */
+    private boolean enableLogEntryChecksum = false;
+    /** {@link RaftOptions#getReadOnlyOptions()} */
+    private ReadOnlyOption readOnlyOptions = ReadOnlyOption.ReadOnlySafe;
+    /** {@link RaftOptions#isStepDownWhenVoteTimedout()} */
+    private boolean stepDownWhenVoteTimedout = true;
 
     private RaftServerOptions() {
     }
@@ -97,6 +150,37 @@ public final class RaftServerOptions<NW extends DefaultStateMachine, S extends R
         nodeOpts.setSharedVoteTimer(sharedVoteTimer);
         nodeOpts.setSharedStepDownTimer(sharedStepDownTimer);
         nodeOpts.setSharedSnapshotTimer(sharedSnapshotTimer);
+
+        nodeOpts.setRpcDefaultTimeout(rpcDefaultTimeout);
+        nodeOpts.setRpcInstallSnapshotTimeout(rpcInstallSnapshotTimeout);
+        nodeOpts.setRpcProcessorThreadPoolSize(rpcProcessorThreadPoolSize);
+        nodeOpts.setEnableRpcChecksum(enableRpcChecksum);
+        nodeOpts.setMetricRegistry(metricRegistry);
+
+        RaftOptions raftOptions = new RaftOptions();
+        setupOtherRaftOptions(raftOptions);
+        nodeOpts.setRaftOptions(raftOptions);
+    }
+
+    void setupOtherRaftOptions(RaftOptions raftOptions) {
+        raftOptions.setMaxByteCountPerRpc(maxByteCountPerRpc);
+        raftOptions.setFileCheckHole(fileCheckHole);
+        raftOptions.setMaxEntriesSize(maxEntriesSize);
+        raftOptions.setMaxBodySize(maxBodySize);
+        raftOptions.setMaxAppendBufferSize(maxAppendBufferSize);
+        raftOptions.setMaxElectionDelayMs(maxElectionDelayMs);
+        raftOptions.setElectionHeartbeatFactor(electionHeartbeatFactor);
+        raftOptions.setApplyBatch(applyBatch);
+        raftOptions.setSync(sync);
+        raftOptions.setSyncMeta(syncMeta);
+        raftOptions.setOpenStatistics(openStatistics);
+        raftOptions.setReplicatorPipeline(replicatorPipeline);
+        raftOptions.setMaxReplicatorInflightMsgs(maxReplicatorInflightMsgs);
+        raftOptions.setDisruptorBufferSize(disruptorBufferSize);
+        raftOptions.setDisruptorPublishEventWaitTimeoutSecs(disruptorPublishEventWaitTimeoutSecs);
+        raftOptions.setEnableLogEntryChecksum(enableLogEntryChecksum);
+        raftOptions.setReadOnlyOptions(readOnlyOptions);
+        raftOptions.setStepDownWhenVoteTimedout(stepDownWhenVoteTimedout);
     }
 
     //getter
@@ -212,44 +296,140 @@ public final class RaftServerOptions<NW extends DefaultStateMachine, S extends R
         return sharedSnapshotTimer;
     }
 
+    public int getRpcConnectTimeoutMs() {
+        return rpcConnectTimeoutMs;
+    }
+
+    public int getRpcDefaultTimeout() {
+        return rpcDefaultTimeout;
+    }
+
+    public int getRpcInstallSnapshotTimeout() {
+        return rpcInstallSnapshotTimeout;
+    }
+
+    public int getRpcProcessorThreadPoolSize() {
+        return rpcProcessorThreadPoolSize;
+    }
+
+    public boolean isEnableRpcChecksum() {
+        return enableRpcChecksum;
+    }
+
+    public MetricRegistry getMetricRegistry() {
+        return metricRegistry;
+    }
+
+    public int getMaxByteCountPerRpc() {
+        return maxByteCountPerRpc;
+    }
+
+    public boolean isFileCheckHole() {
+        return fileCheckHole;
+    }
+
+    public int getMaxEntriesSize() {
+        return maxEntriesSize;
+    }
+
+    public int getMaxBodySize() {
+        return maxBodySize;
+    }
+
+    public int getMaxAppendBufferSize() {
+        return maxAppendBufferSize;
+    }
+
+    public int getMaxElectionDelayMs() {
+        return maxElectionDelayMs;
+    }
+
+    public int getElectionHeartbeatFactor() {
+        return electionHeartbeatFactor;
+    }
+
+    public int getApplyBatch() {
+        return applyBatch;
+    }
+
+    public boolean isSync() {
+        return sync;
+    }
+
+    public boolean isSyncMeta() {
+        return syncMeta;
+    }
+
+    public boolean isOpenStatistics() {
+        return openStatistics;
+    }
+
+    public boolean isReplicatorPipeline() {
+        return replicatorPipeline;
+    }
+
+    public int getMaxReplicatorInflightMsgs() {
+        return maxReplicatorInflightMsgs;
+    }
+
+    public int getDisruptorBufferSize() {
+        return disruptorBufferSize;
+    }
+
+    public int getDisruptorPublishEventWaitTimeoutSecs() {
+        return disruptorPublishEventWaitTimeoutSecs;
+    }
+
+    public boolean isEnableLogEntryChecksum() {
+        return enableLogEntryChecksum;
+    }
+
+    public ReadOnlyOption getReadOnlyOptions() {
+        return readOnlyOptions;
+    }
+
+    public boolean isStepDownWhenVoteTimedout() {
+        return stepDownWhenVoteTimedout;
+    }
+
     //-------------------------------------------------------builder
-    public static <NW extends DefaultStateMachine, S extends RaftService> Builder<NW, S> builder() {
+    public static <NW extends DefaultStateMachine<?>, S extends RaftService> Builder<NW, S> builder() {
         return new Builder<>();
     }
 
     /**
      * 仅仅使用raft election功能的builder
      */
-    public static <NW extends DefaultStateMachine> Builder<NW, DefaultRaftService> electionBuilder() {
+    public static <NW extends DefaultStateMachine<?>> Builder<NW, DefaultRaftService> electionBuilder() {
         return new Builder<NW, DefaultRaftService>().raftServiceFactory(RaftServiceFactory.EMPTY);
     }
 
     /** builder **/
-    public static class Builder<NW extends DefaultStateMachine, S extends RaftService> {
-        private final RaftServerOptions<NW, S> RaftServerOptions = new RaftServerOptions<>();
+    public static class Builder<NW extends DefaultStateMachine<?>, S extends RaftService> {
+        private final RaftServerOptions<NW, S> raftServerOptions = new RaftServerOptions<>();
 
         public Builder<NW, S> dataDir(String dataDir) {
-            RaftServerOptions.dataDir = dataDir;
+            raftServerOptions.dataDir = dataDir;
             return this;
         }
 
         public Builder<NW, S> groupId(String groupId) {
-            RaftServerOptions.groupId = groupId;
+            raftServerOptions.groupId = groupId;
             return this;
         }
 
         public Builder<NW, S> address(String address) {
-            RaftServerOptions.address = address;
+            raftServerOptions.address = address;
             return this;
         }
 
         public Builder<NW, S> clusterAddresses(String clusterAddresses) {
-            RaftServerOptions.clusterAddresses = clusterAddresses;
+            raftServerOptions.clusterAddresses = clusterAddresses;
             return this;
         }
 
         public Builder<NW, S> listeners(List<NodeStateChangeListener> listeners) {
-            RaftServerOptions.listeners.addAll(listeners);
+            raftServerOptions.listeners.addAll(listeners);
             return this;
         }
 
@@ -258,122 +438,242 @@ public final class RaftServerOptions<NW extends DefaultStateMachine, S extends R
         }
 
         public Builder<NW, S> serviceAddress(String serviceAddress) {
-            RaftServerOptions.serviceAddress = serviceAddress;
+            raftServerOptions.serviceAddress = serviceAddress;
             return this;
         }
 
         public Builder<NW, S> raftServiceFactory(RaftServiceFactory<S> factory) {
-            RaftServerOptions.raftServiceFactory = factory;
+            raftServerOptions.raftServiceFactory = factory;
             return this;
         }
 
         public Builder<NW, S> stateMachineFactory(StateMachineFactory<NW, S> factory) {
-            RaftServerOptions.stateMachineFactory = factory;
+            raftServerOptions.stateMachineFactory = factory;
             return this;
         }
 
         public Builder<NW, S> snapshotFileOpr(SnapshotFileOpr<?> snapshotFileOpr) {
-            RaftServerOptions.snapshotFileOpr = snapshotFileOpr;
+            raftServerOptions.snapshotFileOpr = snapshotFileOpr;
             return this;
         }
 
         public Builder<NW, S> electionTimeoutMs(int electionTimeoutMs) {
-            RaftServerOptions.electionTimeoutMs = electionTimeoutMs;
+            raftServerOptions.electionTimeoutMs = electionTimeoutMs;
             return this;
         }
 
         public Builder<NW, S> electionPriority(int electionPriority) {
-            RaftServerOptions.electionPriority = electionPriority;
+            raftServerOptions.electionPriority = electionPriority;
             return this;
         }
 
         public Builder<NW, S> decayPriorityGap(int decayPriorityGap) {
-            RaftServerOptions.decayPriorityGap = decayPriorityGap;
+            raftServerOptions.decayPriorityGap = decayPriorityGap;
             return this;
         }
 
         public Builder<NW, S> leaderLeaseTimeRatio(int leaderLeaseTimeRatio) {
-            RaftServerOptions.leaderLeaseTimeRatio = leaderLeaseTimeRatio;
+            raftServerOptions.leaderLeaseTimeRatio = leaderLeaseTimeRatio;
             return this;
         }
 
         public Builder<NW, S> snapshotIntervalSecs(int snapshotIntervalSecs) {
-            RaftServerOptions.snapshotIntervalSecs = snapshotIntervalSecs;
+            raftServerOptions.snapshotIntervalSecs = snapshotIntervalSecs;
             return this;
         }
 
         public Builder<NW, S> snapshotLogIndexMargin(int snapshotLogIndexMargin) {
-            RaftServerOptions.snapshotLogIndexMargin = snapshotLogIndexMargin;
+            raftServerOptions.snapshotLogIndexMargin = snapshotLogIndexMargin;
             return this;
         }
 
         public Builder<NW, S> catchupMargin(int catchupMargin) {
-            RaftServerOptions.catchupMargin = catchupMargin;
+            raftServerOptions.catchupMargin = catchupMargin;
             return this;
         }
 
         public Builder<NW, S> filterBeforeCopyRemote() {
-            RaftServerOptions.filterBeforeCopyRemote = true;
+            raftServerOptions.filterBeforeCopyRemote = true;
             return this;
         }
 
         public Builder<NW, S> disableCli() {
-            RaftServerOptions.disableCli = false;
+            raftServerOptions.disableCli = false;
             return this;
         }
 
         public Builder<NW, S> sharedTimerPool() {
-            RaftServerOptions.sharedTimerPool = true;
+            raftServerOptions.sharedTimerPool = true;
             return this;
         }
 
         public Builder<NW, S> timerPoolSize(int timerPoolSize) {
-            RaftServerOptions.timerPoolSize = timerPoolSize;
+            raftServerOptions.timerPoolSize = timerPoolSize;
             return this;
         }
 
         public Builder<NW, S> cliRpcThreadPoolSize(int cliRpcThreadPoolSize) {
-            RaftServerOptions.cliRpcThreadPoolSize = cliRpcThreadPoolSize;
+            raftServerOptions.cliRpcThreadPoolSize = cliRpcThreadPoolSize;
             return this;
         }
 
         public Builder<NW, S> raftRpcThreadPoolSize(int raftRpcThreadPoolSize) {
-            RaftServerOptions.raftRpcThreadPoolSize = raftRpcThreadPoolSize;
+            raftServerOptions.raftRpcThreadPoolSize = raftRpcThreadPoolSize;
             return this;
         }
 
         public Builder<NW, S> enableMetrics() {
-            RaftServerOptions.enableMetrics = true;
+            raftServerOptions.enableMetrics = true;
             return this;
         }
 
         public Builder<NW, S> snapshotThrottle(SnapshotThrottle snapshotThrottle) {
-            RaftServerOptions.snapshotThrottle = snapshotThrottle;
+            raftServerOptions.snapshotThrottle = snapshotThrottle;
             return this;
         }
 
         public Builder<NW, S> sharedElectionTimer() {
-            RaftServerOptions.sharedElectionTimer = true;
+            raftServerOptions.sharedElectionTimer = true;
             return this;
         }
 
         public Builder<NW, S> sharedVoteTimer() {
-            RaftServerOptions.sharedVoteTimer = true;
+            raftServerOptions.sharedVoteTimer = true;
             return this;
         }
 
         public Builder<NW, S> sharedStepDownTimer() {
-            RaftServerOptions.sharedStepDownTimer = true;
+            raftServerOptions.sharedStepDownTimer = true;
             return this;
         }
 
         public Builder<NW, S> sharedSnapshotTimer() {
-            RaftServerOptions.sharedSnapshotTimer = true;
+            raftServerOptions.sharedSnapshotTimer = true;
+            return this;
+        }
+
+        public Builder<NW, S> rpcConnectTimeoutMs(int rpcConnectTimeoutMs) {
+            raftServerOptions.rpcConnectTimeoutMs = rpcConnectTimeoutMs;
+            return this;
+        }
+
+        public Builder<NW, S> rpcDefaultTimeout(int rpcDefaultTimeout) {
+            raftServerOptions.rpcDefaultTimeout = rpcDefaultTimeout;
+            return this;
+        }
+
+        public Builder<NW, S> rpcInstallSnapshotTimeout(int rpcInstallSnapshotTimeout) {
+            raftServerOptions.rpcInstallSnapshotTimeout = rpcInstallSnapshotTimeout;
+            return this;
+        }
+
+        public Builder<NW, S> rpcProcessorThreadPoolSize(int rpcProcessorThreadPoolSize) {
+            raftServerOptions.rpcProcessorThreadPoolSize = rpcProcessorThreadPoolSize;
+            return this;
+        }
+
+        public Builder<NW, S> enableRpcChecksum() {
+            raftServerOptions.enableRpcChecksum = true;
+            return this;
+        }
+
+        public Builder<NW, S> metricRegistry(MetricRegistry metricRegistry) {
+            raftServerOptions.metricRegistry = metricRegistry;
+            return this;
+        }
+
+        public Builder<NW, S> maxByteCountPerRpc(int maxByteCountPerRpc) {
+            raftServerOptions.maxByteCountPerRpc = maxByteCountPerRpc;
+            return this;
+        }
+
+        public Builder<NW, S> fileCheckHole() {
+            raftServerOptions.fileCheckHole = true;
+            return this;
+        }
+
+        public Builder<NW, S> maxEntriesSize(int maxEntriesSize) {
+            raftServerOptions.maxEntriesSize = maxEntriesSize;
+            return this;
+        }
+
+        public Builder<NW, S> maxBodySize(int maxBodySize) {
+            raftServerOptions.maxBodySize = maxBodySize;
+            return this;
+        }
+
+        public Builder<NW, S> maxAppendBufferSize(int maxAppendBufferSize) {
+            raftServerOptions.maxAppendBufferSize = maxAppendBufferSize;
+            return this;
+        }
+
+        public Builder<NW, S> maxElectionDelayMs(int maxElectionDelayMs) {
+            raftServerOptions.maxElectionDelayMs = maxElectionDelayMs;
+            return this;
+        }
+
+        public Builder<NW, S> electionHeartbeatFactor(int electionHeartbeatFactor) {
+            raftServerOptions.electionHeartbeatFactor = electionHeartbeatFactor;
+            return this;
+        }
+
+        public Builder<NW, S> applyBatch(int applyBatch) {
+            raftServerOptions.applyBatch = applyBatch;
+            return this;
+        }
+
+        public Builder<NW, S> sync() {
+            raftServerOptions.sync = true;
+            return this;
+        }
+
+        public Builder<NW, S> syncMeta() {
+            raftServerOptions.syncMeta = true;
+            return this;
+        }
+
+        public Builder<NW, S> openStatistics() {
+            raftServerOptions.openStatistics = true;
+            return this;
+        }
+
+        public Builder<NW, S> replicatorPipeline() {
+            raftServerOptions.replicatorPipeline = true;
+            return this;
+        }
+
+        public Builder<NW, S> maxReplicatorInflightMsgs(int maxReplicatorInflightMsgs) {
+            raftServerOptions.maxReplicatorInflightMsgs = maxReplicatorInflightMsgs;
+            return this;
+        }
+
+        public Builder<NW, S> disruptorBufferSize(int disruptorBufferSize) {
+            raftServerOptions.disruptorBufferSize = disruptorBufferSize;
+            return this;
+        }
+
+        public Builder<NW, S> disruptorPublishEventWaitTimeoutSecs(int disruptorPublishEventWaitTimeoutSecs) {
+            raftServerOptions.disruptorPublishEventWaitTimeoutSecs = disruptorPublishEventWaitTimeoutSecs;
+            return this;
+        }
+
+        public Builder<NW, S> enableLogEntryChecksum() {
+            raftServerOptions.enableLogEntryChecksum = true;
+            return this;
+        }
+
+        public Builder<NW, S> readOnlyOptions(ReadOnlyOption readOnlyOptions) {
+            raftServerOptions.readOnlyOptions = readOnlyOptions;
+            return this;
+        }
+
+        public Builder<NW, S> stepDownWhenVoteTimedout() {
+            raftServerOptions.stepDownWhenVoteTimedout = true;
             return this;
         }
 
         public RaftServerOptions<NW, S> build() {
-            return RaftServerOptions;
+            return raftServerOptions;
         }
 
         public RaftServerBootstrap bootstrap() {
