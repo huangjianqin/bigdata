@@ -38,93 +38,202 @@ public final class RaftServerOptions<NW extends DefaultStateMachine<?>, S extend
     /** 快照文件操作 */
     private SnapshotFileOpr<?> snapshotFileOpr = DefaultSnapshotFileOpr.INSTANCE;
 
-    /** {@link NodeOptions#getElectionTimeoutMs()} */
+    /**
+     * A follower would become a candidate if it doesn't receive any message
+     * from the leader in |election_timeout_ms| milliseconds
+     * follower to candidate timeout
+     * Default: 1000 (1s)
+     */
     private int electionTimeoutMs = 1000;
-    /** {@link NodeOptions#getElectionPriority()} */
+    /**
+     * One node's local priority value would be set to | electionPriority |
+     * value when it starts up.If this value is set to 0,the node will never be a leader.
+     * If this node doesn't support priority election,then set this value to -1.
+     * Default: -1
+     */
     private int electionPriority = ElectionPriority.Disabled;
-    /** {@link NodeOptions#getDecayPriorityGap()} */
+    /**
+     * If next leader is not elected until next election timeout, it exponentially
+     * decay its local target priority, for example target_priority = target_priority - gap
+     * Default: 10
+     */
     private int decayPriorityGap = 10;
-    /** {@link NodeOptions#getLeaderLeaseTimeRatio()} */
+    /**
+     * Leader lease time's ratio of electionTimeoutMs,
+     * To minimize the effects of clock drift, we should make that:
+     * clockDrift + leaderLeaseTimeoutMs < electionTimeout
+     * Default: 90, Max: 100
+     */
     private int leaderLeaseTimeRatio = 90;
-    /** {@link NodeOptions#getSnapshotIntervalSecs()} */
+    /**
+     * A snapshot saving would be triggered every |snapshot_interval_s| seconds
+     * if this was reset as a positive number
+     * If |snapshot_interval_s| <= 0, the time based snapshot would be disabled.
+     * Default: 3600 (1 hour)
+     */
     private int snapshotIntervalSecs = 3600;
-    /** {@link NodeOptions#getSnapshotLogIndexMargin()} */
+    /**
+     * A snapshot saving would be triggered every |snapshot_interval_s| seconds,
+     * and at this moment when state machine's lastAppliedIndex value
+     * minus lastSnapshotId value is greater than snapshotLogIndexMargin value,
+     * the snapshot action will be done really.
+     * If |snapshotLogIndexMargin| <= 0, the distance based snapshot would be disable.
+     * Default: 0
+     */
     private int snapshotLogIndexMargin = 0;
-    /** {@link NodeOptions#getCatchupMargin()} */
+    /**
+     * We will regard a adding peer as caught up if the margin between the
+     * last_log_index of this peer and the last_log_index of leader is less than
+     * |catchup_margin|
+     * Default: 1000
+     */
     private int catchupMargin = 1000;
-    /** {@link NodeOptions#isFilterBeforeCopyRemote()} */
+    /**
+     * If enable, we will filter duplicate files before copy remote snapshot,
+     * to avoid useless transmission. Two files in local and remote are duplicate,
+     * only if they has the same filename and the same checksum (stored in file meta).
+     * Default: false
+     */
     private boolean filterBeforeCopyRemote = false;
-    /** {@link NodeOptions#isDisableCli()} */
+    /**
+     * If non-null, we will pass this throughput_snapshot_throttle to SnapshotExecutor
+     * Default: NULL
+     * scoped_refptr<SnapshotThrottle>* snapshot_throttle;
+     * If true, RPCs through raft_cli will be denied.
+     * Default: false
+     */
     private boolean disableCli = false;
-    /** {@link NodeOptions#isSharedTimerPool()} */
+    /**
+     * Whether use global timer pool, if true, the {@code timerPoolSize} will be invalid.
+     */
     private boolean sharedTimerPool = false;
-    /** {@link NodeOptions#getTimerPoolSize()} */
-    private int timerPoolSize = Math.min(Utils.cpus() * 3, 20);
-    /** {@link NodeOptions#getCliRpcThreadPoolSize()} */
+    /**
+     * Timer manager thread pool size
+     */
+    private int timerPoolSize = Utils.cpus() * 3 > 20 ? 20 : Utils.cpus() * 3;
+    /**
+     * CLI service request RPC executor pool size, use default executor if -1.
+     */
     private int cliRpcThreadPoolSize = Utils.cpus();
-    /** {@link NodeOptions#getRaftRpcThreadPoolSize()} */
+    /**
+     * RAFT request RPC executor pool size, use default executor if -1.
+     */
     private int raftRpcThreadPoolSize = Utils.cpus() * 6;
-    /** {@link NodeOptions#isEnableMetrics()} */
+    /**
+     * Whether to enable metrics for node.
+     */
     private boolean enableMetrics = false;
-    /** {@link NodeOptions#getSnapshotThrottle()} */
+    /**
+     * If non-null, we will pass this SnapshotThrottle to SnapshotExecutor
+     * Default: NULL
+     */
     private SnapshotThrottle snapshotThrottle;
-    /** {@link NodeOptions#isSharedElectionTimer()} ()} */
+    /**
+     * Whether use global election timer
+     */
     private boolean sharedElectionTimer = false;
-    /** {@link NodeOptions#isSharedVoteTimer()} */
+    /**
+     * Whether use global vote timer
+     */
     private boolean sharedVoteTimer = false;
-    /** {@link NodeOptions#isSharedStepDownTimer()} */
+    /**
+     * Whether use global step down timer
+     */
     private boolean sharedStepDownTimer = false;
-    /** {@link NodeOptions#isSharedSnapshotTimer()} */
+    /**
+     * Whether use global snapshot timer
+     */
     private boolean sharedSnapshotTimer = false;
-    /** {@link NodeOptions#getRpcConnectTimeoutMs()} */
-    private int rpcConnectTimeoutMs = 1000;
 
-    /** {@link NodeOptions#getRpcConnectTimeoutMs()} */
+
+    /**
+     * Rpc connect timeout in milliseconds
+     * Default: 1000(1s)
+     */
+    private int rpcConnectTimeoutMs = 1000;
+    /**
+     * RPC request default timeout in milliseconds
+     * Default: 5000(5s)
+     */
     private int rpcDefaultTimeout = 5000;
-    /** {@link NodeOptions#getRpcInstallSnapshotTimeout()} */
+    /**
+     * Install snapshot RPC request default timeout in milliseconds
+     * Default: 5 * 60 * 1000(5min)
+     */
     private int rpcInstallSnapshotTimeout = 5 * 60 * 1000;
-    /** {@link NodeOptions#getRpcProcessorThreadPoolSize()} */
+    /**
+     * RPC process thread pool size
+     * Default: 80
+     */
     private int rpcProcessorThreadPoolSize = 80;
-    /** {@link NodeOptions#isEnableRpcChecksum()} */
+    /**
+     * Whether to enable checksum for RPC.
+     * Default: false
+     */
     private boolean enableRpcChecksum = false;
-    /** {@link NodeOptions#getMetricRegistry()} */
+    /**
+     * Metric registry for RPC services, user should not use this field.
+     */
     private MetricRegistry metricRegistry;
 
-    /** {@link RaftOptions#getMaxByteCountPerRpc()} */
+    /** Maximum of block size per RPC */
     private int maxByteCountPerRpc = 128 * 1024;
-    /** {@link RaftOptions#isFileCheckHole()} */
+    /** File service check hole switch, default disable */
     private boolean fileCheckHole = false;
-    /** {@link RaftOptions#getMaxEntriesSize()} */
+    /** The maximum number of entries in AppendEntriesRequest */
     private int maxEntriesSize = 1024;
-    /** {@link RaftOptions#getMaxBodySize()} */
+    /** The maximum byte size of AppendEntriesRequest */
     private int maxBodySize = 512 * 1024;
-    /** {@link RaftOptions#getMaxAppendBufferSize()} */
+    /** Flush buffer to LogStorage if the buffer size reaches the limit */
     private int maxAppendBufferSize = 256 * 1024;
-    /** {@link RaftOptions#getMaxElectionDelayMs()} */
+    /** Maximum election delay time allowed by user */
     private int maxElectionDelayMs = 1000;
-    /** {@link RaftOptions#getElectionHeartbeatFactor()} */
+    /** Raft election:heartbeat timeout factor */
     private int electionHeartbeatFactor = 10;
-    /** {@link RaftOptions#getApplyBatch()} */
+    /** Maximum number of tasks that can be applied in a batch */
     private int applyBatch = 32;
-    /** {@link RaftOptions#isSync()} */
+    /** Call fsync when need */
     private boolean sync = true;
-    /** {@link RaftOptions#isSyncMeta()} */
+    /** Sync log meta, snapshot meta and raft meta */
     private boolean syncMeta = false;
-    /** {@link RaftOptions#isOpenStatistics()} */
+    /** Statistics to analyze the performance of db */
     private boolean openStatistics = true;
-    /** {@link RaftOptions#isReplicatorPipeline()} */
+    /** Whether to enable replicator pipeline. */
     private boolean replicatorPipeline = true;
-    /** {@link RaftOptions#getMaxReplicatorInflightMsgs()} */
+    /** The maximum replicator pipeline in-flight requests/responses, only valid when enable replicator pipeline. */
     private int maxReplicatorInflightMsgs = 256;
-    /** {@link RaftOptions#getDisruptorBufferSize()} ()} */
+    /** Internal disruptor buffers size for Node/FSMCaller/LogManager etc. */
     private int disruptorBufferSize = 16384;
-    /** {@link RaftOptions#getDisruptorPublishEventWaitTimeoutSecs()} */
+    /**
+     * The maximum timeout in seconds to wait when publishing events into disruptor, default is 10 seconds.
+     * If the timeout happens, it may halt the node.
+     */
     private int disruptorPublishEventWaitTimeoutSecs = 10;
-    /** {@link RaftOptions#isEnableLogEntryChecksum()} */
+    /**
+     * When true, validate log entry checksum when transferring the log entry from disk or network, default is false.
+     * If true, it would hurt the performance of JRAft but gain the data safety.
+     *
+     * @since 1.2.6
+     */
     private boolean enableLogEntryChecksum = false;
-    /** {@link RaftOptions#getReadOnlyOptions()} */
+    /**
+     * ReadOnlyOption specifies how the read only request is processed.
+     * <p>
+     * {@link ReadOnlyOption#ReadOnlySafe} guarantees the linearizability of the read only request by
+     * communicating with the quorum. It is the default and suggested option.
+     * <p>
+     * {@link ReadOnlyOption#ReadOnlyLeaseBased} ensures linearizability of the read only request by
+     * relying on the leader lease. It can be affected by clock drift.
+     * If the clock drift is unbounded, leader might keep the lease longer than it
+     * should (clock can move backward/pause without any bound). ReadIndex is not safe
+     * in that case.
+     */
     private ReadOnlyOption readOnlyOptions = ReadOnlyOption.ReadOnlySafe;
-    /** {@link RaftOptions#isStepDownWhenVoteTimedout()} */
+    /**
+     * Candidate steps down when election reaching timeout, default is true(enabled).
+     *
+     * @since 1.3.0
+     */
     private boolean stepDownWhenVoteTimedout = true;
 
     private RaftServerOptions() {
@@ -390,6 +499,261 @@ public final class RaftServerOptions<NW extends DefaultStateMachine<?>, S extend
 
     public boolean isStepDownWhenVoteTimedout() {
         return stepDownWhenVoteTimedout;
+    }
+
+    public RaftServerOptions<NW, S> setDataDir(String dataDir) {
+        this.dataDir = dataDir;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setGroupId(String groupId) {
+        this.groupId = groupId;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setAddress(String address) {
+        this.address = address;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setClusterAddresses(String clusterAddresses) {
+        this.clusterAddresses = clusterAddresses;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setServiceAddress(String serviceAddress) {
+        this.serviceAddress = serviceAddress;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setRaftServiceFactory(RaftServiceFactory<S> raftServiceFactory) {
+        this.raftServiceFactory = raftServiceFactory;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setStateMachineFactory(StateMachineFactory<NW, S> stateMachineFactory) {
+        this.stateMachineFactory = stateMachineFactory;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setSnapshotFileOpr(SnapshotFileOpr<?> snapshotFileOpr) {
+        this.snapshotFileOpr = snapshotFileOpr;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setElectionTimeoutMs(int electionTimeoutMs) {
+        this.electionTimeoutMs = electionTimeoutMs;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setElectionPriority(int electionPriority) {
+        this.electionPriority = electionPriority;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setDecayPriorityGap(int decayPriorityGap) {
+        this.decayPriorityGap = decayPriorityGap;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setLeaderLeaseTimeRatio(int leaderLeaseTimeRatio) {
+        this.leaderLeaseTimeRatio = leaderLeaseTimeRatio;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setSnapshotIntervalSecs(int snapshotIntervalSecs) {
+        this.snapshotIntervalSecs = snapshotIntervalSecs;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setSnapshotLogIndexMargin(int snapshotLogIndexMargin) {
+        this.snapshotLogIndexMargin = snapshotLogIndexMargin;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setCatchupMargin(int catchupMargin) {
+        this.catchupMargin = catchupMargin;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setFilterBeforeCopyRemote(boolean filterBeforeCopyRemote) {
+        this.filterBeforeCopyRemote = filterBeforeCopyRemote;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setDisableCli(boolean disableCli) {
+        this.disableCli = disableCli;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setSharedTimerPool(boolean sharedTimerPool) {
+        this.sharedTimerPool = sharedTimerPool;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setTimerPoolSize(int timerPoolSize) {
+        this.timerPoolSize = timerPoolSize;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setCliRpcThreadPoolSize(int cliRpcThreadPoolSize) {
+        this.cliRpcThreadPoolSize = cliRpcThreadPoolSize;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setRaftRpcThreadPoolSize(int raftRpcThreadPoolSize) {
+        this.raftRpcThreadPoolSize = raftRpcThreadPoolSize;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setEnableMetrics(boolean enableMetrics) {
+        this.enableMetrics = enableMetrics;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setSnapshotThrottle(SnapshotThrottle snapshotThrottle) {
+        this.snapshotThrottle = snapshotThrottle;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setSharedElectionTimer(boolean sharedElectionTimer) {
+        this.sharedElectionTimer = sharedElectionTimer;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setSharedVoteTimer(boolean sharedVoteTimer) {
+        this.sharedVoteTimer = sharedVoteTimer;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setSharedStepDownTimer(boolean sharedStepDownTimer) {
+        this.sharedStepDownTimer = sharedStepDownTimer;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setSharedSnapshotTimer(boolean sharedSnapshotTimer) {
+        this.sharedSnapshotTimer = sharedSnapshotTimer;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setRpcConnectTimeoutMs(int rpcConnectTimeoutMs) {
+        this.rpcConnectTimeoutMs = rpcConnectTimeoutMs;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setRpcDefaultTimeout(int rpcDefaultTimeout) {
+        this.rpcDefaultTimeout = rpcDefaultTimeout;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setRpcInstallSnapshotTimeout(int rpcInstallSnapshotTimeout) {
+        this.rpcInstallSnapshotTimeout = rpcInstallSnapshotTimeout;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setRpcProcessorThreadPoolSize(int rpcProcessorThreadPoolSize) {
+        this.rpcProcessorThreadPoolSize = rpcProcessorThreadPoolSize;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setEnableRpcChecksum(boolean enableRpcChecksum) {
+        this.enableRpcChecksum = enableRpcChecksum;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setMetricRegistry(MetricRegistry metricRegistry) {
+        this.metricRegistry = metricRegistry;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setMaxByteCountPerRpc(int maxByteCountPerRpc) {
+        this.maxByteCountPerRpc = maxByteCountPerRpc;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setFileCheckHole(boolean fileCheckHole) {
+        this.fileCheckHole = fileCheckHole;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setMaxEntriesSize(int maxEntriesSize) {
+        this.maxEntriesSize = maxEntriesSize;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setMaxBodySize(int maxBodySize) {
+        this.maxBodySize = maxBodySize;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setMaxAppendBufferSize(int maxAppendBufferSize) {
+        this.maxAppendBufferSize = maxAppendBufferSize;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setMaxElectionDelayMs(int maxElectionDelayMs) {
+        this.maxElectionDelayMs = maxElectionDelayMs;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setElectionHeartbeatFactor(int electionHeartbeatFactor) {
+        this.electionHeartbeatFactor = electionHeartbeatFactor;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setApplyBatch(int applyBatch) {
+        this.applyBatch = applyBatch;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setSync(boolean sync) {
+        this.sync = sync;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setSyncMeta(boolean syncMeta) {
+        this.syncMeta = syncMeta;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setOpenStatistics(boolean openStatistics) {
+        this.openStatistics = openStatistics;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setReplicatorPipeline(boolean replicatorPipeline) {
+        this.replicatorPipeline = replicatorPipeline;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setMaxReplicatorInflightMsgs(int maxReplicatorInflightMsgs) {
+        this.maxReplicatorInflightMsgs = maxReplicatorInflightMsgs;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setDisruptorBufferSize(int disruptorBufferSize) {
+        this.disruptorBufferSize = disruptorBufferSize;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setDisruptorPublishEventWaitTimeoutSecs(int disruptorPublishEventWaitTimeoutSecs) {
+        this.disruptorPublishEventWaitTimeoutSecs = disruptorPublishEventWaitTimeoutSecs;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setEnableLogEntryChecksum(boolean enableLogEntryChecksum) {
+        this.enableLogEntryChecksum = enableLogEntryChecksum;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setReadOnlyOptions(ReadOnlyOption readOnlyOptions) {
+        this.readOnlyOptions = readOnlyOptions;
+        return this;
+    }
+
+    public RaftServerOptions<NW, S> setStepDownWhenVoteTimedout(boolean stepDownWhenVoteTimedout) {
+        this.stepDownWhenVoteTimedout = stepDownWhenVoteTimedout;
+        return this;
     }
 
     //-------------------------------------------------------builder

@@ -6,7 +6,7 @@ import com.alipay.sofa.jraft.option.CliOptions;
  * @author huangjianqin
  * @date 2021/11/7
  */
-public final class RaftClientOptions {
+public class RaftClientOptions {
     /** raft group id */
     private String groupId;
     /** ip:port,ip:port,ip:port */
@@ -44,6 +44,31 @@ public final class RaftClientOptions {
 
     public int getMaxRetry() {
         return maxRetry;
+    }
+
+    public RaftClientOptions setGroupId(String groupId) {
+        this.groupId = groupId;
+        return this;
+    }
+
+    public RaftClientOptions setClusterAddresses(String clusterAddresses) {
+        this.clusterAddresses = clusterAddresses;
+        return this;
+    }
+
+    public RaftClientOptions setServiceAddress(String serviceAddress) {
+        this.serviceAddress = serviceAddress;
+        return this;
+    }
+
+    public RaftClientOptions setTimeoutMs(int timeoutMs) {
+        this.timeoutMs = timeoutMs;
+        return this;
+    }
+
+    public RaftClientOptions setMaxRetry(int maxRetry) {
+        this.maxRetry = maxRetry;
+        return this;
     }
 
     //-------------------------------------------------------builder

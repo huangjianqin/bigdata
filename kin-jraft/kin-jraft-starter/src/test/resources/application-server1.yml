@@ -1,0 +1,7 @@
+kin:
+  jraft:
+    server:
+      address: 127.0.0.1:15001
+      cluster-addresses: 127.0.0.1:15001,127.0.0.1:15002,127.0.0.1:15003
+      group-id: jraft_spring
+      data-dir: raft/server1

@@ -1,0 +1,5 @@
+kin:
+  jraft:
+    client:
+      cluster-addresses: 127.0.0.1:15001,127.0.0.1:15002,127.0.0.1:15003
+      group-id: jraft_spring

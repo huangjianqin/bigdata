@@ -1,28 +1,31 @@
-package org.kin.jraft.counter;
+package org.kin.jraft.springboot.counter.client;
 
 import com.alipay.sofa.jraft.entity.PeerId;
 import org.kin.jraft.RaftClient;
-import org.kin.jraft.RaftClientOptions;
-import org.kin.jraft.counter.message.GetValueRequest;
-import org.kin.jraft.counter.message.IncrementAndGetRequest;
+import org.kin.jraft.springboot.EnableJRaftClient;
+import org.kin.jraft.springboot.counter.message.GetValueRequest;
+import org.kin.jraft.springboot.counter.message.IncrementAndGetRequest;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * @author huangjianqin
  * @date 2021/11/14
  */
-public class CounterClientTest {
+@EnableJRaftClient
+@SpringBootApplication
+public class CounterClientSpringBootTest {
     public static void main(String[] args) throws InterruptedException {
-        String clusterAddresses = args[0];
-        RaftClient client = RaftClientOptions.builder()
-                .groupId("counter_raft")
-                .clusterAddresses(clusterAddresses)
-                .connect();
+        ConfigurableApplicationContext context = SpringApplication.run(CounterClientSpringBootTest.class, args);
+        RaftClient client = context.getBean(RaftClient.class);
 
         PeerId leader = client.getLeader();
         System.out.println("leader is " + leader);
-        int n = 0;
+        int n = ThreadLocalRandom.current().nextInt(20);
         CountDownLatch latch = new CountDownLatch(n);
         long start = System.currentTimeMillis();
         for (int i = 0; i < n; i++) {

@@ -12,5 +12,6 @@
     <packaging>pom</packaging>
     <modules>
         <module>kin-jraft-core</module>
+        <module>kin-jraft-starter</module>
     </modules>
 </project>
