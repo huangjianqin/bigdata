@@ -19,10 +19,10 @@ import java.util.Objects;
  */
 @Configuration
 @ConditionalOnBean(JRaftServerMarkerConfiguration.Marker.class)
-@EnableConfigurationProperties(org.kin.jraft.springboot.RaftServerOptions.class)
+@EnableConfigurationProperties(RaftServerProperties.class)
 public class JRaftServerAutoConfiguration {
     @Resource
-    private org.kin.jraft.springboot.RaftServerOptions serverOptions;
+    private RaftServerProperties serverOptions;
 
     @Bean
     public <NW extends DefaultStateMachine<?>, S extends RaftService> RaftServerBootstrap raftServerBootstrap(@Autowired List<NodeStateChangeListener> listeners,

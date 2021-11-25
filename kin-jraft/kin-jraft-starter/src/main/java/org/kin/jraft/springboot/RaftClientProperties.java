@@ -7,5 +7,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @date 2021/11/24
  */
 @ConfigurationProperties("kin.jraft.client")
-public class RaftClientOptions extends org.kin.jraft.RaftClientOptions {
+public class RaftClientProperties extends org.kin.jraft.RaftClientOptions {
 }

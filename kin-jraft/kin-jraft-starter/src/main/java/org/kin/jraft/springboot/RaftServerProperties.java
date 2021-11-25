@@ -13,7 +13,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @SuppressWarnings("rawtypes")
 @ConfigurationProperties("kin.jraft.server")
-public class RaftServerOptions {
+public class RaftServerProperties {
     /** 数据存储目录 */
     private String dataDir;
     /** raft group id */
@@ -228,7 +228,7 @@ public class RaftServerOptions {
         return dataDir;
     }
 
-    public RaftServerOptions setDataDir(String dataDir) {
+    public RaftServerProperties setDataDir(String dataDir) {
         this.dataDir = dataDir;
         return this;
     }
@@ -237,7 +237,7 @@ public class RaftServerOptions {
         return groupId;
     }
 
-    public RaftServerOptions setGroupId(String groupId) {
+    public RaftServerProperties setGroupId(String groupId) {
         this.groupId = groupId;
         return this;
     }
@@ -246,7 +246,7 @@ public class RaftServerOptions {
         return address;
     }
 
-    public RaftServerOptions setAddress(String address) {
+    public RaftServerProperties setAddress(String address) {
         this.address = address;
         return this;
     }
@@ -255,7 +255,7 @@ public class RaftServerOptions {
         return clusterAddresses;
     }
 
-    public RaftServerOptions setClusterAddresses(String clusterAddresses) {
+    public RaftServerProperties setClusterAddresses(String clusterAddresses) {
         this.clusterAddresses = clusterAddresses;
         return this;
     }
@@ -264,7 +264,7 @@ public class RaftServerOptions {
         return serviceAddress;
     }
 
-    public RaftServerOptions setServiceAddress(String serviceAddress) {
+    public RaftServerProperties setServiceAddress(String serviceAddress) {
         this.serviceAddress = serviceAddress;
         return this;
     }
@@ -273,7 +273,7 @@ public class RaftServerOptions {
         return electionTimeoutMs;
     }
 
-    public RaftServerOptions setElectionTimeoutMs(int electionTimeoutMs) {
+    public RaftServerProperties setElectionTimeoutMs(int electionTimeoutMs) {
         this.electionTimeoutMs = electionTimeoutMs;
         return this;
     }
@@ -282,7 +282,7 @@ public class RaftServerOptions {
         return electionPriority;
     }
 
-    public RaftServerOptions setElectionPriority(int electionPriority) {
+    public RaftServerProperties setElectionPriority(int electionPriority) {
         this.electionPriority = electionPriority;
         return this;
     }
@@ -291,7 +291,7 @@ public class RaftServerOptions {
         return decayPriorityGap;
     }
 
-    public RaftServerOptions setDecayPriorityGap(int decayPriorityGap) {
+    public RaftServerProperties setDecayPriorityGap(int decayPriorityGap) {
         this.decayPriorityGap = decayPriorityGap;
         return this;
     }
@@ -300,7 +300,7 @@ public class RaftServerOptions {
         return leaderLeaseTimeRatio;
     }
 
-    public RaftServerOptions setLeaderLeaseTimeRatio(int leaderLeaseTimeRatio) {
+    public RaftServerProperties setLeaderLeaseTimeRatio(int leaderLeaseTimeRatio) {
         this.leaderLeaseTimeRatio = leaderLeaseTimeRatio;
         return this;
     }
@@ -309,7 +309,7 @@ public class RaftServerOptions {
         return snapshotIntervalSecs;
     }
 
-    public RaftServerOptions setSnapshotIntervalSecs(int snapshotIntervalSecs) {
+    public RaftServerProperties setSnapshotIntervalSecs(int snapshotIntervalSecs) {
         this.snapshotIntervalSecs = snapshotIntervalSecs;
         return this;
     }
@@ -318,7 +318,7 @@ public class RaftServerOptions {
         return snapshotLogIndexMargin;
     }
 
-    public RaftServerOptions setSnapshotLogIndexMargin(int snapshotLogIndexMargin) {
+    public RaftServerProperties setSnapshotLogIndexMargin(int snapshotLogIndexMargin) {
         this.snapshotLogIndexMargin = snapshotLogIndexMargin;
         return this;
     }
@@ -327,7 +327,7 @@ public class RaftServerOptions {
         return catchupMargin;
     }
 
-    public RaftServerOptions setCatchupMargin(int catchupMargin) {
+    public RaftServerProperties setCatchupMargin(int catchupMargin) {
         this.catchupMargin = catchupMargin;
         return this;
     }
@@ -336,7 +336,7 @@ public class RaftServerOptions {
         return filterBeforeCopyRemote;
     }
 
-    public RaftServerOptions setFilterBeforeCopyRemote(boolean filterBeforeCopyRemote) {
+    public RaftServerProperties setFilterBeforeCopyRemote(boolean filterBeforeCopyRemote) {
         this.filterBeforeCopyRemote = filterBeforeCopyRemote;
         return this;
     }
@@ -345,7 +345,7 @@ public class RaftServerOptions {
         return disableCli;
     }
 
-    public RaftServerOptions setDisableCli(boolean disableCli) {
+    public RaftServerProperties setDisableCli(boolean disableCli) {
         this.disableCli = disableCli;
         return this;
     }
@@ -354,7 +354,7 @@ public class RaftServerOptions {
         return sharedTimerPool;
     }
 
-    public RaftServerOptions setSharedTimerPool(boolean sharedTimerPool) {
+    public RaftServerProperties setSharedTimerPool(boolean sharedTimerPool) {
         this.sharedTimerPool = sharedTimerPool;
         return this;
     }
@@ -363,7 +363,7 @@ public class RaftServerOptions {
         return timerPoolSize;
     }
 
-    public RaftServerOptions setTimerPoolSize(int timerPoolSize) {
+    public RaftServerProperties setTimerPoolSize(int timerPoolSize) {
         this.timerPoolSize = timerPoolSize;
         return this;
     }
@@ -372,7 +372,7 @@ public class RaftServerOptions {
         return cliRpcThreadPoolSize;
     }
 
-    public RaftServerOptions setCliRpcThreadPoolSize(int cliRpcThreadPoolSize) {
+    public RaftServerProperties setCliRpcThreadPoolSize(int cliRpcThreadPoolSize) {
         this.cliRpcThreadPoolSize = cliRpcThreadPoolSize;
         return this;
     }
@@ -381,7 +381,7 @@ public class RaftServerOptions {
         return raftRpcThreadPoolSize;
     }
 
-    public RaftServerOptions setRaftRpcThreadPoolSize(int raftRpcThreadPoolSize) {
+    public RaftServerProperties setRaftRpcThreadPoolSize(int raftRpcThreadPoolSize) {
         this.raftRpcThreadPoolSize = raftRpcThreadPoolSize;
         return this;
     }
@@ -390,7 +390,7 @@ public class RaftServerOptions {
         return enableMetrics;
     }
 
-    public RaftServerOptions setEnableMetrics(boolean enableMetrics) {
+    public RaftServerProperties setEnableMetrics(boolean enableMetrics) {
         this.enableMetrics = enableMetrics;
         return this;
     }
@@ -399,7 +399,7 @@ public class RaftServerOptions {
         return snapshotThrottle;
     }
 
-    public RaftServerOptions setSnapshotThrottle(SnapshotThrottle snapshotThrottle) {
+    public RaftServerProperties setSnapshotThrottle(SnapshotThrottle snapshotThrottle) {
         this.snapshotThrottle = snapshotThrottle;
         return this;
     }
@@ -408,7 +408,7 @@ public class RaftServerOptions {
         return sharedElectionTimer;
     }
 
-    public RaftServerOptions setSharedElectionTimer(boolean sharedElectionTimer) {
+    public RaftServerProperties setSharedElectionTimer(boolean sharedElectionTimer) {
         this.sharedElectionTimer = sharedElectionTimer;
         return this;
     }
@@ -417,7 +417,7 @@ public class RaftServerOptions {
         return sharedVoteTimer;
     }
 
-    public RaftServerOptions setSharedVoteTimer(boolean sharedVoteTimer) {
+    public RaftServerProperties setSharedVoteTimer(boolean sharedVoteTimer) {
         this.sharedVoteTimer = sharedVoteTimer;
         return this;
     }
@@ -426,7 +426,7 @@ public class RaftServerOptions {
         return sharedStepDownTimer;
     }
 
-    public RaftServerOptions setSharedStepDownTimer(boolean sharedStepDownTimer) {
+    public RaftServerProperties setSharedStepDownTimer(boolean sharedStepDownTimer) {
         this.sharedStepDownTimer = sharedStepDownTimer;
         return this;
     }
@@ -435,7 +435,7 @@ public class RaftServerOptions {
         return sharedSnapshotTimer;
     }
 
-    public RaftServerOptions setSharedSnapshotTimer(boolean sharedSnapshotTimer) {
+    public RaftServerProperties setSharedSnapshotTimer(boolean sharedSnapshotTimer) {
         this.sharedSnapshotTimer = sharedSnapshotTimer;
         return this;
     }
@@ -444,7 +444,7 @@ public class RaftServerOptions {
         return rpcConnectTimeoutMs;
     }
 
-    public RaftServerOptions setRpcConnectTimeoutMs(int rpcConnectTimeoutMs) {
+    public RaftServerProperties setRpcConnectTimeoutMs(int rpcConnectTimeoutMs) {
         this.rpcConnectTimeoutMs = rpcConnectTimeoutMs;
         return this;
     }
@@ -453,7 +453,7 @@ public class RaftServerOptions {
         return rpcDefaultTimeout;
     }
 
-    public RaftServerOptions setRpcDefaultTimeout(int rpcDefaultTimeout) {
+    public RaftServerProperties setRpcDefaultTimeout(int rpcDefaultTimeout) {
         this.rpcDefaultTimeout = rpcDefaultTimeout;
         return this;
     }
@@ -462,7 +462,7 @@ public class RaftServerOptions {
         return rpcInstallSnapshotTimeout;
     }
 
-    public RaftServerOptions setRpcInstallSnapshotTimeout(int rpcInstallSnapshotTimeout) {
+    public RaftServerProperties setRpcInstallSnapshotTimeout(int rpcInstallSnapshotTimeout) {
         this.rpcInstallSnapshotTimeout = rpcInstallSnapshotTimeout;
         return this;
     }
@@ -471,7 +471,7 @@ public class RaftServerOptions {
         return rpcProcessorThreadPoolSize;
     }
 
-    public RaftServerOptions setRpcProcessorThreadPoolSize(int rpcProcessorThreadPoolSize) {
+    public RaftServerProperties setRpcProcessorThreadPoolSize(int rpcProcessorThreadPoolSize) {
         this.rpcProcessorThreadPoolSize = rpcProcessorThreadPoolSize;
         return this;
     }
@@ -480,7 +480,7 @@ public class RaftServerOptions {
         return enableRpcChecksum;
     }
 
-    public RaftServerOptions setEnableRpcChecksum(boolean enableRpcChecksum) {
+    public RaftServerProperties setEnableRpcChecksum(boolean enableRpcChecksum) {
         this.enableRpcChecksum = enableRpcChecksum;
         return this;
     }
@@ -489,7 +489,7 @@ public class RaftServerOptions {
         return metricRegistry;
     }
 
-    public RaftServerOptions setMetricRegistry(MetricRegistry metricRegistry) {
+    public RaftServerProperties setMetricRegistry(MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
         return this;
     }
@@ -498,7 +498,7 @@ public class RaftServerOptions {
         return maxByteCountPerRpc;
     }
 
-    public RaftServerOptions setMaxByteCountPerRpc(int maxByteCountPerRpc) {
+    public RaftServerProperties setMaxByteCountPerRpc(int maxByteCountPerRpc) {
         this.maxByteCountPerRpc = maxByteCountPerRpc;
         return this;
     }
@@ -507,7 +507,7 @@ public class RaftServerOptions {
         return fileCheckHole;
     }
 
-    public RaftServerOptions setFileCheckHole(boolean fileCheckHole) {
+    public RaftServerProperties setFileCheckHole(boolean fileCheckHole) {
         this.fileCheckHole = fileCheckHole;
         return this;
     }
@@ -516,7 +516,7 @@ public class RaftServerOptions {
         return maxEntriesSize;
     }
 
-    public RaftServerOptions setMaxEntriesSize(int maxEntriesSize) {
+    public RaftServerProperties setMaxEntriesSize(int maxEntriesSize) {
         this.maxEntriesSize = maxEntriesSize;
         return this;
     }
@@ -525,7 +525,7 @@ public class RaftServerOptions {
         return maxBodySize;
     }
 
-    public RaftServerOptions setMaxBodySize(int maxBodySize) {
+    public RaftServerProperties setMaxBodySize(int maxBodySize) {
         this.maxBodySize = maxBodySize;
         return this;
     }
@@ -534,7 +534,7 @@ public class RaftServerOptions {
         return maxAppendBufferSize;
     }
 
-    public RaftServerOptions setMaxAppendBufferSize(int maxAppendBufferSize) {
+    public RaftServerProperties setMaxAppendBufferSize(int maxAppendBufferSize) {
         this.maxAppendBufferSize = maxAppendBufferSize;
         return this;
     }
@@ -543,7 +543,7 @@ public class RaftServerOptions {
         return maxElectionDelayMs;
     }
 
-    public RaftServerOptions setMaxElectionDelayMs(int maxElectionDelayMs) {
+    public RaftServerProperties setMaxElectionDelayMs(int maxElectionDelayMs) {
         this.maxElectionDelayMs = maxElectionDelayMs;
         return this;
     }
@@ -552,7 +552,7 @@ public class RaftServerOptions {
         return electionHeartbeatFactor;
     }
 
-    public RaftServerOptions setElectionHeartbeatFactor(int electionHeartbeatFactor) {
+    public RaftServerProperties setElectionHeartbeatFactor(int electionHeartbeatFactor) {
         this.electionHeartbeatFactor = electionHeartbeatFactor;
         return this;
     }
@@ -561,7 +561,7 @@ public class RaftServerOptions {
         return applyBatch;
     }
 
-    public RaftServerOptions setApplyBatch(int applyBatch) {
+    public RaftServerProperties setApplyBatch(int applyBatch) {
         this.applyBatch = applyBatch;
         return this;
     }
@@ -570,7 +570,7 @@ public class RaftServerOptions {
         return sync;
     }
 
-    public RaftServerOptions setSync(boolean sync) {
+    public RaftServerProperties setSync(boolean sync) {
         this.sync = sync;
         return this;
     }
@@ -579,7 +579,7 @@ public class RaftServerOptions {
         return syncMeta;
     }
 
-    public RaftServerOptions setSyncMeta(boolean syncMeta) {
+    public RaftServerProperties setSyncMeta(boolean syncMeta) {
         this.syncMeta = syncMeta;
         return this;
     }
@@ -588,7 +588,7 @@ public class RaftServerOptions {
         return openStatistics;
     }
 
-    public RaftServerOptions setOpenStatistics(boolean openStatistics) {
+    public RaftServerProperties setOpenStatistics(boolean openStatistics) {
         this.openStatistics = openStatistics;
         return this;
     }
@@ -597,7 +597,7 @@ public class RaftServerOptions {
         return replicatorPipeline;
     }
 
-    public RaftServerOptions setReplicatorPipeline(boolean replicatorPipeline) {
+    public RaftServerProperties setReplicatorPipeline(boolean replicatorPipeline) {
         this.replicatorPipeline = replicatorPipeline;
         return this;
     }
@@ -606,7 +606,7 @@ public class RaftServerOptions {
         return maxReplicatorInflightMsgs;
     }
 
-    public RaftServerOptions setMaxReplicatorInflightMsgs(int maxReplicatorInflightMsgs) {
+    public RaftServerProperties setMaxReplicatorInflightMsgs(int maxReplicatorInflightMsgs) {
         this.maxReplicatorInflightMsgs = maxReplicatorInflightMsgs;
         return this;
     }
@@ -615,7 +615,7 @@ public class RaftServerOptions {
         return disruptorBufferSize;
     }
 
-    public RaftServerOptions setDisruptorBufferSize(int disruptorBufferSize) {
+    public RaftServerProperties setDisruptorBufferSize(int disruptorBufferSize) {
         this.disruptorBufferSize = disruptorBufferSize;
         return this;
     }
@@ -624,7 +624,7 @@ public class RaftServerOptions {
         return disruptorPublishEventWaitTimeoutSecs;
     }
 
-    public RaftServerOptions setDisruptorPublishEventWaitTimeoutSecs(int disruptorPublishEventWaitTimeoutSecs) {
+    public RaftServerProperties setDisruptorPublishEventWaitTimeoutSecs(int disruptorPublishEventWaitTimeoutSecs) {
         this.disruptorPublishEventWaitTimeoutSecs = disruptorPublishEventWaitTimeoutSecs;
         return this;
     }
@@ -633,7 +633,7 @@ public class RaftServerOptions {
         return enableLogEntryChecksum;
     }
 
-    public RaftServerOptions setEnableLogEntryChecksum(boolean enableLogEntryChecksum) {
+    public RaftServerProperties setEnableLogEntryChecksum(boolean enableLogEntryChecksum) {
         this.enableLogEntryChecksum = enableLogEntryChecksum;
         return this;
     }
@@ -642,7 +642,7 @@ public class RaftServerOptions {
         return readOnlyOptions;
     }
 
-    public RaftServerOptions setReadOnlyOptions(ReadOnlyOption readOnlyOptions) {
+    public RaftServerProperties setReadOnlyOptions(ReadOnlyOption readOnlyOptions) {
         this.readOnlyOptions = readOnlyOptions;
         return this;
     }
@@ -651,7 +651,7 @@ public class RaftServerOptions {
         return stepDownWhenVoteTimedout;
     }
 
-    public RaftServerOptions setStepDownWhenVoteTimedout(boolean stepDownWhenVoteTimedout) {
+    public RaftServerProperties setStepDownWhenVoteTimedout(boolean stepDownWhenVoteTimedout) {
         this.stepDownWhenVoteTimedout = stepDownWhenVoteTimedout;
         return this;
     }

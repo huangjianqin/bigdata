@@ -1,4 +1,4 @@
-package org.kin.hbase.starter.config;
+package org.kin.hbase.starter;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * Created by huangjianqin on 2018/5/26.
  */
 @ConfigurationProperties(prefix = "kin.hbase.zookeeper")
-public class SpringBootHBaseZkConfig {
+public class HBaseZkProperties {
     /**
      * zookeeper地址
      */

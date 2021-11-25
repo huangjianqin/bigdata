@@ -14,10 +14,10 @@ import javax.annotation.Resource;
  */
 @Configuration
 @ConditionalOnBean(JRaftClientMarkerConfiguration.Marker.class)
-@EnableConfigurationProperties(RaftClientOptions.class)
+@EnableConfigurationProperties(RaftClientProperties.class)
 public class JRaftClientAutoConfiguration {
     @Resource
-    private RaftClientOptions clientOptions;
+    private RaftClientProperties clientOptions;
 
     @Bean
     public RaftClient raftClient() {
