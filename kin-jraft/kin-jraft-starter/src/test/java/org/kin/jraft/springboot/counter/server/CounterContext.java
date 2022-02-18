@@ -13,6 +13,6 @@ public class CounterContext {
     public static final ExecutorService EXECUTOR = ExecutionContext.fix(10, "read-index");
 
     static {
-        JvmCloseCleaner.DEFAULT().add(EXECUTOR::shutdown);
+        JvmCloseCleaner.instance().add(EXECUTOR::shutdown);
     }
 }

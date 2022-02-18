@@ -233,7 +233,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
             table.close();
 
             //保证程序关闭, 所有Scanner都关闭
-            JvmCloseCleaner.DEFAULT().add(() -> {
+            JvmCloseCleaner.instance().add(() -> {
                 scanner.close();
             });
 
