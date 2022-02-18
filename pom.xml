@@ -28,7 +28,7 @@
 
         <revision>0.1.0.0</revision>
         <scala.version.head>2.12</scala.version.head>
-        <scala.version>2.12.8</scala.version>
+        <scala.version>2.12.9</scala.version>
     </properties>
 
     <dependencyManagement>
