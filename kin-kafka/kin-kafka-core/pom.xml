@@ -12,16 +12,12 @@
     <artifactId>kin-kafka-core</artifactId>
     <packaging>jar</packaging>
 
-    <properties>
-    </properties>
-
     <dependencies>
         <!-- zookeeper-->
         <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
         </dependency>
-
 
         <!-- kafka-->
         <dependency>
