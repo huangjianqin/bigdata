@@ -101,7 +101,6 @@
                 <version>${mongo-spark-connector.version}</version>
             </dependency>
 
-
             <!-- spark-redis-->
             <dependency>
                 <groupId>com.redislabs</groupId>
@@ -109,14 +108,12 @@
                 <version>${spark-redis.version}</version>
             </dependency>
 
-
             <!-- redis客户端-->
             <dependency>
                 <groupId>io.lettuce</groupId>
                 <artifactId>lettuce-core</artifactId>
                 <version>${lettuce.version}</version>
             </dependency>
-
 
             <!--mongo java driver-->
             <dependency>

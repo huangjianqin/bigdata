@@ -16,6 +16,7 @@
         <module>kin-distributelock</module>
         <module>kin-bigdata-bom</module>
         <module>kin-jraft</module>
+        <module>kin-redis</module>
     </modules>
 
     <properties>
