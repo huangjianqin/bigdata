@@ -20,7 +20,8 @@ import java.lang.reflect.Method;
 import java.util.*;
 
 /**
- * Created by huangjianqin on 2018/5/25.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public class HBaseUtils {
     private static final Logger log = LoggerFactory.getLogger(HBaseConstants.HBASE_LOGGER);
@@ -41,51 +42,57 @@ public class HBaseUtils {
 
         for (T entity : entities) {
             //有@HBaseEntity注解才解析
-            if (entity.getClass().isAnnotationPresent(HBaseEntity.class)) {
-                //如果是HBaseEntity实现类,需先序列化
-                if (entity instanceof org.kin.hbase.core.entity.HBaseEntity) {
-                    ((org.kin.hbase.core.entity.HBaseEntity) entity).serialize();
-                }
-
-                Put put = null;
-
-                Field[] fields = entity.getClass().getDeclaredFields();
-                //先找出row key的成员域
-                for (Field f : fields) {
-                    RowKey rowkey = f.getAnnotation(RowKey.class);
-                    if (rowkey != null) {
-                        byte[] rowKeyBytes = getFieldValue(entity, f);
-                        assert rowKeyBytes != null;
-                        put = new Put(rowKeyBytes);
-
-                        //row key 只有一个
-                        break;
-                    }
-                }
-
-                //再找出qualifier的成员域
-                for (Field f : fields) {
-                    Column hbaseColumn = f.getAnnotation(Column.class);
-                    if (hbaseColumn != null) {
-                        byte[] value = getFieldValue(entity, f);
-                        if (value != null) {
-                            String vStr = Bytes.toString(value);
-                            if (StringUtils.isNotBlank(vStr)) {
-                                String family = hbaseColumn.family();
-                                String qualifier = hbaseColumn.qualifier();
-                                if (StringUtils.isBlank(qualifier)) {
-                                    qualifier = f.getName();
-                                }
-                                assert put != null;
-                                put.addColumn(Bytes.toBytes(family), Bytes.toBytes(qualifier), value);
-                            }
-                        }
-                    }
-                }
-                puts.add(put);
-            } else {
+            if (!entity.getClass().isAnnotationPresent(HBaseEntity.class)) {
                 throw new HBaseEntityException("hbase entity must be annotated with @HBaseEntity");
             }
+
+            //如果是HBaseEntity实现类,需先序列化
+            if (entity instanceof org.kin.hbase.core.entity.HBaseEntity) {
+                ((org.kin.hbase.core.entity.HBaseEntity) entity).serialize();
+            }
+
+            Put put = null;
+
+            Field[] fields = entity.getClass().getDeclaredFields();
+            //先找出row key的成员域
+            for (Field f : fields) {
+                RowKey rowkey = f.getAnnotation(RowKey.class);
+                if (rowkey != null) {
+                    byte[] rowKeyBytes = getFieldValue(entity, f);
+                    assert rowKeyBytes != null;
+                    put = new Put(rowKeyBytes);
+
+                    //row key 只有一个
+                    break;
+                }
+            }
+
+            //再找出qualifier的成员域
+            for (Field f : fields) {
+                Column hbaseColumn = f.getAnnotation(Column.class);
+                if (hbaseColumn == null) {
+                    continue;
+                }
+
+                byte[] value = getFieldValue(entity, f);
+                if (value == null) {
+                    continue;
+                }
+
+                String vStr = Bytes.toString(value);
+                if (StringUtils.isBlank(vStr)) {
+                    continue;
+                }
+
+                String family = hbaseColumn.family();
+                String qualifier = hbaseColumn.qualifier();
+                if (StringUtils.isBlank(qualifier)) {
+                    qualifier = f.getName();
+                }
+                assert put != null;
+                put.addColumn(Bytes.toBytes(family), Bytes.toBytes(qualifier), value);
+            }
+            puts.add(put);
         }
         return puts;
     }
@@ -96,7 +103,8 @@ public class HBaseUtils {
     private static byte[] getFieldValue(Object object, Field field) {
         try {
             Method m = ClassUtils.getterMethod(object.getClass(), field);
-            if (String.class.equals(field)) {
+            Class<?> fieldType = field.getType();
+            if (String.class.equals(fieldType)) {
                 String val;
                 if (m != null) {
                     // 调用getter方法获取属性值
@@ -108,7 +116,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (Character.class.equals(field) || Character.TYPE.equals(field)) {
+            if (Character.class.equals(fieldType) || Character.TYPE.equals(fieldType)) {
                 char val;
                 if (m != null) {
                     // 调用getter方法获取属性值
@@ -120,7 +128,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (Integer.class.equals(field) || Integer.TYPE.equals(field)) {
+            if (Integer.class.equals(fieldType) || Integer.TYPE.equals(fieldType)) {
                 int val;
                 if (m != null) {
                     val = (int) m.invoke(object);
@@ -131,7 +139,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (Double.class.equals(field) || Double.TYPE.equals(field)) {
+            if (Double.class.equals(fieldType) || Double.TYPE.equals(fieldType)) {
                 double val;
                 if (m != null) {
                     val = (double) m.invoke(object);
@@ -142,7 +150,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (Long.class.equals(field) || Long.TYPE.equals(field)) {
+            if (Long.class.equals(fieldType) || Long.TYPE.equals(fieldType)) {
                 long val;
                 if (m != null) {
                     val = (long) m.invoke(object);
@@ -153,7 +161,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (Byte.class.equals(field) || Byte.TYPE.equals(field)) {
+            if (Byte.class.equals(fieldType) || Byte.TYPE.equals(fieldType)) {
                 byte val;
                 if (m != null) {
                     val = (byte) m.invoke(object);
@@ -164,7 +172,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (Short.class.equals(field) || Short.TYPE.equals(field)) {
+            if (Short.class.equals(fieldType) || Short.TYPE.equals(fieldType)) {
                 short val;
                 if (m != null) {
                     val = (byte) m.invoke(object);
@@ -175,7 +183,7 @@ public class HBaseUtils {
                 return Bytes.toBytes(val);
             }
 
-            if (Float.class.equals(field) || Float.TYPE.equals(field)) {
+            if (Float.class.equals(fieldType) || Float.TYPE.equals(fieldType)) {
                 float val;
                 if (m != null) {
                     val = (float) m.invoke(object);
@@ -220,46 +228,48 @@ public class HBaseUtils {
             return null;
         }
 
+        //检查是否有@HBaseEntity注解
+        if (!clazz.isAnnotationPresent(HBaseEntity.class)) {
+            return null;
+        }
+
         Field[] fields = clazz.getDeclaredFields();
         T instance = null;
         try {
-            //检查是否有@HBaseEntity注解
-            if (clazz.isAnnotationPresent(HBaseEntity.class)) {
-                instance = clazz.newInstance();
-                for (Field field : fields) {
-                    field.setAccessible(true);
-                    //设置RowKey @RowKey
-                    if (field.isAnnotationPresent(RowKey.class)) {
-                        setFieldValue(instance, field, ClassUtils.convertBytes2PrimitiveObj(field.getType(), result.getRow()));
-                    } else {
-                        //设置列值 @Column
-                        if (field.isAnnotationPresent(Column.class)) {
-                            Column column = field.getAnnotation(Column.class);
-
-                            String family = column.family();
-                            String qualifier = column.qualifier();
-
-                            if (StringUtils.isBlank(qualifier)) {
-                                qualifier = field.getName();
-                            }
-
-                            if (StringUtils.isBlank(family)) {
-                                throw new IllegalArgumentException("@Column 's qualifier family must be not blank");
-                            }
-
-                            setFieldValue(instance, field, ClassUtils.convertBytes2PrimitiveObj(field.getType(), result.getValue(Bytes.toBytes(family), Bytes.toBytes(qualifier))));
-                        }
+            instance = clazz.newInstance();
+            for (Field field : fields) {
+                field.setAccessible(true);
+                //设置RowKey @RowKey
+                if (field.isAnnotationPresent(RowKey.class)) {
+                    setFieldValue(instance, field, ClassUtils.convertBytes2PrimitiveObj(field.getType(), result.getRow()));
+                } else {
+                    if (!field.isAnnotationPresent(Column.class)) {
+                        continue;
                     }
-                }
 
-                //如果是HBaseEntity实现类,需反序列化
-                if (instance instanceof org.kin.hbase.core.entity.HBaseEntity) {
-                    ((org.kin.hbase.core.entity.HBaseEntity) instance).deserialize();
+                    //设置列值 @Column
+                    Column column = field.getAnnotation(Column.class);
+
+                    String family = column.family();
+                    String qualifier = column.qualifier();
+
+                    if (StringUtils.isBlank(qualifier)) {
+                        qualifier = field.getName();
+                    }
+
+                    if (StringUtils.isBlank(family)) {
+                        throw new IllegalArgumentException("@Column 's qualifier family must be not blank");
+                    }
+
+                    setFieldValue(instance, field, ClassUtils.convertBytes2PrimitiveObj(field.getType(), result.getValue(Bytes.toBytes(family), Bytes.toBytes(qualifier))));
                 }
             }
-        } catch (InstantiationException e) {
-            log.error(e.getMessage(), e);
-        } catch (IllegalAccessException e) {
+
+            //如果是HBaseEntity实现类,需反序列化
+            if (instance instanceof org.kin.hbase.core.entity.HBaseEntity) {
+                ((org.kin.hbase.core.entity.HBaseEntity) instance).deserialize();
+            }
+        } catch (InstantiationException | IllegalAccessException e) {
             log.error(e.getMessage(), e);
         } finally {
             for (Field field : fields) {
@@ -310,13 +320,15 @@ public class HBaseUtils {
     }
 
     public static <T> byte[] getRowKeyBytes(T entity) {
-        if (entity.getClass().isAnnotationPresent(HBaseEntity.class)) {
-            Field[] fields = entity.getClass().getDeclaredFields();
-            for (Field f : fields) {
-                RowKey rowkey = f.getAnnotation(RowKey.class);
-                if (rowkey != null) {
-                    return getFieldValue(entity, f);
-                }
+        if (!entity.getClass().isAnnotationPresent(HBaseEntity.class)) {
+            return null;
+        }
+
+        Field[] fields = entity.getClass().getDeclaredFields();
+        for (Field f : fields) {
+            RowKey rowkey = f.getAnnotation(RowKey.class);
+            if (rowkey != null) {
+                return getFieldValue(entity, f);
             }
         }
 

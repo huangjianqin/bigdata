@@ -3,12 +3,13 @@ package org.kin.hbase.core.domain;
 import java.util.List;
 
 /**
- * Created by huangjianqin on 2018/5/25.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public class Page<T> {
-    private int pageSize;
-    private int pageNo;
-    private List<T> entityList;
+    private final int pageSize;
+    private final int pageNo;
+    private final List<T> entityList;
 
     public Page(int pageSize, int pageNo, List<T> entityList) {
         this.pageSize = pageSize;

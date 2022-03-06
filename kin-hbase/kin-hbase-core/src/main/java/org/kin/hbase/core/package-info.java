@@ -1,5 +1,6 @@
 /**
- * Created by huangjianqin on 2018/5/21.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 package org.kin.hbase.core;
 

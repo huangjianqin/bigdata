@@ -13,7 +13,8 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Created by huangjianqin on 2018/5/25.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public class PutOp extends AbstractHBaseOp<PutOp> {
     public PutOp(String tableName) {
@@ -29,16 +30,18 @@ public class PutOp extends AbstractHBaseOp<PutOp> {
     }
 
     private void put0(List<Put> puts) {
-        if (puts != null && puts.size() > 0) {
-            try (Connection connection = HBasePool.common().getConnection()) {
-                Table table = connection.getTable(TableName.valueOf(getTableName()));
+        if (puts == null || puts.size() <= 0) {
+            return;
+        }
 
-                table.put(puts);
+        try (Connection connection = HBasePool.common().getConnection()) {
+            Table table = connection.getTable(TableName.valueOf(getTableName()));
 
-                table.close();
-            } catch (IOException e) {
-                log.error(e.getMessage(), e);
-            }
+            table.put(puts);
+
+            table.close();
+        } catch (IOException e) {
+            log.error(e.getMessage(), e);
         }
     }
 }

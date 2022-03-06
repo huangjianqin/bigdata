@@ -1,7 +1,8 @@
 package org.kin.hbase.core.config;
 
 /**
- * Created by huangjianqin on 2018/5/24.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public class HBaseConfig {
     /**

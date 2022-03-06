@@ -5,20 +5,25 @@ import org.apache.hadoop.hbase.filter.*;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.kin.hbase.core.domain.QueryInfo;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Created by huangjianqin on 2018/5/25.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
-public abstract class AbstractQueryOp<S extends AbstractQueryOp> extends AbstractHBaseOp<S> {
-    private List<QueryInfo> queryInfos = new ArrayList<>();
-    private List<Filter> filters = new ArrayList<>();
+public abstract class AbstractQueryOp<S extends AbstractQueryOp<S>> extends AbstractHBaseOp<S> {
+    private final List<QueryInfo> queryInfos = new ArrayList<>();
+    private final List<Filter> filters = new ArrayList<>();
 
     public AbstractQueryOp(String tableName) {
         super(tableName);
     }
 
     //-------------------------------------------------------------------------------------------------------
+    @SuppressWarnings("unchecked")
     private S addCondition(QueryInfo queryInfo) {
         queryInfos.add(queryInfo);
         return (S) this;
@@ -46,17 +51,18 @@ public abstract class AbstractQueryOp<S extends AbstractQueryOp> extends Abstrac
         return addFilter(filter);
     }
 
+    @SuppressWarnings("unchecked")
     private S addFilter(Filter filter) {
         filters.add(filter);
         return (S) this;
     }
 
-    //-------------------------------------------------------------------------------------------------------
-    //属性
+    //---------------------------------------属性----------------------------------------------------------------
     public S family(String family) {
         return families(family);
     }
 
+    @SuppressWarnings("unchecked")
     public S families(String... families) {
         if (families != null && families.length > 0) {
             for (String family : families) {
@@ -67,9 +73,10 @@ public abstract class AbstractQueryOp<S extends AbstractQueryOp> extends Abstrac
     }
 
     public S column(String family, String qualifier) {
-        return columns(Collections.singletonMap(family, Arrays.asList(qualifier)));
+        return columns(Collections.singletonMap(family, Collections.singletonList(qualifier)));
     }
 
+    @SuppressWarnings("unchecked")
     public S columns(Map<String, List<String>> family2Qualifiers) {
         if (family2Qualifiers != null && family2Qualifiers.size() > 0) {
             for (String family : family2Qualifiers.keySet()) {
@@ -175,8 +182,7 @@ public abstract class AbstractQueryOp<S extends AbstractQueryOp> extends Abstrac
         return addFilter(filter);
     }
 
-    //-------------------------------------------------------------------------------------------------------
-    //行键元数据过滤器
+    //-----------------------------------------------行键元数据过滤器--------------------------------------------------------
     public S rowFilter(String rowKey) {
         RowFilter filter = new RowFilter(CompareOperator.EQUAL, new BinaryComparator(Bytes.toBytes(rowKey)));
         return addFilter(filter);

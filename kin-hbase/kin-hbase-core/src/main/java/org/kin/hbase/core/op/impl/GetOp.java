@@ -13,7 +13,8 @@ import org.kin.hbase.core.utils.HBaseUtils;
 import java.io.IOException;
 
 /**
- * Created by huangjianqin on 2018/5/25.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public class GetOp extends AbstractQueryOp<GetOp> {
     private final String rowKey;
@@ -24,10 +25,13 @@ public class GetOp extends AbstractQueryOp<GetOp> {
     }
 
     //-------------------------------------------------------------------------------------------------------
-    //query操作
-    public <T> T one(Class<T> entitiyClaxx) {
+
+    /**
+     * query操作
+     */
+    public <T> T one(Class<T> entityClaxx) {
         Result result = one();
-        return HBaseUtils.convert2HBaseEntity(entitiyClaxx, result);
+        return HBaseUtils.convert2HBaseEntity(entityClaxx, result);
     }
 
     private Result one() {

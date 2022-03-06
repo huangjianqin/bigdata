@@ -12,7 +12,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Created by huangjianqin on 2018/5/25.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public class AdminOp extends AbstractHBaseOp<AdminOp> {
     public AdminOp(String tableName) {

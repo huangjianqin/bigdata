@@ -16,7 +16,8 @@ import java.util.*;
 import java.util.concurrent.*;
 
 /**
- * Created by huangjianqin on 2018/5/25.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public class HBasePool implements Closeable {
     private static final Logger log = LoggerFactory.getLogger(HBaseConstants.HBASE_LOGGER);
@@ -83,7 +84,6 @@ public class HBasePool implements Closeable {
                     }
                 } catch (IOException e) {
                     log.error(e.getMessage(), e);
-                    continue;
                 }
             }
             connections.clear();
@@ -113,7 +113,7 @@ public class HBasePool implements Closeable {
      */
     public Connection getConnection(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
         //jvm默认开启的fork join线程池
-        Future<Connection> future = ForkJoinPool.commonPool().submit(() -> getConnection());
+        Future<Connection> future = ForkJoinPool.commonPool().submit((Callable<Connection>) this::getConnection);
         return future.get(timeout, unit);
     }
 

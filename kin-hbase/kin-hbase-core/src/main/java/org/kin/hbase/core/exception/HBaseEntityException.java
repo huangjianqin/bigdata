@@ -1,9 +1,12 @@
 package org.kin.hbase.core.exception;
 
 /**
- * Created by huangjianqin on 2018/5/27.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public class HBaseEntityException extends RuntimeException {
+    private static final long serialVersionUID = -9185747789260834478L;
+
     public HBaseEntityException() {
         super();
     }

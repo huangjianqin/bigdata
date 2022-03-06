@@ -5,7 +5,8 @@ import org.kin.hbase.core.annotation.HBaseEntity;
 import org.kin.hbase.core.annotation.RowKey;
 
 /**
- * Created by huangjianqin on 2018/5/27.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 @HBaseEntity
 public class HEntity {

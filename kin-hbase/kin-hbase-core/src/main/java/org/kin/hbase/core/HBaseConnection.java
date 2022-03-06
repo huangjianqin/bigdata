@@ -8,7 +8,8 @@ import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
 /**
- * Created by huangjianqin on 2018/5/30.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public class HBaseConnection implements Connection {
     private Connection connection;

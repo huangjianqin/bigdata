@@ -17,7 +17,8 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * Created by huangjianqin on 2018/5/25.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public class ScanOp extends AbstractQueryOp<ScanOp> {
     private final Scan scan;
@@ -61,7 +62,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
 
     }
 
-    public ScanOp maxVresions(int version) {
+    public ScanOp maxVersions(int version) {
         scan.readAllVersions();
         return this;
     }
@@ -100,9 +101,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
         return this;
     }
 
-    //-------------------------------------------------------------------------------------------------------
-    //过滤器
-
+    //------------------------------------------过滤器-------------------------------------------------------------
     @Override
     public ScanOp includeStop(String stopRowKey) {
         ScanOp op = super.includeStop(stopRowKey);
@@ -114,9 +113,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
     }
 
 
-    //-------------------------------------------------------------------------------------------------------
-    //query操作
-
+    //-------------------------------------------query操作------------------------------------------------------------
     /**
      * 分批取
      */
@@ -132,10 +129,10 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
     /**
      * 一次取完
      */
-    public <T> List<T> batch(Class<T> entitiyClaxx) {
+    public <T> List<T> batch(Class<T> entityClaxx) {
         ResultScanner scanner = scanner();
         if (scanner != null) {
-            return new Scanner(scanner).batch(entitiyClaxx);
+            return new Scanner(scanner).batch(entityClaxx);
         }
 
         return Collections.emptyList();
@@ -146,18 +143,18 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
      *
      * @param pageNo 从1开始
      */
-    public <T> Page<T> page(Class<T> entitiyClaxx, int pageSize, int pageNo) {
+    public <T> Page<T> page(Class<T> entityClaxx, int pageSize, int pageNo) {
         int offset = (pageNo - 1) * pageSize;
         rowOffsetPerFamily(offset);
 
-        List<T> entities = batch(entitiyClaxx);
+        List<T> entities = batch(entityClaxx);
         return new Page<>(pageSize, pageNo, entities);
     }
 
     //-------------------------------------------------------------------------------------------------------
-    public class Scanner implements Closeable {
+    public static class Scanner implements Closeable {
         private ScannerStatus scannerStatus = ScannerStatus.INIT;
-        private ResultScanner scanner;
+        private final ResultScanner scanner;
 
         public Scanner(ResultScanner scanner) {
             this.scanner = scanner;
@@ -168,7 +165,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
          * <p>
          * 最好设置Scan实例的batch值大点，增加一次请求获取数据的数量
          */
-        public <T> List<T> scan(Class<T> entitiyClaxx, int batchSize) {
+        public <T> List<T> scan(Class<T> entityClaxx, int batchSize) {
             if (scannerStatus.equals(ScannerStatus.CLOSED)) {
                 throw new IllegalScannerStatusException("scanner has been closed");
             }
@@ -178,7 +175,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
                 Result[] results = scanner.next(batchSize);
                 if (results != null && results.length > 0) {
                     for (Result result : results) {
-                        objs.add(HBaseUtils.convert2HBaseEntity(entitiyClaxx, result));
+                        objs.add(HBaseUtils.convert2HBaseEntity(entityClaxx, result));
                     }
                 } else {
                     close();
@@ -221,7 +218,9 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
     }
     //-------------------------------------------------------------------------------------------------------
 
-    //外部维护关闭ResultScanner
+    /**
+     * 外部维护关闭ResultScanner
+     */
     private ResultScanner scanner() {
         try (Connection connection = HBasePool.common().getConnection()) {
             Table table = connection.getTable(TableName.valueOf(getTableName()));
@@ -233,9 +232,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
             table.close();
 
             //保证程序关闭, 所有Scanner都关闭
-            JvmCloseCleaner.instance().add(() -> {
-                scanner.close();
-            });
+            JvmCloseCleaner.instance().add(scanner::close);
 
             return scanner;
         } catch (IOException e) {
@@ -246,7 +243,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
     }
 
     //getter
-    public Map<String, Set<String>> getColunms() {
+    public Map<String, Set<String>> getColumns() {
         Map<String, Set<String>> result = new HashMap<>();
         for (Map.Entry<byte[], NavigableSet<byte[]>> entry : scan.getFamilyMap().entrySet()) {
             String family = new String(entry.getKey());
@@ -282,7 +279,7 @@ public class ScanOp extends AbstractQueryOp<ScanOp> {
 
     }
 
-    public int getMaxVresions() {
+    public int getMaxVersions() {
         return scan.getMaxVersions();
     }
 

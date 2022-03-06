@@ -3,7 +3,8 @@ package org.kin.hbase.core;
 import org.kin.hbase.core.op.HBaseOps;
 
 /**
- * Created by huangjianqin on 2018/5/27.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public class HBasePoolTest extends HBasePoolTestBase {
     public static void main(String[] args) {

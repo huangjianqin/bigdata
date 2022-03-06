@@ -1,7 +1,8 @@
 package org.kin.hbase.core.domain;
 
 /**
- * Created by huangjianqin on 2018/5/25.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public enum ScannerStatus {
     /**

@@ -1,9 +1,12 @@
 package org.kin.hbase.core.exception;
 
 /**
- * Created by huangjianqin on 2018/5/27.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public class IllegalScannerStatusException extends RuntimeException {
+    private static final long serialVersionUID = -1658381733032200377L;
+
     public IllegalScannerStatusException() {
         super();
     }

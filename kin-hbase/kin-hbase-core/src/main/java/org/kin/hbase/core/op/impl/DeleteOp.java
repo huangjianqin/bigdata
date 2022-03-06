@@ -16,7 +16,8 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Created by huangjianqin on 2018/5/25.
+ * @author huangjianqin
+ * @date 2018/5/24
  */
 public class DeleteOp extends AbstractHBaseOp<DeleteOp> {
     public DeleteOp(String tableName) {
