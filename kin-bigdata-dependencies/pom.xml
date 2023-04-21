@@ -18,7 +18,7 @@
         <mongo-spark-connector.version>2.4.0</mongo-spark-connector.version>
         <spark-streaming-kafka.version>2.4.5</spark-streaming-kafka.version>
         <scala.version>2.12.9</scala.version>
-        <spark.version>2.4.5</spark.version>
+        <spark.version>3.4.0</spark.version>
         <mongo.version>3.12.2</mongo.version>
         <hbase.version>2.2.3</hbase.version>
         <kafka.version>2.1.0</kafka.version>
